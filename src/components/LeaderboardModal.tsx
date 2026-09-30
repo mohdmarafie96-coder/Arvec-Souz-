@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { X, Trophy, Medal, Sparkles, LogIn, LogOut, User, Flame, Clock } from 'lucide-react';
+import { X, Trophy, Sparkles, LogIn, LogOut, User, Edit3, Check, HelpCircle } from 'lucide-react';
 import { useAuth } from '../firebase/authContext';
 import { getLeaderboard, GameSolveRecord, getRankTitle } from '../firebase/gameService';
 
@@ -9,9 +9,11 @@ interface LeaderboardModalProps {
 }
 
 export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({ isOpen, onClose }) => {
-  const { user, profile, loginWithGoogle, logout } = useAuth();
+  const { user, profile, loginWithGoogle, logout, setGuestNickname } = useAuth();
   const [leaderboard, setLeaderboard] = useState<GameSolveRecord[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [isEditingNick, setIsEditingNick] = useState<boolean>(false);
+  const [nickInput, setNickInput] = useState<string>('');
 
   useEffect(() => {
     if (isOpen) {
@@ -20,13 +22,23 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({ isOpen, onCl
         setLeaderboard(records);
         setLoading(false);
       });
+      setNickInput(profile?.displayName || 'Player');
     }
-  }, [isOpen]);
+  }, [isOpen, profile]);
 
   if (!isOpen) return null;
 
   const currentPoints = profile?.totalPoints || 0;
   const currentRank = getRankTitle(currentPoints);
+  const isGuest = !user;
+
+  const handleSaveNickname = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (nickInput.trim()) {
+      setGuestNickname(nickInput.trim());
+      setIsEditingNick(false);
+    }
+  };
 
   const formatMs = (ms: number) => {
     const sec = (ms / 1000).toFixed(1);
@@ -101,18 +113,66 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({ isOpen, onCl
               </button>
             </div>
           ) : (
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 rounded-2xl bg-blue-950/20 border border-blue-500/30">
-              <div className="text-center sm:text-left">
-                <h4 className="text-sm font-bold text-slate-200">Save Your Progress & Climb the Ranks</h4>
-                <p className="text-xs text-slate-400 mt-0.5">Sign in with Google to log solo points and compete globally.</p>
+            <div className="space-y-3">
+              {/* Local / Guest Active Player Profile */}
+              <div className="flex items-center justify-between p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-slate-800 text-slate-400 flex items-center justify-center font-bold">
+                    <User className="w-5 h-5 text-sky-400" />
+                  </div>
+                  <div>
+                    {!isEditingNick ? (
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-sm text-slate-200">{profile?.displayName || 'Guest Cuber'}</span>
+                        <button
+                          onClick={() => setIsEditingNick(true)}
+                          className="text-slate-400 hover:text-white p-1 rounded"
+                          title="Edit nickname"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                        </button>
+                        <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-slate-800 text-slate-400">
+                          {currentRank}
+                        </span>
+                      </div>
+                    ) : (
+                      <form onSubmit={handleSaveNickname} className="flex items-center gap-1.5">
+                        <input
+                          type="text"
+                          value={nickInput}
+                          onChange={(e) => setNickInput(e.target.value)}
+                          className="bg-slate-950 border border-slate-700 px-2 py-1 rounded-lg text-xs text-white focus:outline-none focus:border-sky-500 w-32"
+                          maxLength={25}
+                        />
+                        <button
+                          type="submit"
+                          className="p-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg"
+                        >
+                          <Check className="w-3.5 h-3.5" />
+                        </button>
+                      </form>
+                    )}
+                    <div className="flex items-center gap-2 text-xs font-mono text-slate-400 mt-0.5">
+                      <span className="text-amber-400 font-bold">{currentPoints} Pts</span>
+                      <span>·</span>
+                      <span>{profile?.solvesCount || 0} Solves</span>
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  onClick={loginWithGoogle}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-all shadow-md active:scale-95 whitespace-nowrap"
+                >
+                  <LogIn className="w-3.5 h-3.5" />
+                  <span>Google Sign-in</span>
+                </button>
               </div>
-              <button
-                onClick={loginWithGoogle}
-                className="flex items-center gap-2 px-4 py-2 bg-white text-slate-900 hover:bg-slate-100 rounded-xl text-xs font-bold transition-all shadow-md active:scale-95 whitespace-nowrap"
-              >
-                <LogIn className="w-4 h-4 text-blue-600" />
-                Sign in with Google
-              </button>
+
+              <div className="flex items-center gap-2 px-3 text-[11px] text-slate-500">
+                <HelpCircle className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                <span>If the sign-in popup opens & closes immediately on Vercel, the domain must be added to Firebase Authorized Domains.</span>
+              </div>
             </div>
           )}
         </div>

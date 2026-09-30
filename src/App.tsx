@@ -29,6 +29,7 @@ import { AlgorithmsModal } from './components/AlgorithmsModal';
 import { SettingsModal } from './components/SettingsModal';
 import { RubiksTutorial } from './components/RubiksTutorial';
 import { LeaderboardModal } from './components/LeaderboardModal';
+import { AuthErrorModal } from './components/AuthErrorModal';
 import { SlidePuzzle } from './components/SlidePuzzle';
 import { LightsOut } from './components/LightsOut';
 import { ArvecLogo } from './components/ArvecLogo';
@@ -536,6 +537,9 @@ export default function App() {
         isOpen={isLeaderboardOpen}
         onClose={() => setIsLeaderboardOpen(false)}
       />
+
+      {/* Auth Error & Vercel Domain Troubleshooting Modal */}
+      <AuthErrorModal />
 
       {/* Algorithms Codex Modal */}
       <AlgorithmsModal
