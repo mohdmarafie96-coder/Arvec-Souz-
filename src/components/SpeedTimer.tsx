@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import confetti from 'canvas-confetti';
 import { TimerStatus, SolveRecord } from '../types/cube';
 import { soundFx } from '../utils/audio';
+import { calculateSoloPoints } from '../firebase/gameService';
 
 interface SpeedTimerProps {
   status: TimerStatus;
@@ -10,7 +11,7 @@ interface SpeedTimerProps {
   movesCount: number;
   currentScramble: string;
   cubeSize: 2 | 3;
-  onSolveFinished: (record: SolveRecord) => void;
+  onSolveFinished: (record: SolveRecord, points: number) => void;
   isSolved: boolean;
 }
 
@@ -27,6 +28,7 @@ export const SpeedTimer: React.FC<SpeedTimerProps> = ({
   const [elapsedMs, setElapsedMs] = useState<number>(0);
   const [inspectionSeconds, setInspectionSeconds] = useState<number>(15);
   const [holdProgress, setHoldProgress] = useState<'idle' | 'holding' | 'ready'>('idle');
+  const [recentPoints, setRecentPoints] = useState<number | null>(null);
 
   const startTimeRef = useRef<number>(0);
   const timerRafRef = useRef<number | null>(null);
@@ -91,17 +93,26 @@ export const SpeedTimer: React.FC<SpeedTimerProps> = ({
       const totalSec = finalMs / 1000;
       const tps = totalSec > 0 ? Number((currentMovesRef.current / totalSec).toFixed(2)) : 0;
 
+      // Calculate solo points
+      const points = calculateSoloPoints(
+        cubeSize === 3 ? 'rubiks_3x3' : 'rubiks_2x2',
+        finalMs,
+        currentMovesRef.current
+      );
+      setRecentPoints(points.totalPoints);
+
       const record: SolveRecord = {
         id: `${Date.now()}`,
         timeMs: Math.round(finalMs),
         scramble: currentScramble,
         movesCount: currentMovesRef.current,
         tps,
+        pointsEarned: points.totalPoints,
         date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         cubeSize,
       };
 
-      onSolveFinished(record);
+      onSolveFinished(record, points.totalPoints);
       triggerConfetti();
     }
   }, [isSolved, status, currentScramble, cubeSize, onSolveFinished, setStatus, triggerConfetti, elapsedMs]);
@@ -115,17 +126,17 @@ export const SpeedTimer: React.FC<SpeedTimerProps> = ({
       inspectionIntervalRef.current = window.setInterval(() => {
         setInspectionSeconds((prev) => {
           if (prev <= 1) {
-            // Inspection over -> start timer automatically or +2 penalty
+            // Inspection over -> start timer automatically
             clearInterval(inspectionIntervalRef.current!);
             setStatus('running');
             startTimeRef.current = performance.now();
             return 0;
           }
           if (prev === 8) {
-            soundFx.playInspectBeep(false); // 8 seconds warning
+            soundFx.playInspectBeep(false);
           }
           if (prev === 3) {
-            soundFx.playInspectBeep(true); // 12 seconds warning (3s remaining)
+            soundFx.playInspectBeep(true);
           }
           return prev - 1;
         });
@@ -147,6 +158,7 @@ export const SpeedTimer: React.FC<SpeedTimerProps> = ({
   useEffect(() => {
     if (status === 'running') {
       startTimeRef.current = performance.now();
+      setRecentPoints(null);
 
       const tick = () => {
         const now = performance.now();
@@ -171,14 +183,12 @@ export const SpeedTimer: React.FC<SpeedTimerProps> = ({
   // Spacebar handling for WCA-style timer start & stop
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ignore if user is typing in an input
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
 
       if (e.code === 'Space' && !e.repeat) {
         e.preventDefault();
 
         if (status === 'running') {
-          // Stop running timer
           const finalMs = performance.now() - startTimeRef.current;
           setElapsedMs(finalMs);
           setStatus('completed');
@@ -186,16 +196,24 @@ export const SpeedTimer: React.FC<SpeedTimerProps> = ({
           const totalSec = finalMs / 1000;
           const tps = totalSec > 0 ? Number((currentMovesRef.current / totalSec).toFixed(2)) : 0;
 
+          const points = calculateSoloPoints(
+            cubeSize === 3 ? 'rubiks_3x3' : 'rubiks_2x2',
+            finalMs,
+            currentMovesRef.current
+          );
+          setRecentPoints(points.totalPoints);
+
           const record: SolveRecord = {
             id: `${Date.now()}`,
             timeMs: Math.round(finalMs),
             scramble: currentScramble,
             movesCount: currentMovesRef.current,
             tps,
+            pointsEarned: points.totalPoints,
             date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             cubeSize,
           };
-          onSolveFinished(record);
+          onSolveFinished(record, points.totalPoints);
           if (isSolved) {
             triggerConfetti();
           }
@@ -203,7 +221,6 @@ export const SpeedTimer: React.FC<SpeedTimerProps> = ({
           if (inspectionEnabled) {
             setStatus('inspecting');
           } else {
-            // Prepare hold
             isHoldingKeyRef.current = true;
             setHoldProgress('holding');
             holdTimeoutRef.current = window.setTimeout(() => {
@@ -246,7 +263,6 @@ export const SpeedTimer: React.FC<SpeedTimerProps> = ({
     };
   }, [status, holdProgress, inspectionEnabled, currentScramble, cubeSize, onSolveFinished, setStatus, isSolved, triggerConfetti]);
 
-  // Touch / Click handler for mobile or mouse click on timer
   const handleTouchStart = () => {
     if (status === 'running') {
       const finalMs = performance.now() - startTimeRef.current;
@@ -281,6 +297,13 @@ export const SpeedTimer: React.FC<SpeedTimerProps> = ({
 
   return (
     <div className="flex flex-col items-center select-none pointer-events-auto">
+      {/* Recent Points Awarded Popup */}
+      {recentPoints !== null && isSolved && (
+        <div className="mb-2 px-3.5 py-1 rounded-full bg-gradient-to-r from-amber-500/20 via-yellow-500/20 to-sky-500/20 border border-amber-500/40 text-amber-300 text-xs font-mono font-black animate-bounce shadow-lg shadow-amber-500/10">
+          +{recentPoints} Solo Points Earned!
+        </div>
+      )}
+
       {/* Main Timer Display */}
       <div
         onPointerDown={handleTouchStart}
@@ -333,7 +356,7 @@ export const SpeedTimer: React.FC<SpeedTimerProps> = ({
         <div className="w-1 h-1 rounded-full bg-slate-700" />
         <div>
           <span className="text-slate-500">STATUS: </span>
-          <span className={`font-semibold ${isSolved ? 'text-emerald-400' : 'text-slate-300'}`}>
+          <span className={`font-semibold ${isSolved ? 'text-emerald-400' : status === 'running' ? 'text-amber-400' : 'text-slate-300'}`}>
             {isSolved ? 'SOLVED' : status === 'running' ? 'SOLVING' : 'READY'}
           </span>
         </div>
@@ -341,3 +364,4 @@ export const SpeedTimer: React.FC<SpeedTimerProps> = ({
     </div>
   );
 };
+

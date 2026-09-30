@@ -39,6 +39,7 @@ export interface SolveRecord {
   scramble: string;
   movesCount: number;
   tps: number;
+  pointsEarned?: number;
   date: string;
   cubeSize: 2 | 3;
 }

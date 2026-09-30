@@ -1,0 +1,144 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile, total accumulated arcade points, and game statistics",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "User auth UID",
+          "maxLength": 128
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Public display name",
+          "maxLength": 80
+        },
+        "photoURL": {
+          "type": "string",
+          "description": "Avatar image URL",
+          "maxLength": 512
+        },
+        "totalPoints": {
+          "type": "number",
+          "description": "Total arcade points accumulated across games"
+        },
+        "solvesCount": {
+          "type": "number",
+          "description": "Total count of games solved"
+        },
+        "bestRubikMs": {
+          "type": "number",
+          "description": "Best Rubik's cube solve time in milliseconds"
+        },
+        "currentStreak": {
+          "type": "number",
+          "description": "Current daily or solve streak"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO timestamp of last update"
+        }
+      },
+      "required": ["userId", "displayName", "totalPoints", "solvesCount"]
+    },
+    "GameSolve": {
+      "title": "GameSolve",
+      "description": "Record of an individual completed solo game solve with point calculation",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique solve document ID",
+          "maxLength": 128
+        },
+        "userId": {
+          "type": "string",
+          "description": "Author UID",
+          "maxLength": 128
+        },
+        "userName": {
+          "type": "string",
+          "description": "Author display name",
+          "maxLength": 80
+        },
+        "gameType": {
+          "type": "string",
+          "description": "Type of game (rubiks_3x3, rubiks_2x2, slide_puzzle, lights_out)",
+          "enum": ["rubiks_3x3", "rubiks_2x2", "slide_puzzle", "lights_out"]
+        },
+        "timeMs": {
+          "type": "number",
+          "description": "Time to solve in milliseconds"
+        },
+        "movesCount": {
+          "type": "number",
+          "description": "Total moves used to solve"
+        },
+        "pointsEarned": {
+          "type": "number",
+          "description": "Points earned for this solo solve"
+        },
+        "scramble": {
+          "type": "string",
+          "description": "Scramble notation or initial puzzle state",
+          "maxLength": 500
+        },
+        "tps": {
+          "type": "number",
+          "description": "Turns or moves per second"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO timestamp"
+        }
+      },
+      "required": ["userId", "userName", "gameType", "timeMs", "movesCount", "pointsEarned"]
+    },
+    "TutorialProgress": {
+      "title": "TutorialProgress",
+      "description": "Tracks progress through Rubik's interactive learning stages",
+      "type": "object",
+      "properties": {
+        "stageId": {
+          "type": "string",
+          "description": "Identifier for the tutorial stage",
+          "maxLength": 64
+        },
+        "userId": {
+          "type": "string",
+          "description": "User UID",
+          "maxLength": 128
+        },
+        "completed": {
+          "type": "boolean",
+          "description": "Whether the stage is completed"
+        },
+        "pointsAwarded": {
+          "type": "number",
+          "description": "Points awarded for completing this step"
+        },
+        "completedAt": {
+          "type": "string",
+          "description": "ISO timestamp of completion"
+        }
+      },
+      "required": ["stageId", "userId", "completed"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Stores user profile and point totals"
+    },
+    "/solves/{solveId}": {
+      "schema": "GameSolve",
+      "description": "Public arcade leaderboard and solve records"
+    },
+    "/users/{userId}/tutorialProgress/{stageId}": {
+      "schema": "TutorialProgress",
+      "description": "Individual user tutorial completion records"
+    }
+  }
+}

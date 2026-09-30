@@ -1,0 +1,89 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net: Default-deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Validation for UserProfile
+    function isValidUserProfile(data, userId) {
+      return data.userId == userId &&
+        data.displayName is string && data.displayName.size() <= 80 &&
+        data.totalPoints is number && data.totalPoints >= 0 &&
+        data.solvesCount is number && data.solvesCount >= 0 &&
+        (!('photoURL' in data) || (data.photoURL is string && data.photoURL.size() <= 512)) &&
+        (!('bestRubikMs' in data) || data.bestRubikMs is number) &&
+        (!('currentStreak' in data) || data.currentStreak is number) &&
+        (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 64));
+    }
+
+    // Validation for GameSolve
+    function isValidGameSolve(data) {
+      return isSignedIn() &&
+        data.userId == request.auth.uid &&
+        data.userName is string && data.userName.size() <= 80 &&
+        data.gameType is string && data.gameType.size() <= 32 &&
+        data.timeMs is number && data.timeMs >= 0 &&
+        data.movesCount is number && data.movesCount >= 0 &&
+        data.pointsEarned is number && data.pointsEarned >= 0 &&
+        (!('scramble' in data) || (data.scramble is string && data.scramble.size() <= 500)) &&
+        (!('tps' in data) || data.tps is number) &&
+        (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 64));
+    }
+
+    // Validation for TutorialProgress
+    function isValidTutorialProgress(data, userId) {
+      return isOwner(userId) &&
+        data.userId == userId &&
+        data.stageId is string && data.stageId.size() <= 64 &&
+        data.completed is bool &&
+        (!('pointsAwarded' in data) || data.pointsAwarded is number) &&
+        (!('completedAt' in data) || (data.completedAt is string && data.completedAt.size() <= 64));
+    }
+
+    // Collection: /users/{userId}
+    match /users/{userId} {
+      allow get, list: if isSignedIn();
+      allow create: if isOwner(userId) && isValidId(userId) && isValidUserProfile(incoming(), userId);
+      allow update: if isOwner(userId) && isValidId(userId) && isValidUserProfile(incoming(), userId) &&
+        incoming().userId == existing().userId;
+      allow delete: if false;
+
+      // Subcollection: /users/{userId}/tutorialProgress/{stageId}
+      match /tutorialProgress/{stageId} {
+        allow get, list: if isOwner(userId);
+        allow create, update: if isOwner(userId) && isValidId(stageId) && isValidTutorialProgress(incoming(), userId);
+        allow delete: if false;
+      }
+    }
+
+    // Collection: /solves/{solveId}
+    match /solves/{solveId} {
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn() && isValidId(solveId) && isValidGameSolve(incoming());
+      allow update, delete: if false;
+    }
+  }
+}
