@@ -1,0 +1,6 @@
+{
+  "name": "Rubik's Studio 3D",
+  "description": "An interactive 3D Rubik's Cube game with silky smooth face rotations, tactile drag physics, keyboard controls, WCA scramble generator, solver guide, and speedcubing timer.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
