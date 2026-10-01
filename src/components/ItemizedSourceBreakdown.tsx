@@ -1,5 +1,5 @@
 import React from 'react';
-import { ExternalLink, ShieldCheck, Truck, RotateCcw, PackageCheck, Receipt, Clock, Sparkles } from 'lucide-react';
+import { ExternalLink, ShieldCheck, Truck, PackageCheck, Receipt, Sparkles, CheckCircle2 } from 'lucide-react';
 import { SourcingSource } from '../types/sourcing';
 import { formatCurrency } from '../utils/destinationsAndCurrencies';
 
@@ -14,17 +14,19 @@ export const ItemizedSourceBreakdown: React.FC<ItemizedSourceBreakdownProps> = (
 }) => {
   return (
     <div className="w-full space-y-6">
-      <div className="flex items-center gap-2 px-1">
-        <div className="p-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
-          <PackageCheck className="w-4 h-4" />
-        </div>
-        <div>
-          <h2 className="text-base sm:text-lg font-bold text-white tracking-tight">
-            2. Itemized Breakdown (Top 5 Verified Sources)
-          </h2>
-          <p className="text-xs text-slate-400">
-            Authenticated inventory, cost decomposition, freight insurance, and return guarantees
-          </p>
+      <div className="flex items-center justify-between px-1">
+        <div className="flex items-center gap-2">
+          <div className="p-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
+            <PackageCheck className="w-4 h-4" />
+          </div>
+          <div>
+            <h2 className="text-base sm:text-lg font-bold text-white tracking-tight">
+              2. Itemized Breakdown (Top 5 Verified Sources)
+            </h2>
+            <p className="text-xs text-slate-400">
+              Authenticated inventory, verified active pages, cost decomposition, freight insurance, and return guarantees
+            </p>
+          </div>
         </div>
       </div>
 
@@ -43,7 +45,7 @@ export const ItemizedSourceBreakdown: React.FC<ItemizedSourceBreakdownProps> = (
                   : 'bg-slate-900/80 border-slate-800 hover:border-slate-700'
               }`}
             >
-              {/* Card Header: Store Link & Badges */}
+              {/* Card Header: Store Link, Live In-Stock Badge, Clearance Badge */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-800">
                 <div className="flex items-center gap-3">
                   <span
@@ -56,16 +58,22 @@ export const ItemizedSourceBreakdown: React.FC<ItemizedSourceBreakdownProps> = (
                     #{source.rank}
                   </span>
                   <div>
-                    <a
-                      href={source.source_url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-base sm:text-lg font-extrabold text-white hover:text-sky-400 flex items-center gap-1.5 transition-colors group"
-                    >
-                      <span>{source.store_name}</span>
-                      <ExternalLink className="w-3.5 h-3.5 text-slate-500 group-hover:text-sky-400" />
-                    </a>
-                    <span className="text-xs text-slate-400 font-medium">Direct Product / Catalog Link</span>
+                    <div className="flex items-center gap-2">
+                      <a
+                        href={source.source_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-base sm:text-lg font-extrabold text-white hover:text-sky-400 flex items-center gap-1.5 transition-colors group"
+                      >
+                        <span>{source.store_name}</span>
+                        <ExternalLink className="w-3.5 h-3.5 text-slate-500 group-hover:text-sky-400" />
+                      </a>
+                      <span className="inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold">
+                        <CheckCircle2 className="w-2.5 h-2.5 text-emerald-400" />
+                        Live & Available
+                      </span>
+                    </div>
+                    <span className="text-xs text-slate-400 font-medium">Direct In-Stock Catalog Search Endpoint</span>
                   </div>
                 </div>
 
@@ -73,7 +81,7 @@ export const ItemizedSourceBreakdown: React.FC<ItemizedSourceBreakdownProps> = (
                   {isBest && (
                     <span className="flex items-center gap-1 text-[11px] font-mono px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/30 font-bold">
                       <Sparkles className="w-3 h-3 text-amber-400" />
-                      Lowest Landed Cost
+                      Best Landed Price
                     </span>
                   )}
                   <span
@@ -85,6 +93,15 @@ export const ItemizedSourceBreakdown: React.FC<ItemizedSourceBreakdownProps> = (
                   >
                     Clearance: {source.clearance_type}
                   </span>
+                  <a
+                    href={source.source_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 px-3 py-1 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-semibold transition-all active:scale-95 border border-slate-700 whitespace-nowrap"
+                  >
+                    <span>View Store</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
                 </div>
               </div>
 

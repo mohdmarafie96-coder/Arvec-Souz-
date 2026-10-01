@@ -30,7 +30,7 @@ if (process.env.GEMINI_API_KEY) {
 // Sourcing & Landed Cost API Endpoint
 app.post('/api/sourcing/analyze', async (req, res) => {
   try {
-    const { item_name, condition_tier, destination_country, preferred_currency, json_output_only } = req.body;
+    const { item_name, condition_tier, destination_country, preferred_currency } = req.body;
 
     if (!item_name || !destination_country) {
       res.status(400).json({ error: 'item_name and destination_country are required.' });
@@ -45,45 +45,64 @@ app.post('/api/sourcing/analyze', async (req, res) => {
       return;
     }
 
+    const cleanItem = item_name.trim();
+
     const prompt = `You are the Smart Item Sourcing & Landed Cost Engine for "Arvec Souz".
-Analyze this purchase request:
-- Item: "${item_name}"
-- Condition Tier: "${condition_tier || 'New / Store Fresh'}"
+Perform an authenticated marketplace search and precise CIF landed cost calculation for:
+- Exact Item: "${cleanItem}"
+- Condition Grade: "${condition_tier || 'New / Store Fresh'}"
 - Destination Country: "${destination_country}"
-- Preferred Currency: "${preferred_currency || 'USD'}"
+- Display Currency: "${preferred_currency || 'USD'}"
 
-Operational Rules:
-1. Select exactly 5 reliable, authenticated sources tailored to this item's category:
-   - For luxury fashion / quota bags: Sotheby's Buy Now, FASHIONPHILE, Madison Avenue Couture, The Luxury Closet, 1stDibs, Farfetch Private Client.
-   - For luxury watches / horology: Chrono24 (Verified Dealers), WatchBox/1916 Company, Bob's Watches, European Watch Co., Bucherer CPO.
-   - For consumer tech / camera gear: B&H Photo Video, Adorama, Amazon Direct, Best Buy, authorized regional distributors.
-2. Filter out out-of-stock and unverified listings.
-3. Determine clearance type: DDP (Delivered Duty Paid) or DDU (Delivered Duty Unpaid).
-4. Compute CIF & Landed Cost Arithmetic:
-   - CIF = Base Price + Insured Freight + Transit Insurance
-   - Duty Amount = CIF × Local Customs Duty Rate (e.g. GCC 5%, US ~3-6.5%, UK ~2.5%, EU ~3%)
-   - VAT/Tax = (CIF + Duty Amount) × Destination VAT Rate (e.g. Kuwait 0%, UAE 5%, Saudi Arabia 15%, UK 20%, EU 19-21%, US 0% federal)
-   - Total Landed Cost = Base Price + Freight & Insurance + Duty + Local VAT
-5. All pricing must be converted to the preferred currency (${preferred_currency || 'USD'}).
+CRITICAL SOURCING & PRICING RULES:
+1. PRICE ACCURACY: You must retrieve and calculate REAL current market pricing for "${cleanItem}". Do NOT use generic or static placeholders.
+   - If user specified a budget or price (e.g. "$14,000", "KD 4,500"), anchor prices closely around that target.
+   - If market price is $28,000, compute base price around $28,000, not an arbitrary low or high number.
+   - Sort the 5 sources by Total Landed Cost in ascending order (best / lowest price first).
 
-Return a strictly valid JSON object matching this schema:
+2. VERIFIED SOURCES & WORKING URLS ONLY (AVOID UNAVAILABLE / BROKEN PAGES):
+   - Select 5 authenticated, verified platforms for this category:
+     * Watches: Chrono24 (Verified Dealers), WatchBox/1916 Company, Bob's Watches, European Watch Co., Bucherer CPO.
+     * Luxury Bags: Sotheby's Buy Now, FASHIONPHILE, Madison Avenue Couture, The Luxury Closet, 1stDibs, Farfetch Private Client.
+     * Optics/Tech: B&H Photo Video, Adorama, Amazon Direct, Best Buy, Leica Store.
+   - For every source, generate a canonical, live working in-stock search URL:
+     * Chrono24: https://www.chrono24.com/search/index.htm?query=${encodeURIComponent(cleanItem)}&dosearch=true&searchexplain=1&sortorder=1
+     * Sotheby's: https://www.sothebys.com/en/buy/luxury/search?query=${encodeURIComponent(cleanItem)}
+     * WatchBox: https://www.the1916company.com/search?q=${encodeURIComponent(cleanItem)}
+     * Bob's Watches: https://www.bobswatches.com/rolex-search?q=${encodeURIComponent(cleanItem)}
+     * FASHIONPHILE: https://www.fashionphile.com/shop?search=${encodeURIComponent(cleanItem)}
+     * The Luxury Closet: https://theluxurycloset.com/search?q=${encodeURIComponent(cleanItem)}
+     * B&H Photo: https://www.bhphotovideo.com/c/search?Ntt=${encodeURIComponent(cleanItem)}&N=0&InitialSearch=yes
+     * Adorama: https://www.adorama.com/l/?searchinfo=${encodeURIComponent(cleanItem)}&sel=Instock_In-Stock
+     * Farfetch: https://www.farfetch.com/shopping/search/items.aspx?q=${encodeURIComponent(cleanItem)}
+
+3. CIF & LANDED COST ARITHMETIC:
+   - Base Price: [Accurate item price in ${preferred_currency}]
+   - Insured Shipping: [Express courier freight + full value transit insurance in ${preferred_currency}]
+   - CIF = Base Price + Insured Freight
+   - Customs Duty = CIF × Destination Customs Duty Rate (GCC 5%, US ~3-6%, UK ~2.5%, EU ~3%)
+   - Local VAT = (CIF + Duty) × Destination VAT Rate (Kuwait 0%, UAE 5%, Saudi Arabia 15%, UK 20%, EU 19-21%, US 0%)
+   - Total Landed Cost = Base Price + Insured Freight + Duty + Local VAT
+
+4. OUTPUT FORMAT:
+Output strictly valid JSON matching this schema:
 {
   "query": {
-    "item": "${item_name}",
+    "item": "${cleanItem}",
     "destination": "${destination_country}",
     "condition": "${condition_tier || 'New / Store Fresh'}",
     "currency": "${preferred_currency || 'USD'}"
   },
-  "market_summary": "Two concise sentences describing retail boutique availability vs. secondary market premium.",
+  "market_summary": "Two concise sentences describing retail boutique availability vs. secondary market premium for this specific model.",
   "sources": [
     {
       "rank": 1,
       "store_name": "Store Name",
-      "source_url": "https://www.google.com/search?q=...",
-      "condition_grade": "Store Fresh / Pristine (Box & Papers)",
-      "inclusions": "Original invoice, dustbag, clochette, lock & keys, felt protector",
+      "source_url": "Canonical working live catalog URL",
+      "condition_grade": "Specific condition (e.g. Unworn 2024 Full Set / Sealed)",
+      "inclusions": "Complete inclusions (box, papers, tags, seals, warranty)",
       "clearance_type": "DDP" | "DDU",
-      "eta_business_days": "3 - 5 business days (FedEx International Priority)",
+      "eta_business_days": "3 - 5 business days",
       "pricing": {
         "base_price": number,
         "shipping_insured": number,
@@ -92,11 +111,11 @@ Return a strictly valid JSON object matching this schema:
         "total_landed_cost": number,
         "currency": "${preferred_currency || 'USD'}"
       },
-      "duty_percent": 5,
-      "vat_percent": 0,
-      "carrier": "DHL Express Worldwide or FedEx International Priority",
-      "authenticity_guarantee": "Full lifetime money-back authenticity guarantee and physical multi-point inspection",
-      "return_policy": "14-day return window with security tag intact"
+      "duty_percent": number,
+      "vat_percent": number,
+      "carrier": "Ferrari Express / DHL Express / FedEx Priority",
+      "authenticity_guarantee": "Authenticity guarantee terms",
+      "return_policy": "Inspection and return window terms"
     }
   ]
 }
@@ -114,10 +133,10 @@ Do NOT include markdown fences, code blocks, or extra text. Output only valid JS
     const parsed = JSON.parse(jsonText);
     res.json(parsed);
   } catch (err: unknown) {
-    console.error('Server Sourcing Engine error:', err);
+    console.warn('Server Sourcing Engine live query error, falling back:', err);
     res.status(500).json({
       fallback: true,
-      error: err instanceof Error ? err.message : 'Failed to query sourcing engine',
+      error: err instanceof Error ? err.message : 'Fallback to client arithmetic engine',
     });
   }
 });

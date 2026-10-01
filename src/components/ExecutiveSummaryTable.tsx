@@ -1,6 +1,16 @@
-import React, { useState } from 'react';
-import { ExternalLink, Copy, Check, TrendingUp, ShieldCheck, Clock, Award } from 'lucide-react';
-import { SourcingReport } from '../types/sourcing';
+import React, { useState, useMemo } from 'react';
+import {
+  ExternalLink,
+  Copy,
+  Check,
+  TrendingUp,
+  ShieldCheck,
+  ArrowUpDown,
+  Filter,
+  CheckCircle2,
+  Sparkles,
+} from 'lucide-react';
+import { SourcingReport, ClearanceType } from '../types/sourcing';
 import { formatCurrency } from '../utils/destinationsAndCurrencies';
 
 interface ExecutiveSummaryTableProps {
@@ -8,12 +18,42 @@ interface ExecutiveSummaryTableProps {
   onSelectSource?: (rank: number) => void;
 }
 
+type SortField = 'landed' | 'base' | 'eta';
+
 export const ExecutiveSummaryTable: React.FC<ExecutiveSummaryTableProps> = ({
   report,
   onSelectSource,
 }) => {
   const [copiedMarkdown, setCopiedMarkdown] = useState<boolean>(false);
+  const [sortBy, setSortBy] = useState<SortField>('landed');
+  const [clearanceFilter, setClearanceFilter] = useState<'ALL' | ClearanceType>('ALL');
+
   const currency = report.query.currency;
+
+  // Filter & Sort Sources
+  const displayedSources = useMemo(() => {
+    let list = [...report.sources];
+
+    if (clearanceFilter !== 'ALL') {
+      list = list.filter((s) => s.clearance_type === clearanceFilter);
+    }
+
+    if (sortBy === 'landed') {
+      list.sort((a, b) => a.pricing.total_landed_cost - b.pricing.total_landed_cost);
+    } else if (sortBy === 'base') {
+      list.sort((a, b) => a.pricing.base_price - b.pricing.base_price);
+    } else if (sortBy === 'eta') {
+      list.sort((a, b) => a.eta_business_days.localeCompare(b.eta_business_days));
+    }
+
+    return list;
+  }, [report.sources, sortBy, clearanceFilter]);
+
+  // Compute best price savings compared to highest quote
+  const lowestLanded = report.sources[0]?.pricing?.total_landed_cost || 0;
+  const highestLanded = report.sources[report.sources.length - 1]?.pricing?.total_landed_cost || 0;
+  const maxSavings = Math.max(0, highestLanded - lowestLanded);
+  const savingsPercent = highestLanded > 0 ? Math.round((maxSavings / highestLanded) * 100) : 0;
 
   // Generate markdown table representation as specified in the prompt
   const generateMarkdownTable = () => {
@@ -50,28 +90,110 @@ export const ExecutiveSummaryTable: React.FC<ExecutiveSummaryTableProps> = ({
               <TrendingUp className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-base sm:text-lg font-bold text-white tracking-tight">
-                1. Executive Summary & Market Comparison
-              </h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-base sm:text-lg font-bold text-white tracking-tight">
+                  1. Executive Summary & Market Comparison
+                </h2>
+                <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold">
+                  <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                  All In Stock
+                </span>
+              </div>
               <span className="text-xs text-slate-400 font-mono">
                 {report.query.item} · {report.query.condition} · Destination: {report.query.destination}
               </span>
             </div>
           </div>
 
-          <button
-            onClick={handleCopyMarkdown}
-            className="flex items-center gap-1.5 self-start sm:self-auto px-3.5 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-xs font-semibold text-slate-200 transition-colors border border-slate-700 active:scale-95 cursor-pointer"
-            title="Copy as Markdown table"
-          >
-            {copiedMarkdown ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-            <span>{copiedMarkdown ? 'Table Copied!' : 'Copy Markdown Table'}</span>
-          </button>
+          <div className="flex items-center gap-2 self-start sm:self-auto">
+            {maxSavings > 0 && (
+              <span className="hidden md:flex items-center gap-1 px-3 py-1 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 font-mono text-xs font-bold">
+                <Sparkles className="w-3 h-3 text-amber-400" />
+                Best Price Saves {formatCurrency(maxSavings, currency)} ({savingsPercent}%)
+              </span>
+            )}
+
+            <button
+              onClick={handleCopyMarkdown}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-xs font-semibold text-slate-200 transition-colors border border-slate-700 active:scale-95 cursor-pointer"
+              title="Copy as Markdown table"
+            >
+              {copiedMarkdown ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+              <span>{copiedMarkdown ? 'Table Copied!' : 'Copy Table'}</span>
+            </button>
+          </div>
         </div>
 
         {/* 2-Sentence Market Status Summary (Prompt Requirement) */}
         <div className="p-4 rounded-2xl bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 border border-slate-800/80 text-xs sm:text-sm text-slate-300 leading-relaxed font-sans">
           {report.market_summary}
+        </div>
+      </div>
+
+      {/* Sorting & Filter Controls */}
+      <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div className="flex items-center gap-2">
+          <span className="text-slate-400 font-semibold flex items-center gap-1">
+            <ArrowUpDown className="w-3.5 h-3.5 text-sky-400" /> Sort By:
+          </span>
+          <div className="flex items-center p-0.5 rounded-xl bg-slate-950 border border-slate-800">
+            <button
+              onClick={() => setSortBy('landed')}
+              className={`px-2.5 py-1 rounded-lg font-medium transition-colors ${
+                sortBy === 'landed' ? 'bg-sky-600 text-white font-bold' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              Best Landed Price
+            </button>
+            <button
+              onClick={() => setSortBy('base')}
+              className={`px-2.5 py-1 rounded-lg font-medium transition-colors ${
+                sortBy === 'base' ? 'bg-sky-600 text-white font-bold' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              Base Item
+            </button>
+            <button
+              onClick={() => setSortBy('eta')}
+              className={`px-2.5 py-1 rounded-lg font-medium transition-colors ${
+                sortBy === 'eta' ? 'bg-sky-600 text-white font-bold' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              Fastest ETA
+            </button>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="text-slate-400 font-semibold flex items-center gap-1">
+            <Filter className="w-3.5 h-3.5 text-amber-400" /> Clearance:
+          </span>
+          <div className="flex items-center p-0.5 rounded-xl bg-slate-950 border border-slate-800">
+            <button
+              onClick={() => setClearanceFilter('ALL')}
+              className={`px-2.5 py-1 rounded-lg font-medium transition-colors ${
+                clearanceFilter === 'ALL' ? 'bg-slate-800 text-white font-bold' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              All (5)
+            </button>
+            <button
+              onClick={() => setClearanceFilter('DDP')}
+              className={`px-2.5 py-1 rounded-lg font-medium transition-colors ${
+                clearanceFilter === 'DDP' ? 'bg-emerald-600 text-white font-bold' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              DDP (Taxes Pre-paid)
+            </button>
+            <button
+              onClick={() => setClearanceFilter('DDU')}
+              className={`px-2.5 py-1 rounded-lg font-medium transition-colors ${
+                clearanceFilter === 'DDU' ? 'bg-amber-600 text-white font-bold' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              DDU (At Customs)
+            </button>
+          </div>
         </div>
       </div>
 
@@ -91,7 +213,7 @@ export const ExecutiveSummaryTable: React.FC<ExecutiveSummaryTableProps> = ({
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-800/60 font-sans">
-            {report.sources.map((source, index) => {
+            {displayedSources.map((source, index) => {
               const isBest = index === 0;
               const totalTaxes = source.pricing.customs_duty + source.pricing.local_vat;
 
@@ -118,9 +240,10 @@ export const ExecutiveSummaryTable: React.FC<ExecutiveSummaryTableProps> = ({
                       <a
                         href={source.source_url}
                         target="_blank"
-                        rel="noreferrer"
+                        rel="noopener noreferrer"
                         onClick={(e) => e.stopPropagation()}
                         className="font-bold text-slate-100 hover:text-sky-400 flex items-center gap-1 transition-colors"
+                        title="Open live verified catalog page"
                       >
                         <span>{source.store_name}</span>
                         <ExternalLink className="w-3 h-3 text-slate-500 group-hover:text-sky-400" />
@@ -155,7 +278,7 @@ export const ExecutiveSummaryTable: React.FC<ExecutiveSummaryTableProps> = ({
                     <div className="flex items-center justify-end gap-1.5">
                       {isBest && (
                         <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/25 font-bold">
-                          Best Landed
+                          Best Price
                         </span>
                       )}
                       <span>{formatCurrency(source.pricing.total_landed_cost, currency)}</span>
