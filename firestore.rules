@@ -85,5 +85,12 @@ service cloud.firestore {
       allow create: if isSignedIn() && isValidId(solveId) && isValidGameSolve(incoming());
       allow update, delete: if false;
     }
+
+    // Collection: /sourcingReports/{reportId}
+    match /sourcingReports/{reportId} {
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn() && isValidId(reportId) && incoming().userId == request.auth.uid;
+      allow update, delete: if isSignedIn() && isValidId(reportId) && existing().userId == request.auth.uid;
+    }
   }
 }
