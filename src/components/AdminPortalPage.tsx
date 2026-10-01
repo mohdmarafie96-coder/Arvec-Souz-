@@ -16,6 +16,9 @@ import {
   Search,
   Filter,
   Eye,
+  EyeOff,
+  Lock,
+  ShieldAlert,
   LogOut,
   Building2,
   Receipt,
@@ -42,9 +45,18 @@ export const AdminPortalPage: React.FC<AdminPortalPageProps> = ({
   onToggleLang,
   onExitAdmin,
 }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
-  const [passcode, setPasscode] = useState<string>('');
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    try {
+      return sessionStorage.getItem('arvec_admin_session') === 'true';
+    } catch {
+      return false;
+    }
+  });
+  const [adminUsername, setAdminUsername] = useState<string>('');
+  const [adminPassword, setAdminPassword] = useState<string>('');
+  const [showPassword, setShowPassword] = useState<boolean>(false);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   // Data states
   const [shoppers, setShoppers] = useState<UserProfile[]>([]);
@@ -57,21 +69,49 @@ export const AdminPortalPage: React.FC<AdminPortalPageProps> = ({
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
 
-  // Unlock Admin Session
+  // Unlock Admin Session with Username and Password
   const handleLogin = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (passcode.trim() === 'marafie2026' || passcode.trim() === 'admin' || passcode.trim() === '') {
+    setIsSubmitting(true);
+    setAuthError(null);
+
+    const cleanUser = adminUsername.trim().toLowerCase();
+    const cleanPass = adminPassword.trim();
+
+    // Restricted exclusively to Mohd Marafie
+    const allowedUsers = ['marafie', 'mohdmarafie', 'mohdmarafie96@gmail.com', 'admin'];
+    const isUserValid = allowedUsers.includes(cleanUser);
+    const isPassValid = cleanPass === 'marafie2026';
+
+    if (isUserValid && isPassValid) {
       setIsAuthenticated(true);
-      localStorage.setItem('arvec_admin_session', 'true');
+      try {
+        sessionStorage.setItem('arvec_admin_session', 'true');
+      } catch {
+        // ignore
+      }
       setAuthError(null);
     } else {
-      setAuthError(lang === 'ar' ? 'رمز الدخول غير صحيح' : 'Invalid admin access key');
+      setAuthError(
+        lang === 'ar'
+          ? 'اسم المستخدم أو كلمة المرور غير صحيحة. الوصول مقيد للمشرف العام فقط.'
+          : 'Access Denied: Invalid username or password. Restricted to Mohd Marafie only.'
+      );
     }
+    setIsSubmitting(false);
   };
 
   const handleLogout = () => {
     setIsAuthenticated(false);
-    localStorage.removeItem('arvec_admin_session');
+    try {
+      sessionStorage.removeItem('arvec_admin_session');
+      localStorage.removeItem('arvec_admin_session');
+    } catch {
+      // ignore
+    }
+    setAdminUsername('');
+    setAdminPassword('');
+    setAuthError(null);
   };
 
   // Real-time subscriptions
@@ -92,11 +132,16 @@ export const AdminPortalPage: React.FC<AdminPortalPageProps> = ({
   // Shopper Actions
   const handleShopperStatus = async (shopperId: string, status: 'approved' | 'rejected') => {
     setProcessingId(shopperId);
+    // Optimistic instant state update
+    setShoppers((prev) =>
+      prev.map((s) =>
+        s.userId === shopperId
+          ? { ...s, status, approvedAt: new Date().toISOString(), approvedBy: 'admin_marafie' }
+          : s
+      )
+    );
     try {
       await setShopperApproval(shopperId, status, 'admin_marafie');
-      setShoppers((prev) =>
-        prev.map((s) => (s.userId === shopperId ? { ...s, status } : s))
-      );
     } catch (err) {
       console.error('Shopper status change failed:', err);
     } finally {
@@ -137,52 +182,84 @@ export const AdminPortalPage: React.FC<AdminPortalPageProps> = ({
           </div>
 
           <div className="text-center space-y-2">
-            <div className="w-14 h-14 rounded-2xl bg-purple-500/10 border border-purple-500/30 text-purple-400 flex items-center justify-center mx-auto">
+            <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center mx-auto">
               <ShieldCheck className="w-7 h-7" />
             </div>
             <h1 className="text-xl font-black text-white tracking-tight">
               {lang === 'ar' ? 'بوابة إدارة أرفيك سوز المستقلة' : 'Arvec Souz | Executive Admin Portal'}
             </h1>
             <p className="text-xs text-zinc-400 font-mono">
-              Mohd Marafie · Private Desk Command & Approvals
+              {lang === 'ar'
+                ? 'وصول مقيد ومحمي · يتطلب اسم المستخدم وكلمة المرور'
+                : 'Restricted Executive Access · Username & Password Required'}
             </p>
           </div>
+
+          {authError && (
+            <div className="p-3 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-300 text-xs flex items-start gap-2.5 font-mono leading-relaxed">
+              <ShieldAlert className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+              <span>{authError}</span>
+            </div>
+          )}
 
           <form onSubmit={handleLogin} className="space-y-4 text-xs">
             <div>
               <label className="text-zinc-300 font-medium block mb-1">
-                {lang === 'ar' ? 'رمز الدخول الإداري' : 'Admin Security Key'}
+                {lang === 'ar' ? 'اسم المستخدم الإداري *' : 'Admin Username *'}
               </label>
               <div className="relative">
                 <input
-                  type="password"
-                  value={passcode}
-                  onChange={(e) => setPasscode(e.target.value)}
-                  placeholder={lang === 'ar' ? 'أدخل رمز الإدارة...' : 'Enter admin security passkey...'}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-3 px-4 text-white font-mono focus:outline-none focus:border-purple-500 text-sm"
+                  type="text"
+                  autoComplete="username"
+                  value={adminUsername}
+                  onChange={(e) => {
+                    setAdminUsername(e.target.value);
+                    setAuthError(null);
+                  }}
+                  required
+                  placeholder={lang === 'ar' ? 'أدخل اسم المستخدم الإداري...' : 'Enter admin username...'}
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-2.5 px-4 text-white font-mono focus:outline-none focus:border-amber-500 text-sm"
                 />
-                <KeyRound className="w-4 h-4 text-zinc-500 absolute right-3 top-3.5" />
+                <User className="w-4 h-4 text-zinc-500 absolute right-3 rtl:right-auto rtl:left-3 top-3.5" />
               </div>
-              {authError && <p className="text-red-400 text-xs mt-1">{authError}</p>}
             </div>
 
-            <div className="space-y-2 pt-2">
+            <div>
+              <label className="text-zinc-300 font-medium block mb-1">
+                {lang === 'ar' ? 'كلمة المرور الإدارية *' : 'Master Password *'}
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  autoComplete="current-password"
+                  value={adminPassword}
+                  onChange={(e) => {
+                    setAdminPassword(e.target.value);
+                    setAuthError(null);
+                  }}
+                  required
+                  placeholder="••••••••••••"
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-2.5 px-4 text-white font-mono focus:outline-none focus:border-amber-500 text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 rtl:right-auto rtl:left-3 top-3 text-zinc-500 hover:text-zinc-300 p-0.5"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            <div className="pt-2">
               <button
                 type="submit"
-                className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs shadow-lg shadow-purple-600/20 active:scale-95 transition-all cursor-pointer"
+                disabled={isSubmitting || !adminUsername.trim() || !adminPassword.trim()}
+                className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-zinc-950 font-bold text-xs shadow-lg shadow-amber-500/20 active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
               >
-                {lang === 'ar' ? 'تسجيل دخول المشرف العام' : 'Access Admin Command'}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setPasscode('marafie2026');
-                  handleLogin();
-                }}
-                className="w-full py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-semibold text-xs transition-all cursor-pointer"
-              >
-                {lang === 'ar' ? 'دخول مباشر كـ محمد معرفي (Admin)' : 'Direct Admin Access (Mohd Marafie)'}
+                {isSubmitting
+                  ? (lang === 'ar' ? 'جاري التحقق...' : 'Verifying Credentials...')
+                  : (lang === 'ar' ? 'تسجيل دخول المشرف العام' : 'Access Admin Command')}
               </button>
             </div>
           </form>

@@ -66,7 +66,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<TabView>('pipeline');
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
-  // Listen to browser navigation changes (e.g. going to /adminmarafie or back) & keyboard shortcut
+  // Listen to browser navigation changes (e.g. going to /adminmarafie or back)
   useEffect(() => {
     const handleLocationChange = () => {
       if (checkIsAdminRoute()) {
@@ -76,27 +76,9 @@ export default function App() {
       }
     };
 
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Secret Admin Key combinations: Shift+Ctrl+A or Shift+Cmd+A or F2
-      if ((e.shiftKey && (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') || e.key === 'F2') {
-        e.preventDefault();
-        setCurrentPage((prev) => {
-          const next = prev === 'admin' ? 'main' : 'admin';
-          if (next === 'admin') {
-            window.history.pushState({}, '', '/adminmarafie');
-          } else {
-            window.history.pushState({}, '', '/');
-          }
-          return next;
-        });
-      }
-    };
-
     window.addEventListener('popstate', handleLocationChange);
-    window.addEventListener('keydown', handleKeyDown);
     return () => {
       window.removeEventListener('popstate', handleLocationChange);
-      window.removeEventListener('keydown', handleKeyDown);
     };
   }, []);
 
@@ -264,12 +246,6 @@ export default function App() {
         onOpenShopperSignIn={() => setIsShopperSignInOpen(true)}
         onLogout={handleLogout}
         canManage={Boolean(isApproved)}
-        onSecretAdminAccess={() => {
-          setCurrentPage('admin');
-          if (typeof window !== 'undefined' && window.history.pushState) {
-            window.history.pushState({}, '', '/adminmarafie');
-          }
-        }}
       />
 
       {/* 2. Sub-Nav / Tabs Segmented Control */}

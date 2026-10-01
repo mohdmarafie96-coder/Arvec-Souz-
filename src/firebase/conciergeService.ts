@@ -172,29 +172,48 @@ export async function setShopperApproval(
   adminId: string
 ): Promise<void> {
   const path = 'users';
-  try {
-    const userRef = doc(db, path, shopperId);
-    await updateDoc(userRef, {
-      status,
-      approvedAt: new Date().toISOString(),
-      approvedBy: adminId,
-    });
-  } catch (err) {
-    console.warn('Update shopper approval remote error:', err);
-  }
+  const now = new Date().toISOString();
 
-  // Also update local cache
+  // 1. Update local cache immediately
   try {
     const stored = localStorage.getItem('arvec_registered_shoppers') || '[]';
     const list: UserProfile[] = JSON.parse(stored);
     const updated = list.map((s) =>
       s.userId === shopperId
-        ? { ...s, status, approvedAt: new Date().toISOString(), approvedBy: adminId }
+        ? { ...s, status, approvedAt: now, approvedBy: adminId }
         : s
     );
     localStorage.setItem('arvec_registered_shoppers', JSON.stringify(updated));
-  } catch {
-    // ignore
+
+    // Also update active session if this is the active shopper
+    const activeStored = localStorage.getItem('arvec_active_shopper');
+    if (activeStored) {
+      const activeShopper = JSON.parse(activeStored);
+      if (activeShopper.userId === shopperId) {
+        localStorage.setItem(
+          'arvec_active_shopper',
+          JSON.stringify({ ...activeShopper, status, approvedAt: now, approvedBy: adminId })
+        );
+      }
+    }
+  } catch (err) {
+    console.warn('Local approval update error:', err);
+  }
+
+  // 2. Persist to Firestore with setDoc merge
+  try {
+    const userRef = doc(db, path, shopperId);
+    await setDoc(
+      userRef,
+      {
+        status,
+        approvedAt: now,
+        approvedBy: adminId,
+      },
+      { merge: true }
+    );
+  } catch (err) {
+    console.warn('Update shopper approval remote error:', err);
   }
 }
 
@@ -222,11 +241,30 @@ export function subscribeToShoppers(callback: (shoppers: UserProfile[]) => void)
           .filter((u) => u.role === 'shopper');
 
         const local = getLocal();
-        // Merge without duplicates
+        const localMap = new Map<string, UserProfile>();
+        local.forEach((s) => localMap.set(s.userId, s));
+
+        // Merge: If a shopper was marked approved in local or Firestore, keep approved
         const map = new Map<string, UserProfile>();
-        firestoreShoppers.forEach((s) => map.set(s.userId, s));
+        firestoreShoppers.forEach((fs) => {
+          const loc = localMap.get(fs.userId);
+          if (loc && loc.status === 'approved') {
+            map.set(fs.userId, {
+              ...fs,
+              status: 'approved',
+              approvedAt: loc.approvedAt || fs.approvedAt,
+              approvedBy: loc.approvedBy || fs.approvedBy,
+            });
+          } else {
+            map.set(fs.userId, fs);
+          }
+        });
+
+        // Include any registered shoppers from local storage not yet in remote
         local.forEach((s) => {
-          if (!map.has(s.userId)) map.set(s.userId, s);
+          if (!map.has(s.userId)) {
+            map.set(s.userId, s);
+          }
         });
 
         const all = Array.from(map.values()).sort(

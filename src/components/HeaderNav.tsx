@@ -18,7 +18,6 @@ interface HeaderNavProps {
   onOpenShopperSignIn: () => void;
   onLogout: () => void;
   canManage: boolean;
-  onSecretAdminAccess?: () => void;
 }
 
 export const HeaderNav: React.FC<HeaderNavProps> = ({
@@ -35,21 +34,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
   onOpenShopperSignIn,
   onLogout,
   canManage,
-  onSecretAdminAccess,
 }) => {
-  const [logoClicks, setLogoClicks] = React.useState<number>(0);
-
-  const handleLogoClick = () => {
-    setLogoClicks((prev) => {
-      const next = prev + 1;
-      if (next >= 3) {
-        if (onSecretAdminAccess) onSecretAdminAccess();
-        return 0;
-      }
-      return next;
-    });
-    setTimeout(() => setLogoClicks(0), 1800);
-  };
   const t = TRANSLATIONS[lang];
   const activeOrders = orders.filter((o) => o.stage !== 'Delivered & Settled');
 
@@ -72,8 +57,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         {/* Brand Logo & Name */}
         <div
-          onClick={handleLogoClick}
-          className="flex items-center gap-3 cursor-pointer select-none active:opacity-90 transition-opacity"
+          className="flex items-center gap-3 select-none"
           title="Arvec Souz Luxury Concierge"
         >
           <ArvecLogo size="md" showSubtitle={false} />
