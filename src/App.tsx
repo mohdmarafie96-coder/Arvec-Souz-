@@ -24,6 +24,7 @@ import { NewClientModal } from './components/NewClientModal';
 import { PublicTrackingModal } from './components/PublicTrackingModal';
 import { OrderCreatedSuccessModal } from './components/OrderCreatedSuccessModal';
 import { ShopperRegisterModal } from './components/ShopperRegisterModal';
+import { ShopperSignInModal } from './components/ShopperSignInModal';
 import { AdminPortalPage } from './components/AdminPortalPage';
 import { useAuth } from './firebase/authContext';
 import {
@@ -42,8 +43,14 @@ const checkIsAdminRoute = (): boolean => {
   const hash = window.location.hash.toLowerCase();
   return (
     path.includes('adminmarafie') ||
+    path.includes('/admin') ||
+    path.includes('marafie') ||
     search.includes('adminmarafie') ||
-    hash.includes('adminmarafie')
+    search.includes('admin') ||
+    search.includes('marafie') ||
+    hash.includes('adminmarafie') ||
+    hash.includes('admin') ||
+    hash.includes('marafie')
   );
 };
 
@@ -59,7 +66,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<TabView>('pipeline');
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
-  // Listen to browser navigation changes (e.g. going to /adminmarafie or back)
+  // Listen to browser navigation changes (e.g. going to /adminmarafie or back) & keyboard shortcut
   useEffect(() => {
     const handleLocationChange = () => {
       if (checkIsAdminRoute()) {
@@ -68,8 +75,29 @@ export default function App() {
         setCurrentPage('main');
       }
     };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Secret Admin Key combinations: Shift+Ctrl+A or Shift+Cmd+A or F2
+      if ((e.shiftKey && (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') || e.key === 'F2') {
+        e.preventDefault();
+        setCurrentPage((prev) => {
+          const next = prev === 'admin' ? 'main' : 'admin';
+          if (next === 'admin') {
+            window.history.pushState({}, '', '/adminmarafie');
+          } else {
+            window.history.pushState({}, '', '/');
+          }
+          return next;
+        });
+      }
+    };
+
     window.addEventListener('popstate', handleLocationChange);
-    return () => window.removeEventListener('popstate', handleLocationChange);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('popstate', handleLocationChange);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
   }, []);
 
   // Live Firestore collections
@@ -81,6 +109,7 @@ export default function App() {
   const [isNewOrderOpen, setIsNewOrderOpen] = useState<boolean>(false);
   const [isNewClientOpen, setIsNewClientOpen] = useState<boolean>(false);
   const [isShopperRegisterOpen, setIsShopperRegisterOpen] = useState<boolean>(false);
+  const [isShopperSignInOpen, setIsShopperSignInOpen] = useState<boolean>(false);
   const [previewOrder, setPreviewOrder] = useState<SourcingOrder | null>(null);
   const [createdOrderSuccess, setCreatedOrderSuccess] = useState<SourcingOrder | null>(null);
 
@@ -96,7 +125,7 @@ export default function App() {
     }
   }, []);
 
-  // Sync user profile upon authentication
+  // Sync user profile upon authentication or restore persisted shopper session
   useEffect(() => {
     if (authProfile) {
       setUserProfile({
@@ -117,9 +146,31 @@ export default function App() {
         photoURL: user.photoURL,
       }).then((p) => setUserProfile(p));
     } else {
+      try {
+        const saved = localStorage.getItem('arvec_active_shopper');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed && parsed.userId) {
+            setUserProfile(parsed);
+            return;
+          }
+        }
+      } catch {
+        // ignore
+      }
       setUserProfile(null);
     }
   }, [user, authProfile]);
+
+  const handleLogout = async () => {
+    try {
+      localStorage.removeItem('arvec_active_shopper');
+    } catch {
+      // ignore
+    }
+    setUserProfile(null);
+    await logout();
+  };
 
   // Subscribe to real-time Firestore collections
   useEffect(() => {
@@ -210,8 +261,15 @@ export default function App() {
         onOpenNewClient={() => setIsNewClientOpen(true)}
         onOpenPublicTracker={() => setActiveTab('tracking')}
         onOpenShopperRegister={() => setIsShopperRegisterOpen(true)}
-        onLogout={logout}
+        onOpenShopperSignIn={() => setIsShopperSignInOpen(true)}
+        onLogout={handleLogout}
         canManage={Boolean(isApproved)}
+        onSecretAdminAccess={() => {
+          setCurrentPage('admin');
+          if (typeof window !== 'undefined' && window.history.pushState) {
+            window.history.pushState({}, '', '/adminmarafie');
+          }
+        }}
       />
 
       {/* 2. Sub-Nav / Tabs Segmented Control */}
@@ -370,6 +428,24 @@ export default function App() {
         onClose={() => setIsShopperRegisterOpen(false)}
         lang={lang}
         onRegistered={(newProfile) => {
+          setUserProfile(newProfile);
+        }}
+        onOpenLogin={() => {
+          setIsShopperRegisterOpen(false);
+          setIsShopperSignInOpen(true);
+        }}
+      />
+
+      {/* Shopper Sign In Modal (Email & Password - Approved Shoppers Only) */}
+      <ShopperSignInModal
+        isOpen={isShopperSignInOpen}
+        onClose={() => setIsShopperSignInOpen(false)}
+        lang={lang}
+        onOpenRegister={() => {
+          setIsShopperSignInOpen(false);
+          setIsShopperRegisterOpen(true);
+        }}
+        onLoginSuccess={(newProfile) => {
           setUserProfile(newProfile);
         }}
       />

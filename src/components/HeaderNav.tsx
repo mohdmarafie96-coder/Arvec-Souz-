@@ -15,8 +15,10 @@ interface HeaderNavProps {
   onOpenNewClient: () => void;
   onOpenPublicTracker: () => void;
   onOpenShopperRegister: () => void;
+  onOpenShopperSignIn: () => void;
   onLogout: () => void;
   canManage: boolean;
+  onSecretAdminAccess?: () => void;
 }
 
 export const HeaderNav: React.FC<HeaderNavProps> = ({
@@ -30,9 +32,24 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
   onOpenNewClient,
   onOpenPublicTracker,
   onOpenShopperRegister,
+  onOpenShopperSignIn,
   onLogout,
   canManage,
+  onSecretAdminAccess,
 }) => {
+  const [logoClicks, setLogoClicks] = React.useState<number>(0);
+
+  const handleLogoClick = () => {
+    setLogoClicks((prev) => {
+      const next = prev + 1;
+      if (next >= 3) {
+        if (onSecretAdminAccess) onSecretAdminAccess();
+        return 0;
+      }
+      return next;
+    });
+    setTimeout(() => setLogoClicks(0), 1800);
+  };
   const t = TRANSLATIONS[lang];
   const activeOrders = orders.filter((o) => o.stage !== 'Delivered & Settled');
 
@@ -54,7 +71,11 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
     <header className="sticky top-0 z-40 border-b border-zinc-800/80 bg-zinc-950/85 backdrop-blur-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         {/* Brand Logo & Name */}
-        <div className="flex items-center gap-3">
+        <div
+          onClick={handleLogoClick}
+          className="flex items-center gap-3 cursor-pointer select-none active:opacity-90 transition-opacity"
+          title="Arvec Souz Luxury Concierge"
+        >
           <ArvecLogo size="md" showSubtitle={false} />
           <div>
             <div className="flex items-center gap-2">
@@ -115,16 +136,27 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
             <span className="font-sans font-bold">{lang === 'en' ? 'العربية' : 'English'}</span>
           </button>
 
-          {/* Apply as Personal Shopper */}
+          {/* Apply or Sign In as Personal Shopper */}
           {!userProfile && (
-            <button
-              onClick={onOpenShopperRegister}
-              className="hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-zinc-900 border border-zinc-800 hover:border-amber-500/40 text-xs font-semibold text-zinc-300 hover:text-amber-300 transition-all cursor-pointer"
-              title="Apply as Personal Shopper"
-            >
-              <UserPlus className="w-3.5 h-3.5 text-amber-400" />
-              <span>{lang === 'ar' ? 'تسجيل متسوق' : 'Join as Shopper'}</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={onOpenShopperRegister}
+                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-900 border border-zinc-800 hover:border-amber-500/40 text-xs font-semibold text-zinc-300 hover:text-amber-300 transition-all cursor-pointer"
+                title="Apply as Personal Shopper"
+              >
+                <UserPlus className="w-3.5 h-3.5 text-amber-400" />
+                <span>{lang === 'ar' ? 'تسجيل متسوق' : 'Join as Shopper'}</span>
+              </button>
+
+              <button
+                onClick={onOpenShopperSignIn}
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs shadow-md shadow-amber-500/20 active:scale-95 transition-all cursor-pointer whitespace-nowrap"
+                title="Sign in with Email and Password"
+              >
+                <LogIn className="w-3.5 h-3.5" />
+                <span>{lang === 'ar' ? 'دخول المتسوق' : 'Shopper Sign In'}</span>
+              </button>
+            </div>
           )}
 
           {/* New Job and New Client (if allowed) */}

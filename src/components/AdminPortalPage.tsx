@@ -42,9 +42,7 @@ export const AdminPortalPage: React.FC<AdminPortalPageProps> = ({
   onToggleLang,
   onExitAdmin,
 }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
-    return localStorage.getItem('arvec_admin_session') === 'true';
-  });
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
   const [passcode, setPasscode] = useState<string>('');
   const [authError, setAuthError] = useState<string | null>(null);
 

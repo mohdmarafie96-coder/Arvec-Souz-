@@ -7,6 +7,7 @@ export type ShopperStatus = 'pending_approval' | 'approved' | 'rejected';
 export interface UserProfile {
   userId: string;
   email: string;
+  password?: string;
   displayName: string;
   photoURL?: string;
   role: UserRole;

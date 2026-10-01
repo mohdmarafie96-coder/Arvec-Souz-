@@ -8,6 +8,7 @@ interface ShopperRegisterModalProps {
   onClose: () => void;
   lang: Language;
   onRegistered: (profile: UserProfile) => void;
+  onOpenLogin?: () => void;
 }
 
 export const ShopperRegisterModal: React.FC<ShopperRegisterModalProps> = ({
@@ -15,9 +16,13 @@ export const ShopperRegisterModal: React.FC<ShopperRegisterModalProps> = ({
   onClose,
   lang,
   onRegistered,
+  onOpenLogin,
 }) => {
   const [fullName, setFullName] = useState<string>('');
   const [email, setEmail] = useState<string>('');
+  const [password, setPassword] = useState<string>('');
+  const [confirmPassword, setConfirmPassword] = useState<string>('');
+  const [passwordError, setPasswordError] = useState<string | null>(null);
   const [phone, setPhone] = useState<string>('');
   const [hubCity, setHubCity] = useState<string>('London / Harrods Desk');
   const [specialization, setSpecialization] = useState<string>('Hermès Leather & High Horology');
@@ -31,12 +36,32 @@ export const ShopperRegisterModal: React.FC<ShopperRegisterModalProps> = ({
     e.preventDefault();
     if (!fullName.trim() || !email.trim()) return;
 
+    if (password.length < 6) {
+      setPasswordError(
+        lang === 'ar'
+          ? 'كلمة المرور يجب أن لا تقل عن ٦ أحرف'
+          : 'Password must be at least 6 characters'
+      );
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setPasswordError(
+        lang === 'ar'
+          ? 'كلمات المرور غير متطابقة'
+          : 'Passwords do not match'
+      );
+      return;
+    }
+
+    setPasswordError(null);
     setIsSubmitting(true);
     const userId = `shopper_${Date.now()}_${Math.floor(100 + Math.random() * 900)}`;
 
     const newShopper: UserProfile = {
       userId,
-      email: email.trim(),
+      email: email.trim().toLowerCase(),
+      password: password.trim(),
       displayName: fullName.trim(),
       role: 'shopper',
       status: 'pending_approval',
@@ -160,6 +185,49 @@ export const ShopperRegisterModal: React.FC<ShopperRegisterModalProps> = ({
               </div>
             </div>
 
+            {/* Password and Confirm Password */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="font-medium text-zinc-300 block mb-1">
+                  {lang === 'ar' ? 'كلمة المرور للحساب *' : 'Account Password *'}
+                </label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setPasswordError(null);
+                  }}
+                  required
+                  placeholder="••••••••"
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-2 px-3 text-white focus:outline-none focus:border-amber-500 font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="font-medium text-zinc-300 block mb-1">
+                  {lang === 'ar' ? 'تأكيد كلمة المرور *' : 'Confirm Password *'}
+                </label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => {
+                    setConfirmPassword(e.target.value);
+                    setPasswordError(null);
+                  }}
+                  required
+                  placeholder="••••••••"
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-2 px-3 text-white focus:outline-none focus:border-amber-500 font-mono"
+                />
+              </div>
+            </div>
+
+            {passwordError && (
+              <div className="p-2.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 text-xs font-mono">
+                {passwordError}
+              </div>
+            )}
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="font-medium text-zinc-300 block mb-1">
@@ -220,23 +288,40 @@ export const ShopperRegisterModal: React.FC<ShopperRegisterModalProps> = ({
               </p>
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-2">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-4 py-2 rounded-xl text-zinc-400 hover:text-white"
-              >
-                {lang === 'ar' ? 'إلغاء' : 'Cancel'}
-              </button>
-              <button
-                type="submit"
-                disabled={isSubmitting || !fullName.trim() || !email.trim()}
-                className="px-6 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold transition-all disabled:opacity-50 cursor-pointer shadow-md shadow-amber-500/20"
-              >
-                {isSubmitting
-                  ? (lang === 'ar' ? 'جاري الإرسال...' : 'Submitting...')
-                  : (lang === 'ar' ? 'إرسال طلب الاعتماد' : 'Submit Application')}
-              </button>
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
+              {onOpenLogin ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    onOpenLogin();
+                  }}
+                  className="text-xs text-amber-400 hover:text-amber-300 hover:underline cursor-pointer"
+                >
+                  {lang === 'ar'
+                    ? 'لديك حساب معتمد مسبقاً؟ تسجيل الدخول'
+                    : 'Already registered? Sign in with email & password'}
+                </button>
+              ) : <div />}
+
+              <div className="flex items-center gap-3 self-end sm:self-auto">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-4 py-2 rounded-xl text-zinc-400 hover:text-white"
+                >
+                  {lang === 'ar' ? 'إلغاء' : 'Cancel'}
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting || !fullName.trim() || !email.trim() || password.length < 6}
+                  className="px-6 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold transition-all disabled:opacity-50 cursor-pointer shadow-md shadow-amber-500/20"
+                >
+                  {isSubmitting
+                    ? (lang === 'ar' ? 'جاري الإرسال...' : 'Submitting...')
+                    : (lang === 'ar' ? 'إرسال طلب الاعتماد' : 'Submit Application')}
+                </button>
+              </div>
             </div>
           </form>
         )}

@@ -102,6 +102,68 @@ export async function registerShopperApplication(profile: UserProfile): Promise<
 }
 
 /**
+ * Authenticate personal shopper with email and password
+ * Enforces admin approval: Only approved shoppers can successfully sign in
+ */
+export async function authenticateShopper(
+  email: string,
+  pass: string
+): Promise<{ success: boolean; profile?: UserProfile; error?: string; status?: ShopperStatus }> {
+  const cleanEmail = email.trim().toLowerCase();
+  const cleanPass = pass.trim();
+
+  // 1. Check in Firestore collection 'users'
+  try {
+    const q = query(collection(db, 'users'), where('email', '==', cleanEmail));
+    const snapshot = await getDocs(q);
+    if (!snapshot.empty) {
+      const docData = snapshot.docs[0].data() as UserProfile;
+      // If user had a password configured, verify it
+      if (docData.password && docData.password !== cleanPass) {
+        return { success: false, error: 'invalid_credentials' };
+      }
+      // Check admin approval
+      if (docData.status !== 'approved') {
+        return {
+          success: false,
+          profile: docData,
+          status: docData.status,
+          error: docData.status === 'rejected' ? 'rejected' : 'pending_approval',
+        };
+      }
+      return { success: true, profile: docData };
+    }
+  } catch (err) {
+    console.warn('Firestore shopper auth query error, checking local store:', err);
+  }
+
+  // 2. Fallback to registered shoppers in localStorage
+  try {
+    const stored = localStorage.getItem('arvec_registered_shoppers') || '[]';
+    const list: UserProfile[] = JSON.parse(stored);
+    const found = list.find((s) => s.email.toLowerCase() === cleanEmail);
+    if (found) {
+      if (found.password && found.password !== cleanPass) {
+        return { success: false, error: 'invalid_credentials' };
+      }
+      if (found.status !== 'approved') {
+        return {
+          success: false,
+          profile: found,
+          status: found.status,
+          error: found.status === 'rejected' ? 'rejected' : 'pending_approval',
+        };
+      }
+      return { success: true, profile: found };
+    }
+  } catch (err) {
+    console.warn('Local shopper auth search error:', err);
+  }
+
+  return { success: false, error: 'not_found' };
+}
+
+/**
  * Admin action: Approve or reject personal shopper
  */
 export async function setShopperApproval(
