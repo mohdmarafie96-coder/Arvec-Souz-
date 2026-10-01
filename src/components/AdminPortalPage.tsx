@@ -130,18 +130,18 @@ export const AdminPortalPage: React.FC<AdminPortalPageProps> = ({
   }, [isAuthenticated]);
 
   // Shopper Actions
-  const handleShopperStatus = async (shopperId: string, status: 'approved' | 'rejected') => {
+  const handleShopperStatus = async (shopperId: string, status: 'approved' | 'rejected', email?: string) => {
     setProcessingId(shopperId);
     // Optimistic instant state update
     setShoppers((prev) =>
       prev.map((s) =>
-        s.userId === shopperId
+        s.userId === shopperId || (email && s.email.toLowerCase() === email.toLowerCase())
           ? { ...s, status, approvedAt: new Date().toISOString(), approvedBy: 'admin_marafie' }
           : s
       )
     );
     try {
-      await setShopperApproval(shopperId, status, 'admin_marafie');
+      await setShopperApproval(shopperId, status, 'admin_marafie', email);
     } catch (err) {
       console.error('Shopper status change failed:', err);
     } finally {
@@ -581,7 +581,7 @@ export const AdminPortalPage: React.FC<AdminPortalPageProps> = ({
                         {isPending ? (
                           <>
                             <button
-                              onClick={() => handleShopperStatus(shopper.userId, 'approved')}
+                              onClick={() => handleShopperStatus(shopper.userId, 'approved', shopper.email)}
                               disabled={processingId === shopper.userId}
                               className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all active:scale-95 shadow-lg shadow-emerald-600/20 cursor-pointer"
                             >
@@ -590,7 +590,7 @@ export const AdminPortalPage: React.FC<AdminPortalPageProps> = ({
                             </button>
 
                             <button
-                              onClick={() => handleShopperStatus(shopper.userId, 'rejected')}
+                              onClick={() => handleShopperStatus(shopper.userId, 'rejected', shopper.email)}
                               disabled={processingId === shopper.userId}
                               className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-zinc-950 hover:bg-red-950 text-zinc-400 hover:text-red-400 text-xs font-semibold border border-zinc-800 transition-all cursor-pointer"
                             >
@@ -600,7 +600,7 @@ export const AdminPortalPage: React.FC<AdminPortalPageProps> = ({
                           </>
                         ) : isApproved ? (
                           <button
-                            onClick={() => handleShopperStatus(shopper.userId, 'rejected')}
+                            onClick={() => handleShopperStatus(shopper.userId, 'rejected', shopper.email)}
                             disabled={processingId === shopper.userId}
                             className="px-4 py-2 rounded-xl bg-zinc-950 hover:bg-red-950 text-xs font-mono text-zinc-400 hover:text-red-400 border border-zinc-800 transition-all cursor-pointer"
                           >
@@ -608,7 +608,7 @@ export const AdminPortalPage: React.FC<AdminPortalPageProps> = ({
                           </button>
                         ) : (
                           <button
-                            onClick={() => handleShopperStatus(shopper.userId, 'approved')}
+                            onClick={() => handleShopperStatus(shopper.userId, 'approved', shopper.email)}
                             disabled={processingId === shopper.userId}
                             className="px-4 py-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-xs font-mono text-amber-300 border border-amber-500/30 transition-all cursor-pointer"
                           >

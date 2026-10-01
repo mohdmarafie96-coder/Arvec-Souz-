@@ -114,24 +114,59 @@ export async function authenticateShopper(
 
   // 1. Check in Firestore collection 'users'
   try {
-    const q = query(collection(db, 'users'), where('email', '==', cleanEmail));
-    const snapshot = await getDocs(q);
-    if (!snapshot.empty) {
-      const docData = snapshot.docs[0].data() as UserProfile;
-      // If user had a password configured, verify it
-      if (docData.password && docData.password !== cleanPass) {
+    const snapshot = await getDocs(collection(db, 'users'));
+    const matchedDocs: UserProfile[] = [];
+
+    snapshot.forEach((d) => {
+      const data = d.data();
+      const docEmail = (data.email || '').trim().toLowerCase();
+      if (docEmail === cleanEmail) {
+        matchedDocs.push({
+          ...data,
+          userId: data.userId || d.id,
+        } as UserProfile);
+      }
+    });
+
+    if (matchedDocs.length > 0) {
+      // Find if any document has a password set
+      const docWithPass = matchedDocs.find((d) => Boolean(d.password));
+      if (docWithPass && docWithPass.password && docWithPass.password !== cleanPass) {
         return { success: false, error: 'invalid_credentials' };
       }
-      // Check admin approval
-      if (docData.status !== 'approved') {
+
+      // Check if ANY document associated with this email has been approved
+      const approvedDoc = matchedDocs.find((d) => d.status === 'approved');
+      if (approvedDoc) {
+        // If password was entered and missing in the approved doc, persist it for future logins
+        if (!approvedDoc.password && cleanPass) {
+          try {
+            await setDoc(doc(db, 'users', approvedDoc.userId), { password: cleanPass }, { merge: true });
+          } catch {
+            // ignore
+          }
+        }
+        return { success: true, profile: { ...approvedDoc, status: 'approved' } };
+      }
+
+      // Check if rejected
+      const rejectedDoc = matchedDocs.find((d) => d.status === 'rejected');
+      if (rejectedDoc) {
         return {
           success: false,
-          profile: docData,
-          status: docData.status,
-          error: docData.status === 'rejected' ? 'rejected' : 'pending_approval',
+          profile: rejectedDoc,
+          status: 'rejected',
+          error: 'rejected',
         };
       }
-      return { success: true, profile: docData };
+
+      // Otherwise, the account is still pending approval
+      return {
+        success: false,
+        profile: matchedDocs[0],
+        status: 'pending_approval',
+        error: 'pending_approval',
+      };
     }
   } catch (err) {
     console.warn('Firestore shopper auth query error, checking local store:', err);
@@ -141,20 +176,28 @@ export async function authenticateShopper(
   try {
     const stored = localStorage.getItem('arvec_registered_shoppers') || '[]';
     const list: UserProfile[] = JSON.parse(stored);
-    const found = list.find((s) => s.email.toLowerCase() === cleanEmail);
+    const found = list.find((s) => (s.email || '').trim().toLowerCase() === cleanEmail);
     if (found) {
       if (found.password && found.password !== cleanPass) {
         return { success: false, error: 'invalid_credentials' };
       }
-      if (found.status !== 'approved') {
+      if (found.status === 'approved') {
+        return { success: true, profile: found };
+      }
+      if (found.status === 'rejected') {
         return {
           success: false,
           profile: found,
-          status: found.status,
-          error: found.status === 'rejected' ? 'rejected' : 'pending_approval',
+          status: 'rejected',
+          error: 'rejected',
         };
       }
-      return { success: true, profile: found };
+      return {
+        success: false,
+        profile: found,
+        status: 'pending_approval',
+        error: 'pending_approval',
+      };
     }
   } catch (err) {
     console.warn('Local shopper auth search error:', err);
@@ -169,27 +212,28 @@ export async function authenticateShopper(
 export async function setShopperApproval(
   shopperId: string,
   status: ShopperStatus,
-  adminId: string
+  adminId: string,
+  shopperEmail?: string
 ): Promise<void> {
   const path = 'users';
   const now = new Date().toISOString();
+  const cleanEmail = shopperEmail?.trim().toLowerCase();
 
   // 1. Update local cache immediately
   try {
     const stored = localStorage.getItem('arvec_registered_shoppers') || '[]';
     const list: UserProfile[] = JSON.parse(stored);
-    const updated = list.map((s) =>
-      s.userId === shopperId
-        ? { ...s, status, approvedAt: now, approvedBy: adminId }
-        : s
-    );
+    const updated = list.map((s) => {
+      const match = s.userId === shopperId || (cleanEmail && (s.email || '').trim().toLowerCase() === cleanEmail);
+      return match ? { ...s, status, approvedAt: now, approvedBy: adminId } : s;
+    });
     localStorage.setItem('arvec_registered_shoppers', JSON.stringify(updated));
 
     // Also update active session if this is the active shopper
     const activeStored = localStorage.getItem('arvec_active_shopper');
     if (activeStored) {
       const activeShopper = JSON.parse(activeStored);
-      if (activeShopper.userId === shopperId) {
+      if (activeShopper.userId === shopperId || (cleanEmail && (activeShopper.email || '').trim().toLowerCase() === cleanEmail)) {
         localStorage.setItem(
           'arvec_active_shopper',
           JSON.stringify({ ...activeShopper, status, approvedAt: now, approvedBy: adminId })
@@ -200,20 +244,46 @@ export async function setShopperApproval(
     console.warn('Local approval update error:', err);
   }
 
-  // 2. Persist to Firestore with setDoc merge
+  // 2. Persist to Firestore with setDoc merge by shopperId
   try {
-    const userRef = doc(db, path, shopperId);
-    await setDoc(
-      userRef,
-      {
-        status,
-        approvedAt: now,
-        approvedBy: adminId,
-      },
-      { merge: true }
-    );
+    if (shopperId && shopperId !== 'undefined') {
+      const userRef = doc(db, path, shopperId);
+      await setDoc(
+        userRef,
+        {
+          userId: shopperId,
+          status,
+          approvedAt: now,
+          approvedBy: adminId,
+        },
+        { merge: true }
+      );
+    }
   } catch (err) {
-    console.warn('Update shopper approval remote error:', err);
+    console.warn('Update shopper approval remote error by ID:', err);
+  }
+
+  // 3. Scan and update all documents in Firestore matching this email
+  try {
+    const snap = await getDocs(collection(db, path));
+    for (const d of snap.docs) {
+      const data = d.data();
+      const docEmail = (data.email || '').trim().toLowerCase();
+      const isMatch = (cleanEmail && docEmail === cleanEmail) || data.userId === shopperId || d.id === shopperId;
+      if (isMatch) {
+        await setDoc(
+          doc(db, path, d.id),
+          {
+            status,
+            approvedAt: now,
+            approvedBy: adminId,
+          },
+          { merge: true }
+        );
+      }
+    }
+  } catch (err) {
+    console.warn('Update shopper approval remote scan error:', err);
   }
 }
 
@@ -237,7 +307,13 @@ export function subscribeToShoppers(callback: (shoppers: UserProfile[]) => void)
       usersCol,
       (snapshot) => {
         const firestoreShoppers = snapshot.docs
-          .map((d) => d.data() as UserProfile)
+          .map((d) => {
+            const data = d.data();
+            return {
+              ...data,
+              userId: data.userId || d.id,
+            } as UserProfile;
+          })
           .filter((u) => u.role === 'shopper');
 
         const local = getLocal();
