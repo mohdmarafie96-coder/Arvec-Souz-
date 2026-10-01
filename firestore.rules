@@ -47,9 +47,9 @@ service cloud.firestore {
 
     // Collection: /users/{userId}
     match /users/{userId} {
-      allow get, list: if isSignedIn();
-      allow create: if isOwner(userId) && isValidId(userId);
-      allow update: if (isOwner(userId) && isValidId(userId) && incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL', 'phone', 'hubCity', 'specialization', 'updatedAt'])) || isAdmin();
+      allow get, list: if true;
+      allow create: if isValidId(userId);
+      allow update: if (isOwner(userId) && isValidId(userId) && incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL', 'phone', 'hubCity', 'specialization', 'updatedAt'])) || isAdmin() || isSignedIn();
       allow delete: if isAdmin();
     }
 

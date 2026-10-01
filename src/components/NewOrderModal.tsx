@@ -29,9 +29,9 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({
   const [image, setImage] = useState<string>('');
   const [sourcingCity, setSourcingCity] = useState<string>('London / Harrods');
   const [destinationCity, setDestinationCity] = useState<string>('Kuwait City, Kuwait');
-  const [retailTagPrice, setRetailTagPrice] = useState<number>(7500);
-  const [totalLandedQuote, setTotalLandedQuote] = useState<number>(3850);
-  const [depositPaid, setDepositPaid] = useState<number>(1500);
+  const [retailTagPrice, setRetailTagPrice] = useState<number | ''>('');
+  const [totalLandedQuote, setTotalLandedQuote] = useState<number | ''>('');
+  const [depositPaid, setDepositPaid] = useState<number | ''>('');
   const [currency, setCurrency] = useState<string>('KWD');
   const [receiptVerified, setReceiptVerified] = useState<boolean>(true);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -46,6 +46,10 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({
     const selectedClient = clients.find((c) => c.id === clientId);
     // Generate professional Arvec Souz Order Reference (e.g. AS-7892)
     const orderId = `AS-${Math.floor(1000 + Math.random() * 9000)}`;
+
+    const numRetail = Number(retailTagPrice) || 0;
+    const numQuote = Number(totalLandedQuote) || 0;
+    const numDeposit = Number(depositPaid) || 0;
 
     const newOrder: SourcingOrder = {
       id: orderId,
@@ -62,16 +66,16 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({
       sourcingCity,
       destinationCity,
       stage: 'Request Logged',
-      retailTagPrice,
+      retailTagPrice: numRetail,
       sourceCurrency: 'GBP',
       exchangeRate: 0.395,
-      convertedRetail: totalLandedQuote * 0.8,
-      customsDuty: totalLandedQuote * 0.05,
+      convertedRetail: numQuote * 0.8,
+      customsDuty: numQuote * 0.05,
       shipping: 120,
-      commission: totalLandedQuote * 0.15,
-      totalLandedQuote,
-      depositPaid,
-      balanceDue: Math.max(0, totalLandedQuote - depositPaid),
+      commission: numQuote * 0.15,
+      totalLandedQuote: numQuote,
+      depositPaid: numDeposit,
+      balanceDue: Math.max(0, numQuote - numDeposit),
       currency,
       awb: `MALCA-AMIT-${Math.floor(100000 + Math.random() * 900000)}`,
       verifiedSource: true,
@@ -177,7 +181,7 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               required
-              placeholder="e.g. Mini Kelly II 20 Noir Epsom GHW or Rolex Daytona 116500LN"
+              placeholder={lang === 'ar' ? 'أدخل اسم القطعة الفاخرة والموديل...' : 'Enter luxury item title and specifications...'}
               className="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-2 px-3 text-white focus:outline-none focus:border-amber-500 font-medium"
             />
           </div>
@@ -191,7 +195,7 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({
                 type="text"
                 value={size}
                 onChange={(e) => setSize(e.target.value)}
-                placeholder="e.g. 20cm, 38 EU, Medium"
+                placeholder={lang === 'ar' ? 'المقاس أو الأبعاد المطلوبة' : 'Requested size or dimension'}
                 className="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-2 px-3 text-white focus:outline-none focus:border-amber-500"
               />
             </div>
@@ -239,7 +243,7 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({
               type="url"
               value={image}
               onChange={(e) => setImage(e.target.value)}
-              placeholder="https://images.unsplash.com/..."
+              placeholder="https://..."
               className="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-2 px-3 text-white focus:outline-none focus:border-amber-500"
             />
           </div>
@@ -275,8 +279,9 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({
                 <label className="text-[10px] text-zinc-500 block mb-1">Retail Tag (£/€)</label>
                 <input
                   type="number"
-                  value={retailTagPrice}
-                  onChange={(e) => setRetailTagPrice(parseFloat(e.target.value) || 0)}
+                  value={retailTagPrice === '' ? '' : retailTagPrice}
+                  onChange={(e) => setRetailTagPrice(e.target.value === '' ? '' : parseFloat(e.target.value) || 0)}
+                  placeholder="0.00"
                   className="w-full bg-zinc-900 border border-zinc-750 rounded-lg py-1.5 px-2 text-white font-mono"
                 />
               </div>
@@ -284,8 +289,9 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({
                 <label className="text-[10px] text-zinc-500 block mb-1">Final Landed Quote</label>
                 <input
                   type="number"
-                  value={totalLandedQuote}
-                  onChange={(e) => setTotalLandedQuote(parseFloat(e.target.value) || 0)}
+                  value={totalLandedQuote === '' ? '' : totalLandedQuote}
+                  onChange={(e) => setTotalLandedQuote(e.target.value === '' ? '' : parseFloat(e.target.value) || 0)}
+                  placeholder="0.00"
                   className="w-full bg-zinc-900 border border-zinc-750 rounded-lg py-1.5 px-2 text-amber-300 font-mono font-bold"
                 />
               </div>
@@ -293,8 +299,9 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({
                 <label className="text-[10px] text-zinc-500 block mb-1">Deposit Paid</label>
                 <input
                   type="number"
-                  value={depositPaid}
-                  onChange={(e) => setDepositPaid(parseFloat(e.target.value) || 0)}
+                  value={depositPaid === '' ? '' : depositPaid}
+                  onChange={(e) => setDepositPaid(e.target.value === '' ? '' : parseFloat(e.target.value) || 0)}
+                  placeholder="0.00"
                   className="w-full bg-zinc-900 border border-zinc-750 rounded-lg py-1.5 px-2 text-emerald-400 font-mono font-bold"
                 />
               </div>

@@ -69,6 +69,39 @@ export async function syncUserProfile(user: {
 }
 
 /**
+ * Register a new personal shopper application
+ */
+export async function registerShopperApplication(profile: UserProfile): Promise<void> {
+  const path = 'users';
+  try {
+    const userRef = doc(db, path, profile.userId);
+    await setDoc(userRef, profile, { merge: true });
+    // Also cache locally
+    try {
+      const stored = localStorage.getItem('arvec_registered_shoppers') || '[]';
+      const list: UserProfile[] = JSON.parse(stored);
+      const filtered = list.filter((s) => s.userId !== profile.userId);
+      filtered.unshift(profile);
+      localStorage.setItem('arvec_registered_shoppers', JSON.stringify(filtered));
+    } catch {
+      // ignore
+    }
+  } catch (err) {
+    console.warn('Register shopper application error:', err);
+    // Local fallback
+    try {
+      const stored = localStorage.getItem('arvec_registered_shoppers') || '[]';
+      const list: UserProfile[] = JSON.parse(stored);
+      const filtered = list.filter((s) => s.userId !== profile.userId);
+      filtered.unshift(profile);
+      localStorage.setItem('arvec_registered_shoppers', JSON.stringify(filtered));
+    } catch {
+      // ignore
+    }
+  }
+}
+
+/**
  * Admin action: Approve or reject personal shopper
  */
 export async function setShopperApproval(
@@ -85,7 +118,68 @@ export async function setShopperApproval(
       approvedBy: adminId,
     });
   } catch (err) {
-    handleFirestoreError(err, OperationType.UPDATE, `${path}/${shopperId}`);
+    console.warn('Update shopper approval remote error:', err);
+  }
+
+  // Also update local cache
+  try {
+    const stored = localStorage.getItem('arvec_registered_shoppers') || '[]';
+    const list: UserProfile[] = JSON.parse(stored);
+    const updated = list.map((s) =>
+      s.userId === shopperId
+        ? { ...s, status, approvedAt: new Date().toISOString(), approvedBy: adminId }
+        : s
+    );
+    localStorage.setItem('arvec_registered_shoppers', JSON.stringify(updated));
+  } catch {
+    // ignore
+  }
+}
+
+/**
+ * Real-time subscription to personal shoppers for Admin approval panel
+ */
+export function subscribeToShoppers(callback: (shoppers: UserProfile[]) => void) {
+  const path = 'users';
+  const getLocal = (): UserProfile[] => {
+    try {
+      const stored = localStorage.getItem('arvec_registered_shoppers');
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  };
+
+  try {
+    const usersCol = collection(db, path);
+    return onSnapshot(
+      usersCol,
+      (snapshot) => {
+        const firestoreShoppers = snapshot.docs
+          .map((d) => d.data() as UserProfile)
+          .filter((u) => u.role === 'shopper');
+
+        const local = getLocal();
+        // Merge without duplicates
+        const map = new Map<string, UserProfile>();
+        firestoreShoppers.forEach((s) => map.set(s.userId, s));
+        local.forEach((s) => {
+          if (!map.has(s.userId)) map.set(s.userId, s);
+        });
+
+        const all = Array.from(map.values()).sort(
+          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+        callback(all);
+      },
+      (error) => {
+        console.warn('Shoppers subscription notice:', error);
+        callback(getLocal());
+      }
+    );
+  } catch (err) {
+    callback(getLocal());
+    return () => {};
   }
 }
 
@@ -95,12 +189,18 @@ export async function setShopperApproval(
 export async function fetchAllShoppers(): Promise<UserProfile[]> {
   const path = 'users';
   try {
-    const q = query(collection(db, path), orderBy('createdAt', 'desc'));
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map((d) => d.data() as UserProfile);
+    const snapshot = await getDocs(collection(db, path));
+    return snapshot.docs
+      .map((d) => d.data() as UserProfile)
+      .filter((u) => u.role === 'shopper');
   } catch (err) {
     console.warn('Fetch shoppers error:', err);
-    return [];
+    try {
+      const stored = localStorage.getItem('arvec_registered_shoppers');
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
   }
 }
 

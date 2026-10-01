@@ -32,11 +32,11 @@ export const CalculatorTab: React.FC<CalculatorTabProps> = ({ lang, onTransferQu
   const [sourceCurr, setSourceCurr] = useState<string>('GBP');
   const [destCurr, setDestCurr] = useState<string>('KWD');
   const [fxRate, setFxRate] = useState<number>(0.395);
-  const [retailPrice, setRetailPrice] = useState<number>(8200);
-  const [shipping, setShipping] = useState<number>(120);
+  const [retailPrice, setRetailPrice] = useState<number | ''>('');
+  const [shipping, setShipping] = useState<number | ''>('');
   const [dutyPercent, setDutyPercent] = useState<number>(5);
   const [commissionPercent, setCommissionPercent] = useState<number>(15);
-  const [depositPaid, setDepositPaid] = useState<number>(1500);
+  const [depositPaid, setDepositPaid] = useState<number | ''>('');
 
   const t = TRANSLATIONS[lang];
 
@@ -49,11 +49,15 @@ export const CalculatorTab: React.FC<CalculatorTabProps> = ({ lang, onTransferQu
   };
 
   // Calculations
-  const convertedRetail = retailPrice * fxRate;
+  const numericRetail = typeof retailPrice === 'number' ? retailPrice : 0;
+  const numericShipping = typeof shipping === 'number' ? shipping : 0;
+  const numericDeposit = typeof depositPaid === 'number' ? depositPaid : 0;
+
+  const convertedRetail = numericRetail * fxRate;
   const customsFee = convertedRetail * (dutyPercent / 100);
   const shopperMargin = convertedRetail * (commissionPercent / 100);
-  const totalLandedQuote = convertedRetail + customsFee + shipping + shopperMargin;
-  const balanceDue = Math.max(0, totalLandedQuote - depositPaid);
+  const totalLandedQuote = convertedRetail + customsFee + numericShipping + shopperMargin;
+  const balanceDue = Math.max(0, totalLandedQuote - numericDeposit);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -127,8 +131,9 @@ export const CalculatorTab: React.FC<CalculatorTabProps> = ({ lang, onTransferQu
             </label>
             <input
               type="number"
-              value={retailPrice}
-              onChange={(e) => setRetailPrice(parseFloat(e.target.value) || 0)}
+              value={retailPrice === '' ? '' : retailPrice}
+              onChange={(e) => setRetailPrice(e.target.value === '' ? '' : parseFloat(e.target.value) || 0)}
+              placeholder="0.00"
               className="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-2.5 px-3.5 text-sm font-mono text-white focus:outline-none focus:border-amber-500"
             />
           </div>
@@ -139,8 +144,9 @@ export const CalculatorTab: React.FC<CalculatorTabProps> = ({ lang, onTransferQu
             </label>
             <input
               type="number"
-              value={shipping}
-              onChange={(e) => setShipping(parseFloat(e.target.value) || 0)}
+              value={shipping === '' ? '' : shipping}
+              onChange={(e) => setShipping(e.target.value === '' ? '' : parseFloat(e.target.value) || 0)}
+              placeholder="0.00"
               className="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-2.5 px-3.5 text-sm font-mono text-white focus:outline-none focus:border-amber-500"
             />
           </div>
@@ -153,6 +159,7 @@ export const CalculatorTab: React.FC<CalculatorTabProps> = ({ lang, onTransferQu
               type="number"
               value={dutyPercent}
               onChange={(e) => setDutyPercent(parseFloat(e.target.value) || 0)}
+              placeholder="5"
               className="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-2.5 px-3.5 text-sm font-mono text-white focus:outline-none focus:border-amber-500"
             />
           </div>
@@ -165,6 +172,7 @@ export const CalculatorTab: React.FC<CalculatorTabProps> = ({ lang, onTransferQu
               type="number"
               value={commissionPercent}
               onChange={(e) => setCommissionPercent(parseFloat(e.target.value) || 0)}
+              placeholder="15"
               className="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-2.5 px-3.5 text-sm font-mono text-amber-300 focus:outline-none focus:border-amber-500"
             />
           </div>
@@ -175,8 +183,9 @@ export const CalculatorTab: React.FC<CalculatorTabProps> = ({ lang, onTransferQu
             </label>
             <input
               type="number"
-              value={depositPaid}
-              onChange={(e) => setDepositPaid(parseFloat(e.target.value) || 0)}
+              value={depositPaid === '' ? '' : depositPaid}
+              onChange={(e) => setDepositPaid(e.target.value === '' ? '' : parseFloat(e.target.value) || 0)}
+              placeholder="0.00"
               className="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-2.5 px-3.5 text-sm font-mono text-emerald-300 focus:outline-none focus:border-amber-500"
             />
           </div>
@@ -186,9 +195,9 @@ export const CalculatorTab: React.FC<CalculatorTabProps> = ({ lang, onTransferQu
           <button
             onClick={() =>
               onTransferQuote({
-                retail: retailPrice,
+                retail: numericRetail,
                 totalQuote: Math.round(totalLandedQuote),
-                deposit: depositPaid,
+                deposit: numericDeposit,
                 currency: destCurr,
               })
             }

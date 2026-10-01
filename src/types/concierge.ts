@@ -14,6 +14,7 @@ export interface UserProfile {
   hubCity?: string;
   phone?: string;
   specialization?: string;
+  experience?: string;
   createdAt: string;
   approvedAt?: string;
   approvedBy?: string;

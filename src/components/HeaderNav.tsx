@@ -10,10 +10,12 @@ interface HeaderNavProps {
   user: any;
   userProfile: UserProfile | null;
   orders: SourcingOrder[];
+  pendingShoppersCount: number;
   onOpenNewOrder: () => void;
   onOpenNewClient: () => void;
   onOpenAdminModal: () => void;
   onOpenPublicTracker: () => void;
+  onOpenShopperRegister: () => void;
   onLogin: () => void;
   onLogout: () => void;
   canManage: boolean;
@@ -25,10 +27,12 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
   user,
   userProfile,
   orders,
+  pendingShoppersCount,
   onOpenNewOrder,
   onOpenNewClient,
   onOpenAdminModal,
   onOpenPublicTracker,
+  onOpenShopperRegister,
   onLogin,
   onLogout,
   canManage,
@@ -124,6 +128,23 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
             >
               <ShieldCheck className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">{t.adminPanelBtn}</span>
+              {pendingShoppersCount > 0 && (
+                <span className="px-1.5 py-0.2 rounded-full bg-amber-400 text-zinc-950 font-mono text-[10px] font-extrabold animate-pulse">
+                  {pendingShoppersCount}
+                </span>
+              )}
+            </button>
+          )}
+
+          {/* Apply as Personal Shopper */}
+          {!isAdmin && (
+            <button
+              onClick={onOpenShopperRegister}
+              className="hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-zinc-900 border border-zinc-800 hover:border-amber-500/40 text-xs font-semibold text-zinc-300 hover:text-amber-300 transition-all cursor-pointer"
+              title="Apply as Personal Shopper"
+            >
+              <UserPlus className="w-3.5 h-3.5 text-amber-400" />
+              <span>{lang === 'ar' ? 'تسجيل متسوق' : 'Join as Shopper'}</span>
             </button>
           )}
 

@@ -24,12 +24,14 @@ import { NewClientModal } from './components/NewClientModal';
 import { PublicTrackingModal } from './components/PublicTrackingModal';
 import { OrderCreatedSuccessModal } from './components/OrderCreatedSuccessModal';
 import { AdminApprovalsModal } from './components/AdminApprovalsModal';
+import { ShopperRegisterModal } from './components/ShopperRegisterModal';
 import { AuthErrorModal } from './components/AuthErrorModal';
 import { useAuth } from './firebase/authContext';
 import {
   syncUserProfile,
   subscribeToOrders,
   subscribeToClients,
+  subscribeToShoppers,
 } from './firebase/conciergeService';
 
 type TabView = 'pipeline' | 'calculator' | 'clients' | 'tracking';
@@ -44,15 +46,27 @@ export default function App() {
   // Live Firestore collections (started empty with ZERO samples)
   const [orders, setOrders] = useState<SourcingOrder[]>([]);
   const [clients, setClients] = useState<VipClient[]>([]);
+  const [shoppersList, setShoppersList] = useState<UserProfile[]>([]);
 
   // Modals state
   const [isNewOrderOpen, setIsNewOrderOpen] = useState<boolean>(false);
   const [isNewClientOpen, setIsNewClientOpen] = useState<boolean>(false);
   const [isAdminModalOpen, setIsAdminModalOpen] = useState<boolean>(false);
+  const [isShopperRegisterOpen, setIsShopperRegisterOpen] = useState<boolean>(false);
   const [previewOrder, setPreviewOrder] = useState<SourcingOrder | null>(null);
   const [createdOrderSuccess, setCreatedOrderSuccess] = useState<SourcingOrder | null>(null);
 
   const t = TRANSLATIONS[lang];
+
+  // Purge any legacy sample mock data from localStorage
+  useEffect(() => {
+    try {
+      localStorage.removeItem('arvec_concierge_orders');
+      localStorage.removeItem('arvec_concierge_clients');
+    } catch {
+      // ignore
+    }
+  }, []);
 
   // Sync user profile upon authentication
   useEffect(() => {
@@ -103,15 +117,21 @@ export default function App() {
       setClients(liveClients);
     });
 
+    const unsubShoppers = subscribeToShoppers((liveShoppers) => {
+      setShoppersList(liveShoppers);
+    });
+
     return () => {
       unsubOrders();
       unsubClients();
+      unsubShoppers();
     };
   }, []);
 
   const isAdmin = userProfile?.role === 'admin';
   const isApproved = userProfile?.status === 'approved' || isAdmin;
   const isPending = userProfile && !isApproved;
+  const pendingShoppersCount = shoppersList.filter((s) => s.status === 'pending_approval').length;
 
   const handleToggleLang = () => {
     setLang((prev) => (prev === 'en' ? 'ar' : 'en'));
@@ -144,10 +164,12 @@ export default function App() {
         user={userProfile || user}
         userProfile={userProfile}
         orders={orders}
+        pendingShoppersCount={pendingShoppersCount}
         onOpenNewOrder={() => setIsNewOrderOpen(true)}
         onOpenNewClient={() => setIsNewClientOpen(true)}
         onOpenAdminModal={() => setIsAdminModalOpen(true)}
         onOpenPublicTracker={() => setActiveTab('tracking')}
+        onOpenShopperRegister={() => setIsShopperRegisterOpen(true)}
         onLogin={loginWithGoogle}
         onLogout={logout}
         canManage={Boolean(isApproved)}
@@ -317,6 +339,16 @@ export default function App() {
           currentAdminUid={userProfile?.userId || ''}
         />
       )}
+
+      {/* Shopper Application Modal */}
+      <ShopperRegisterModal
+        isOpen={isShopperRegisterOpen}
+        onClose={() => setIsShopperRegisterOpen(false)}
+        lang={lang}
+        onRegistered={(newProfile) => {
+          setUserProfile(newProfile);
+        }}
+      />
 
       <AuthErrorModal />
     </div>

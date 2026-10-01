@@ -70,7 +70,7 @@ export const PublicTrackerSection: React.FC<PublicTrackerSectionProps> = ({
               type="text"
               value={trackingInput}
               onChange={(e) => setTrackingInput(e.target.value)}
-              placeholder={lang === 'ar' ? 'أدخل رقم الطلب (مثال: AS-1042 أو ORD-1001)...' : 'Enter Order Reference No (e.g. AS-1042 or ORD-1001)...'}
+              placeholder={lang === 'ar' ? 'أدخل رقم مرجع الطلب الخاص بك (Order No)...' : 'Enter your Order Reference No (Order No)...'}
               className="w-full bg-zinc-950 border border-zinc-700/80 rounded-2xl py-3.5 pl-4 pr-12 text-sm sm:text-base text-white placeholder-zinc-500 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all font-mono"
             />
             <button

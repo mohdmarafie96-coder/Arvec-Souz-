@@ -84,7 +84,7 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
-              placeholder="e.g. Sheikha Al-Sabah or H.E. Princess Reema"
+              placeholder={lang === 'ar' ? 'الاسم الكامل للعميل...' : 'Client full honorific and name...'}
               className="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-2 px-3 text-white focus:outline-none focus:border-amber-500 font-medium"
             />
           </div>
@@ -99,7 +99,7 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 required
-                placeholder="+965 9988 7766"
+                placeholder="+965 ..."
                 className="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-2 px-3 text-white focus:outline-none focus:border-amber-500"
               />
             </div>
@@ -112,7 +112,7 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
                 required
-                placeholder="Kuwait City, Kuwait"
+                placeholder={lang === 'ar' ? 'المدينة، الدولة' : 'City, Country'}
                 className="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-2 px-3 text-white focus:outline-none focus:border-amber-500"
               />
             </div>
@@ -129,7 +129,7 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({
                   type="text"
                   value={shoeSize}
                   onChange={(e) => setShoeSize(e.target.value)}
-                  placeholder="38 EU"
+                  placeholder="EU"
                   className="w-full bg-zinc-900 border border-zinc-750 rounded-lg py-1 px-2 text-white font-mono"
                 />
               </div>
@@ -139,7 +139,7 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({
                   type="text"
                   value={ringSize}
                   onChange={(e) => setRingSize(e.target.value)}
-                  placeholder="52 EU"
+                  placeholder="EU"
                   className="w-full bg-zinc-900 border border-zinc-750 rounded-lg py-1 px-2 text-white font-mono"
                 />
               </div>
@@ -149,7 +149,7 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({
                   type="text"
                   value={rtwSize}
                   onChange={(e) => setRtwSize(e.target.value)}
-                  placeholder="36 FR"
+                  placeholder="FR / IT"
                   className="w-full bg-zinc-900 border border-zinc-750 rounded-lg py-1 px-2 text-white font-mono"
                 />
               </div>
