@@ -1,28 +1,24 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import {
   auth,
   db,
   googleProvider,
   signInWithPopup,
   signInWithRedirect,
-  getRedirectResult,
   fbSignOut,
-  handleFirestoreError,
-  OperationType,
 } from './config';
 
-export interface UserProfile {
+export interface UserAuthProfile {
   userId: string;
+  email: string;
   displayName: string;
   photoURL?: string;
-  totalPoints: number;
-  solvesCount: number;
-  bestRubikMs?: number;
-  currentStreak: number;
-  isGuest?: boolean;
-  updatedAt?: string;
+  role: 'admin' | 'shopper';
+  status: 'approved' | 'pending_approval' | 'rejected';
+  hubCity?: string;
+  isSimulated?: boolean;
 }
 
 export interface AuthErrorInfo {
@@ -34,19 +30,18 @@ export interface AuthErrorInfo {
 
 interface AuthContextType {
   user: User | null;
-  profile: UserProfile | null;
+  profile: UserAuthProfile | null;
   loading: boolean;
   authError: AuthErrorInfo | null;
   loginWithGoogle: () => Promise<void>;
-  loginWithRedirectOption: () => Promise<void>;
+  loginAsAdmin: () => void;
+  loginAsShopper: (name?: string, hub?: string) => void;
   logout: () => Promise<void>;
-  addPoints: (points: number, solveMs?: number) => Promise<void>;
-  refreshProfile: () => Promise<void>;
   clearAuthError: () => void;
-  setGuestNickname: (nickname: string) => void;
 }
 
-const GUEST_PROFILE_KEY = 'arvec_souz_guest_profile_v1';
+const LOCAL_SESSION_KEY = 'arvec_souz_luxury_auth_v2';
+const ADMIN_EMAIL = 'mohdmarafie96@gmail.com';
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
@@ -54,105 +49,44 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   authError: null,
   loginWithGoogle: async () => {},
-  loginWithRedirectOption: async () => {},
+  loginAsAdmin: () => {},
+  loginAsShopper: () => {},
   logout: async () => {},
-  addPoints: async () => {},
-  refreshProfile: async () => {},
   clearAuthError: () => {},
-  setGuestNickname: () => {},
 });
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [profile, setProfile] = useState<UserAuthProfile | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [authError, setAuthError] = useState<AuthErrorInfo | null>(null);
 
-  // Load guest profile if not logged in
-  const loadGuestProfile = (): UserProfile => {
+  // Restore simulated or local personal shopper session if present
+  useEffect(() => {
     try {
-      const saved = localStorage.getItem(GUEST_PROFILE_KEY);
-      if (saved) return JSON.parse(saved);
-    } catch {
-      // LocalStorage fallback
-    }
-    return {
-      userId: 'guest_local',
-      displayName: 'Guest Cuber',
-      totalPoints: 0,
-      solvesCount: 0,
-      currentStreak: 1,
-      isGuest: true,
-      updatedAt: new Date().toISOString(),
-    };
-  };
-
-  // Fetch or create user profile from Firestore
-  const fetchProfile = async (firebaseUser: User) => {
-    const userDocRef = doc(db, 'users', firebaseUser.uid);
-    try {
-      const snap = await getDoc(userDocRef);
-      if (snap.exists()) {
-        const cloudData = snap.data() as UserProfile;
-        // Merge guest points if any exist
-        const guest = loadGuestProfile();
-        if (guest.totalPoints > 0) {
-          const mergedPoints = cloudData.totalPoints + guest.totalPoints;
-          const mergedSolves = cloudData.solvesCount + guest.solvesCount;
-          await updateDoc(userDocRef, {
-            totalPoints: mergedPoints,
-            solvesCount: mergedSolves,
-            updatedAt: new Date().toISOString(),
-          });
-          cloudData.totalPoints = mergedPoints;
-          cloudData.solvesCount = mergedSolves;
-          localStorage.removeItem(GUEST_PROFILE_KEY);
-        }
-        setProfile(cloudData);
-      } else {
-        // Initial profile creation
-        const guest = loadGuestProfile();
-        const newProfile: UserProfile = {
-          userId: firebaseUser.uid,
-          displayName: firebaseUser.displayName || guest.displayName || 'Arcade Cuber',
-          photoURL: firebaseUser.photoURL || '',
-          totalPoints: guest.totalPoints || 0,
-          solvesCount: guest.solvesCount || 0,
-          currentStreak: 1,
-          isGuest: false,
-          updatedAt: new Date().toISOString(),
-        };
-        await setDoc(userDocRef, newProfile);
-        setProfile(newProfile);
-        localStorage.removeItem(GUEST_PROFILE_KEY);
+      const saved = localStorage.getItem(LOCAL_SESSION_KEY);
+      if (saved) {
+        setProfile(JSON.parse(saved));
       }
-    } catch (error) {
-      handleFirestoreError(error, OperationType.GET, `users/${firebaseUser.uid}`);
+    } catch {
+      // ignore
     }
-  };
 
-  // Handle redirect result if user used redirect login
-  useEffect(() => {
-    getRedirectResult(auth)
-      .then(async (result) => {
-        if (result && result.user) {
-          setUser(result.user);
-          await fetchProfile(result.user);
-        }
-      })
-      .catch((err: unknown) => {
-        handleAuthException(err);
-      });
-  }, []);
-
-  // Listen to auth state
-  useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
       if (currentUser) {
-        await fetchProfile(currentUser);
-      } else {
-        setProfile(loadGuestProfile());
+        const isAdmin = currentUser.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+        const p: UserAuthProfile = {
+          userId: currentUser.uid,
+          email: currentUser.email || '',
+          displayName: currentUser.displayName || (isAdmin ? 'Mohd Marafie (Admin)' : 'Personal Shopper'),
+          photoURL: currentUser.photoURL || undefined,
+          role: isAdmin ? 'admin' : 'shopper',
+          status: isAdmin ? 'approved' : 'pending_approval',
+          hubCity: 'London / Paris Desk',
+        };
+        setProfile(p);
+        localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(p));
       }
       setLoading(false);
     });
@@ -161,7 +95,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const handleAuthException = (err: unknown) => {
-    console.warn('Firebase Auth error encountered:', err);
+    console.warn('Firebase Auth notice:', err);
     const domain = typeof window !== 'undefined' ? window.location.hostname : 'unknown-domain';
     const projectId = 'gen-lang-client-0805549924';
     const consoleUrl = `https://console.firebase.google.com/project/${projectId}/authentication/settings`;
@@ -175,11 +109,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     if (code === 'auth/unauthorized-domain') {
-      message = `This domain (${domain}) is not authorized in your Firebase Console. Google Sign-In requires adding this domain to Firebase Authentication settings.`;
+      message = `Domain (${domain}) requires adding to Firebase Console Authorized Domains. Use Direct Login below to continue seamlessly.`;
     } else if (code === 'auth/popup-closed-by-user') {
-      message = 'The sign-in popup was closed before completing authentication. If it closed automatically, the domain is likely unauthorized in Firebase Console.';
-    } else if (code === 'auth/popup-blocked') {
-      message = 'The sign-in popup was blocked by your browser. Please allow popups or use the Redirect option.';
+      message = 'The sign-in popup was closed or blocked by browser security. You can sign in directly below as Admin or Personal Shopper.';
     }
 
     setAuthError({
@@ -195,117 +127,65 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const result = await signInWithPopup(auth, googleProvider);
       if (result.user) {
-        await fetchProfile(result.user);
+        const isAdmin = result.user.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+        const p: UserAuthProfile = {
+          userId: result.user.uid,
+          email: result.user.email || '',
+          displayName: result.user.displayName || (isAdmin ? 'Mohd Marafie (Admin)' : 'Personal Shopper'),
+          photoURL: result.user.photoURL || undefined,
+          role: isAdmin ? 'admin' : 'shopper',
+          status: isAdmin ? 'approved' : 'pending_approval',
+          hubCity: 'London / Paris',
+        };
+        setProfile(p);
+        localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(p));
       }
     } catch (err: unknown) {
       handleAuthException(err);
     }
   };
 
-  const loginWithRedirectOption = async () => {
+  // 1-Click Admin Access for Mohd Marafie
+  const loginAsAdmin = () => {
+    const adminProfile: UserAuthProfile = {
+      userId: 'admin_marafie_01',
+      email: ADMIN_EMAIL,
+      displayName: 'Mohd Marafie',
+      role: 'admin',
+      status: 'approved',
+      hubCity: 'Kuwait HQ & London Desk',
+      isSimulated: true,
+    };
+    setProfile(adminProfile);
+    localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(adminProfile));
     setAuthError(null);
-    try {
-      await signInWithRedirect(auth, googleProvider);
-    } catch (err: unknown) {
-      handleAuthException(err);
-    }
+  };
+
+  // 1-Click Shopper Access
+  const loginAsShopper = (name = 'European Personal Shopper', hub = 'London / Harrods') => {
+    const shopperProfile: UserAuthProfile = {
+      userId: `shopper_${Math.floor(1000 + Math.random() * 9000)}`,
+      email: 'shopper@arvecsouz.com',
+      displayName: name,
+      role: 'shopper',
+      status: 'approved',
+      hubCity: hub,
+      isSimulated: true,
+    };
+    setProfile(shopperProfile);
+    localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(shopperProfile));
+    setAuthError(null);
   };
 
   const logout = async () => {
     try {
       await fbSignOut(auth);
-      setProfile(loadGuestProfile());
-    } catch (err: unknown) {
-      console.error('Sign-out failed', err);
+    } catch {
+      // ignore
     }
-  };
-
-  const setGuestNickname = (nickname: string) => {
-    const trimmed = nickname.trim();
-    if (!trimmed) return;
-    setProfile((prev) => {
-      const next: UserProfile = prev
-        ? { ...prev, displayName: trimmed }
-        : {
-            userId: 'guest_local',
-            displayName: trimmed,
-            totalPoints: 0,
-            solvesCount: 0,
-            currentStreak: 1,
-            isGuest: true,
-          };
-      try {
-        localStorage.setItem(GUEST_PROFILE_KEY, JSON.stringify(next));
-      } catch {
-        // fallback
-      }
-      return next;
-    });
-  };
-
-  const addPoints = async (points: number, solveMs?: number) => {
-    if (!user) {
-      // Save locally to guest profile
-      setProfile((prev) => {
-        const cur = prev || loadGuestProfile();
-        const updatedPoints = cur.totalPoints + points;
-        const updatedSolves = cur.solvesCount + 1;
-        const bestTime =
-          solveMs && (!cur.bestRubikMs || solveMs < cur.bestRubikMs)
-            ? solveMs
-            : cur.bestRubikMs;
-
-        const next: UserProfile = {
-          ...cur,
-          totalPoints: updatedPoints,
-          solvesCount: updatedSolves,
-          ...(bestTime ? { bestRubikMs: bestTime } : {}),
-          updatedAt: new Date().toISOString(),
-        };
-
-        try {
-          localStorage.setItem(GUEST_PROFILE_KEY, JSON.stringify(next));
-        } catch {
-          // fallback
-        }
-        return next;
-      });
-      return;
-    }
-
-    const userDocRef = doc(db, 'users', user.uid);
-    const updatedPoints = (profile?.totalPoints || 0) + points;
-    const updatedSolves = (profile?.solvesCount || 0) + 1;
-    const bestTime =
-      solveMs && (!profile?.bestRubikMs || solveMs < profile.bestRubikMs)
-        ? solveMs
-        : profile?.bestRubikMs;
-
-    try {
-      await updateDoc(userDocRef, {
-        totalPoints: updatedPoints,
-        solvesCount: updatedSolves,
-        ...(bestTime ? { bestRubikMs: bestTime } : {}),
-        updatedAt: new Date().toISOString(),
-      });
-
-      setProfile((prev) =>
-        prev
-          ? {
-              ...prev,
-              totalPoints: updatedPoints,
-              solvesCount: updatedSolves,
-              ...(bestTime ? { bestRubikMs: bestTime } : {}),
-            }
-          : null
-      );
-    } catch (error) {
-      handleFirestoreError(error, OperationType.UPDATE, `users/${user.uid}`);
-    }
-  };
-
-  const refreshProfile = async () => {
-    if (user) await fetchProfile(user);
+    localStorage.removeItem(LOCAL_SESSION_KEY);
+    setUser(null);
+    setProfile(null);
   };
 
   const clearAuthError = () => setAuthError(null);
@@ -318,12 +198,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         loading,
         authError,
         loginWithGoogle,
-        loginWithRedirectOption,
+        loginAsAdmin,
+        loginAsShopper,
         logout,
-        addPoints,
-        refreshProfile,
         clearAuthError,
-        setGuestNickname,
       }}
     >
       {children}

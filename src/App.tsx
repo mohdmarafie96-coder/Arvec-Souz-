@@ -3,331 +3,321 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-  Search,
-  Table,
   PackageCheck,
-  Code2,
-  BookmarkCheck,
-  Share2,
-  FileSpreadsheet,
-  Globe,
-  LogIn,
-  LogOut,
-  User,
-  Sparkles,
-  HelpCircle,
-  ExternalLink,
+  Calculator,
+  Users,
+  Search,
+  Clock,
   ShieldCheck,
-  ArrowRight,
-  TrendingUp,
 } from 'lucide-react';
-import { ConditionTier, SourcingReport } from './types/sourcing';
-import { ArvecLogo } from './components/ArvecLogo';
-import { SourcingInputForm } from './components/SourcingInputForm';
-import { ExecutiveSummaryTable } from './components/ExecutiveSummaryTable';
-import { ItemizedSourceBreakdown } from './components/ItemizedSourceBreakdown';
-import { JsonModeViewer } from './components/JsonModeViewer';
+import { Language, UserProfile, SourcingOrder, VipClient } from './types/concierge';
+import { TRANSLATIONS } from './utils/translations';
+import { HeaderNav } from './components/HeaderNav';
+import { PipelineTab } from './components/PipelineTab';
+import { CalculatorTab } from './components/CalculatorTab';
+import { ClientsTab } from './components/ClientsTab';
+import { PublicTrackerSection } from './components/PublicTrackerSection';
+import { NewOrderModal } from './components/NewOrderModal';
+import { NewClientModal } from './components/NewClientModal';
+import { PublicTrackingModal } from './components/PublicTrackingModal';
+import { OrderCreatedSuccessModal } from './components/OrderCreatedSuccessModal';
+import { AdminApprovalsModal } from './components/AdminApprovalsModal';
 import { AuthErrorModal } from './components/AuthErrorModal';
-import { fetchSourcingReport } from './utils/sourcingEngine';
 import { useAuth } from './firebase/authContext';
-import { saveSourcingReportToFirestore } from './firebase/sourcingService';
+import {
+  syncUserProfile,
+  subscribeToOrders,
+  subscribeToClients,
+} from './firebase/conciergeService';
 
-type ViewMode = 'all' | 'table' | 'itemized' | 'json';
+type TabView = 'pipeline' | 'calculator' | 'clients' | 'tracking';
 
 export default function App() {
-  const { user, profile, loginWithGoogle, logout } = useAuth();
+  const { user, profile: authProfile, loginWithGoogle, logout } = useAuth();
 
-  // Active Sourcing Query & Report State (null initially until user submits)
-  const [report, setReport] = useState<SourcingReport | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [viewMode, setViewMode] = useState<ViewMode>('all');
-  const [isSaved, setIsSaved] = useState<boolean>(false);
-  const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null);
+  const [lang, setLang] = useState<Language>('en');
+  const [activeTab, setActiveTab] = useState<TabView>('pipeline');
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
-  // Execute new sourcing query
-  const handleSearch = async (params: {
-    item: string;
-    condition: ConditionTier;
-    country: string;
-    currency: string;
-  }) => {
-    setIsLoading(true);
-    setIsSaved(false);
-    setSaveSuccessMsg(null);
+  // Live Firestore collections (started empty with ZERO samples)
+  const [orders, setOrders] = useState<SourcingOrder[]>([]);
+  const [clients, setClients] = useState<VipClient[]>([]);
 
-    try {
-      const result = await fetchSourcingReport(
-        params.item,
-        params.condition,
-        params.country,
-        params.currency
-      );
-      setReport(result);
-    } catch (err) {
-      console.error('Failed to run sourcing query:', err);
-    } finally {
-      setIsLoading(false);
+  // Modals state
+  const [isNewOrderOpen, setIsNewOrderOpen] = useState<boolean>(false);
+  const [isNewClientOpen, setIsNewClientOpen] = useState<boolean>(false);
+  const [isAdminModalOpen, setIsAdminModalOpen] = useState<boolean>(false);
+  const [previewOrder, setPreviewOrder] = useState<SourcingOrder | null>(null);
+  const [createdOrderSuccess, setCreatedOrderSuccess] = useState<SourcingOrder | null>(null);
+
+  const t = TRANSLATIONS[lang];
+
+  // Sync user profile upon authentication
+  useEffect(() => {
+    if (authProfile) {
+      setUserProfile({
+        userId: authProfile.userId,
+        email: authProfile.email,
+        displayName: authProfile.displayName,
+        photoURL: authProfile.photoURL,
+        role: authProfile.role,
+        status: authProfile.status,
+        hubCity: authProfile.hubCity,
+        createdAt: new Date().toISOString(),
+      });
+    } else if (user) {
+      syncUserProfile({
+        uid: user.uid,
+        email: user.email,
+        displayName: user.displayName,
+        photoURL: user.photoURL,
+      }).then((p) => setUserProfile(p));
+    } else {
+      setUserProfile(null);
     }
+  }, [user, authProfile]);
+
+  // Subscribe to real-time Firestore collections
+  useEffect(() => {
+    const unsubOrders = subscribeToOrders((liveOrders) => {
+      setOrders(liveOrders);
+
+      // Check if URL has ?track=AS-XXXX or ?order=AS-XXXX query
+      if (typeof window !== 'undefined') {
+        const urlParams = new URLSearchParams(window.location.search);
+        const trackCode = urlParams.get('track') || urlParams.get('order');
+        if (trackCode) {
+          const match = liveOrders.find(
+            (o) => o.id.toUpperCase() === trackCode.toUpperCase()
+          );
+          if (match) {
+            setPreviewOrder(match);
+          }
+        }
+      }
+    });
+
+    const unsubClients = subscribeToClients((liveClients) => {
+      setClients(liveClients);
+    });
+
+    return () => {
+      unsubOrders();
+      unsubClients();
+    };
+  }, []);
+
+  const isAdmin = userProfile?.role === 'admin';
+  const isApproved = userProfile?.status === 'approved' || isAdmin;
+  const isPending = userProfile && !isApproved;
+
+  const handleToggleLang = () => {
+    setLang((prev) => (prev === 'en' ? 'ar' : 'en'));
   };
 
-  // Save report to Firestore
-  const handleSaveReport = async () => {
-    if (!report) return;
-    if (!user) {
+  const handleTransferQuote = (quoteData: {
+    retail: number;
+    totalQuote: number;
+    deposit: number;
+    currency: string;
+  }) => {
+    if (!userProfile) {
       loginWithGoogle();
       return;
     }
-
-    try {
-      await saveSourcingReportToFirestore(
-        user.uid,
-        profile?.displayName || user.displayName || 'Authorized Client',
-        report
-      );
-      setIsSaved(true);
-      setSaveSuccessMsg('Report saved securely to your Arvec Souz portfolio!');
-      setTimeout(() => setSaveSuccessMsg(null), 3500);
-    } catch (err) {
-      console.error('Failed to save report:', err);
-    }
-  };
-
-  const handleScrollToSource = (rank: number) => {
-    const el = document.getElementById(`source-card-${rank}`);
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
+    setIsNewOrderOpen(true);
   };
 
   return (
-    <div className="relative min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-sky-500/30">
-      {/* 1. TOP BAR CONTRACT: Brand Wordmark — Navigation Links — Primary Actions */}
-      <header className="sticky top-0 z-40 flex items-center justify-between px-4 sm:px-8 py-3.5 border-b border-slate-800/80 bg-slate-950/85 backdrop-blur-md">
-        {/* Zone 1: Single text element brand wordmark */}
-        <div className="flex items-center gap-4">
-          <ArvecLogo size="md" showSubtitle={false} />
-          <div className="hidden lg:flex items-center gap-2 pl-3 border-l border-slate-800 text-xs font-mono text-slate-400">
-            <span className="text-sky-400 font-semibold">ENGINE:</span>
-            <span>Smart Item Sourcing & Landed Cost</span>
-          </div>
-        </div>
+    <div
+      dir={lang === 'ar' ? 'rtl' : 'ltr'}
+      className={`relative min-h-screen bg-zinc-950 text-zinc-100 flex flex-col font-sans antialiased selection:bg-amber-500/30 selection:text-amber-200 ${
+        lang === 'ar' ? 'font-arabic' : ''
+      }`}
+    >
+      {/* 1. Header Navigation */}
+      <HeaderNav
+        lang={lang}
+        onToggleLang={handleToggleLang}
+        user={userProfile || user}
+        userProfile={userProfile}
+        orders={orders}
+        onOpenNewOrder={() => setIsNewOrderOpen(true)}
+        onOpenNewClient={() => setIsNewClientOpen(true)}
+        onOpenAdminModal={() => setIsAdminModalOpen(true)}
+        onOpenPublicTracker={() => setActiveTab('tracking')}
+        onLogin={loginWithGoogle}
+        onLogout={logout}
+        canManage={Boolean(isApproved)}
+      />
 
-        {/* Zone 2: Navigation Links / View Segmented Control (only when report exists) */}
-        {report && (
-          <nav className="hidden md:flex items-center gap-1 p-1 bg-slate-900 border border-slate-800 rounded-2xl">
+      {/* 2. Sub-Nav / Tabs Segmented Control */}
+      <div className="border-b border-zinc-800/60 bg-zinc-950/90 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto flex items-center justify-between overflow-x-auto py-2 gap-2 text-xs">
+          <div className="flex items-center gap-1.5">
             <button
-              onClick={() => setViewMode('all')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                viewMode === 'all'
-                  ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              Complete Report
-            </button>
-            <button
-              onClick={() => setViewMode('table')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                viewMode === 'table'
-                  ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <Table className="w-3.5 h-3.5" />
-              <span>Comparison Table</span>
-            </button>
-            <button
-              onClick={() => setViewMode('itemized')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                viewMode === 'itemized'
-                  ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
-                  : 'text-slate-400 hover:text-slate-200'
+              onClick={() => setActiveTab('pipeline')}
+              className={`px-3.5 py-1.5 rounded-lg border font-semibold transition-all flex items-center gap-2 cursor-pointer ${
+                activeTab === 'pipeline'
+                  ? 'bg-zinc-850 text-amber-200 border-amber-500/35'
+                  : 'text-zinc-400 hover:text-zinc-200 border-transparent'
               }`}
             >
               <PackageCheck className="w-3.5 h-3.5" />
-              <span>Top 5 Sources</span>
+              <span>{t.tabs.pipeline}</span>
+              <span className="px-1.5 py-0.2 rounded-full bg-zinc-800 text-zinc-300 text-[10px] font-mono">
+                {orders.length}
+              </span>
             </button>
+
             <button
-              onClick={() => setViewMode('json')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                viewMode === 'json'
-                  ? 'bg-purple-600 text-white shadow-md shadow-purple-600/20'
-                  : 'text-slate-400 hover:text-slate-200'
+              onClick={() => setActiveTab('calculator')}
+              className={`px-3.5 py-1.5 rounded-lg border font-semibold transition-all flex items-center gap-2 cursor-pointer ${
+                activeTab === 'calculator'
+                  ? 'bg-zinc-850 text-amber-200 border-amber-500/35'
+                  : 'text-zinc-400 hover:text-zinc-200 border-transparent'
               }`}
             >
-              <Code2 className="w-3.5 h-3.5" />
-              <span>JSON Mode</span>
+              <Calculator className="w-3.5 h-3.5" />
+              <span>{t.tabs.calculator}</span>
             </button>
-          </nav>
-        )}
 
-        {/* Zone 3: Actions & Account Authentication */}
-        <div className="flex items-center gap-2 sm:gap-3">
-          {report && (
             <button
-              onClick={handleSaveReport}
-              className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 border cursor-pointer ${
-                isSaved
-                  ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-300'
-                  : 'bg-slate-900 border-slate-800 hover:border-slate-700 text-slate-200'
+              onClick={() => setActiveTab('clients')}
+              className={`px-3.5 py-1.5 rounded-lg border font-semibold transition-all flex items-center gap-2 cursor-pointer ${
+                activeTab === 'clients'
+                  ? 'bg-zinc-850 text-amber-200 border-amber-500/35'
+                  : 'text-zinc-400 hover:text-zinc-200 border-transparent'
               }`}
-              title="Save this quote to your Firestore portfolio"
             >
-              <BookmarkCheck className={`w-3.5 h-3.5 ${isSaved ? 'text-emerald-400' : 'text-slate-400'}`} />
-              <span className="hidden sm:inline">{isSaved ? 'Saved to Cloud' : 'Save Quote'}</span>
+              <Users className="w-3.5 h-3.5" />
+              <span>{t.tabs.clients}</span>
+              <span className="px-1.5 py-0.2 rounded-full bg-zinc-800 text-zinc-300 text-[10px] font-mono">
+                {clients.length}
+              </span>
             </button>
-          )}
 
-          {/* User Sign-In or Avatar */}
-          {user ? (
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-slate-900 border border-slate-800">
-                {user.photoURL ? (
-                  <img
-                    src={user.photoURL}
-                    alt={user.displayName || 'Client'}
-                    className="w-5 h-5 rounded-lg object-cover"
-                    referrerPolicy="no-referrer"
-                  />
-                ) : (
-                  <div className="w-5 h-5 rounded-lg bg-blue-600/30 text-blue-400 flex items-center justify-center font-bold text-[10px]">
-                    <User className="w-3.5 h-3.5" />
-                  </div>
-                )}
-                <span className="text-xs font-semibold text-slate-200 max-w-[90px] truncate hidden md:inline">
-                  {profile?.displayName || user.displayName}
-                </span>
-              </div>
-              <button
-                onClick={logout}
-                className="p-2 rounded-xl text-slate-400 hover:text-red-400 hover:bg-slate-900 transition-colors"
-                title="Sign out"
-              >
-                <LogOut className="w-4 h-4" />
-              </button>
-            </div>
-          ) : (
             <button
-              onClick={loginWithGoogle}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-all active:scale-95 shadow-md shadow-blue-600/20 whitespace-nowrap cursor-pointer"
+              onClick={() => setActiveTab('tracking')}
+              className={`px-3.5 py-1.5 rounded-lg border font-semibold transition-all flex items-center gap-2 cursor-pointer ${
+                activeTab === 'tracking'
+                  ? 'bg-zinc-850 text-amber-200 border-amber-500/35'
+                  : 'text-zinc-400 hover:text-zinc-200 border-transparent'
+              }`}
             >
-              <LogIn className="w-3.5 h-3.5" />
-              <span>Sign In</span>
+              <Search className="w-3.5 h-3.5 text-amber-400" />
+              <span>{t.tabs.tracking}</span>
             </button>
-          )}
+          </div>
+
+          <div className="text-[11px] font-mono text-zinc-500 hidden sm:flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+            <span>{t.reliableSourcing}</span>
+          </div>
         </div>
-      </header>
+      </div>
 
-      {/* Save Success Alert Banner */}
-      {saveSuccessMsg && (
-        <div className="bg-emerald-950/80 border-b border-emerald-500/40 text-emerald-200 px-4 py-2 text-xs font-medium text-center animate-in fade-in duration-200">
-          ✓ {saveSuccessMsg}
+      {/* 3. Pending Shopper Approval Alert Banner */}
+      {isPending && (
+        <div className="bg-amber-950/70 border-b border-amber-500/30 text-amber-200 px-4 py-2.5 text-xs flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 max-w-4xl mx-auto">
+            <Clock className="w-4 h-4 text-amber-400 shrink-0" />
+            <span>{t.pendingApprovalMsg}</span>
+          </div>
         </div>
       )}
 
-      {/* 2. MAIN APPLICATION CONTENT */}
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-10 space-y-8">
-        {/* Hero Title & Mission Brief */}
-        <div className="space-y-2 text-left">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/10 border border-sky-500/20 text-sky-400 text-xs font-mono font-semibold">
-            <Sparkles className="w-3.5 h-3.5" />
-            Autonomous Verified Marketplace Sourcing & Customs Clearance
-          </div>
-          <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-white">
-            Smart Item Sourcing & Landed Cost Engine
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-400 max-w-3xl leading-relaxed">
-            Extracts item parameters, filters out unverified or out-of-stock listings across accredited global secondary and authorized retail networks, and executes deterministic CIF landed cost arithmetic: <strong>Item Base + Freight & Insurance + Customs Duty + Import VAT</strong>.
-          </p>
-        </div>
+      {/* 4. Main Tab Content */}
+      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-7 space-y-6">
+        {activeTab === 'pipeline' && (
+          <PipelineTab
+            orders={orders}
+            lang={lang}
+            onPreviewOrder={(ord) => setPreviewOrder(ord)}
+            canManage={Boolean(isApproved)}
+          />
+        )}
 
-        {/* Operational Workflow Form (Query Extraction & Normalization) */}
-        <SourcingInputForm onSearch={handleSearch} isLoading={isLoading} />
+        {activeTab === 'calculator' && (
+          <CalculatorTab lang={lang} onTransferQuote={handleTransferQuote} />
+        )}
 
-        {/* Report Display or Clean Initial Prompt State */}
-        {report ? (
-          <>
-            {/* Mobile View Switcher */}
-            <div className="flex md:hidden items-center justify-center gap-1 p-1 bg-slate-900 border border-slate-800 rounded-2xl">
-              <button
-                onClick={() => setViewMode('all')}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold ${
-                  viewMode === 'all' ? 'bg-blue-600 text-white' : 'text-slate-400'
-                }`}
-              >
-                All
-              </button>
-              <button
-                onClick={() => setViewMode('table')}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold ${
-                  viewMode === 'table' ? 'bg-blue-600 text-white' : 'text-slate-400'
-                }`}
-              >
-                Table
-              </button>
-              <button
-                onClick={() => setViewMode('itemized')}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold ${
-                  viewMode === 'itemized' ? 'bg-blue-600 text-white' : 'text-slate-400'
-                }`}
-              >
-                Top 5
-              </button>
-              <button
-                onClick={() => setViewMode('json')}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold ${
-                  viewMode === 'json' ? 'bg-purple-600 text-white' : 'text-slate-400'
-                }`}
-              >
-                JSON
-              </button>
-            </div>
+        {activeTab === 'clients' && (
+          <ClientsTab
+            clients={clients}
+            lang={lang}
+            onOpenNewClient={() => {
+              if (!userProfile) loginWithGoogle();
+              else setIsNewClientOpen(true);
+            }}
+            onNewOrderForClient={(clientId) => {
+              if (!userProfile) loginWithGoogle();
+              else setIsNewOrderOpen(true);
+            }}
+          />
+        )}
 
-            {/* Output Components Rendering */}
-            <div className="space-y-8 animate-in fade-in duration-300">
-              {/* Component 1: Executive Summary & Comparison Table */}
-              {(viewMode === 'all' || viewMode === 'table') && (
-                <ExecutiveSummaryTable report={report} onSelectSource={handleScrollToSource} />
-              )}
-
-              {/* Component 2: Itemized Breakdown (Top 5 Sources) */}
-              {(viewMode === 'all' || viewMode === 'itemized') && (
-                <ItemizedSourceBreakdown sources={report.sources} currency={report.query.currency} />
-              )}
-
-              {/* Component 3: JSON Structured Mode (Optional / API Integration) */}
-              {(viewMode === 'all' || viewMode === 'json') && (
-                <JsonModeViewer report={report} />
-              )}
-            </div>
-          </>
-        ) : (
-          <div className="p-8 sm:p-12 rounded-3xl bg-slate-900/50 border border-slate-800/80 text-center space-y-4">
-            <div className="w-12 h-12 rounded-2xl bg-sky-500/10 text-sky-400 border border-sky-500/20 flex items-center justify-center mx-auto">
-              <Search className="w-6 h-6" />
-            </div>
-            <div className="space-y-1 max-w-md mx-auto">
-              <h3 className="text-base font-bold text-slate-100">Ready to Source & Compute Landed Cost</h3>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Enter your item name, model year, reference, size, or material in the search box above to calculate accurate CIF pricing across 5 verified global sources.
-              </p>
-            </div>
-          </div>
+        {activeTab === 'tracking' && (
+          <PublicTrackerSection
+            orders={orders}
+            lang={lang}
+            onTrackOrder={(ord) => setPreviewOrder(ord)}
+          />
         )}
       </main>
 
-      {/* 3. FOOTER */}
-      <footer className="mt-auto border-t border-slate-800/80 bg-slate-950/80 py-6 px-4 text-center text-xs text-slate-500 font-mono">
+      {/* 5. Footer */}
+      <footer className="mt-auto border-t border-zinc-800/80 bg-zinc-950/80 py-6 px-4 text-center text-xs text-zinc-500 font-mono">
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-          <span>Arvec Souz © 2026 · Smart Item Sourcing & Landed Cost Engine</span>
+          <span>Arvec Souz © 2026 · {t.appSubtitle}</span>
           <span className="hidden sm:inline">·</span>
-          <span>Verified Sources: Sotheby's, Chrono24, WatchBox, FASHIONPHILE, B&H Photo, Farfetch</span>
+          <span>Europe ⇄ GCC Luxury Concierge Network</span>
         </div>
       </footer>
 
-      {/* Vercel Domain & Auth Troubleshooting Modal */}
+      {/* Modals */}
+      <NewOrderModal
+        isOpen={isNewOrderOpen}
+        onClose={() => setIsNewOrderOpen(false)}
+        clients={clients}
+        shopperId={userProfile?.userId || 'GUEST'}
+        shopperName={userProfile?.displayName || 'Personal Shopper'}
+        lang={lang}
+        onOrderCreated={(ord) => setCreatedOrderSuccess(ord)}
+      />
+
+      <NewClientModal
+        isOpen={isNewClientOpen}
+        onClose={() => setIsNewClientOpen(false)}
+        creatorId={userProfile?.userId || 'GUEST'}
+        lang={lang}
+      />
+
+      <PublicTrackingModal
+        isOpen={Boolean(previewOrder)}
+        onClose={() => setPreviewOrder(null)}
+        order={previewOrder}
+        lang={lang}
+      />
+
+      {/* Official VIP Dispatch Note Generated */}
+      <OrderCreatedSuccessModal
+        order={createdOrderSuccess}
+        onClose={() => setCreatedOrderSuccess(null)}
+        lang={lang}
+      />
+
+      {isAdmin && (
+        <AdminApprovalsModal
+          isOpen={isAdminModalOpen}
+          onClose={() => setIsAdminModalOpen(false)}
+          lang={lang}
+          currentAdminUid={userProfile?.userId || ''}
+        />
+      )}
+
       <AuthErrorModal />
     </div>
   );

@@ -2,12 +2,17 @@
   "entities": {
     "UserProfile": {
       "title": "UserProfile",
-      "description": "User profile, total accumulated arcade points, and game statistics",
+      "description": "User profile with Personal Shopper verification status and Admin RBAC",
       "type": "object",
       "properties": {
         "userId": {
           "type": "string",
           "description": "User auth UID",
+          "maxLength": 128
+        },
+        "email": {
+          "type": "string",
+          "description": "Email address",
           "maxLength": 128
         },
         "displayName": {
@@ -20,125 +25,206 @@
           "description": "Avatar image URL",
           "maxLength": 512
         },
-        "totalPoints": {
-          "type": "number",
-          "description": "Total arcade points accumulated across games"
-        },
-        "solvesCount": {
-          "type": "number",
-          "description": "Total count of games solved"
-        },
-        "bestRubikMs": {
-          "type": "number",
-          "description": "Best Rubik's cube solve time in milliseconds"
-        },
-        "currentStreak": {
-          "type": "number",
-          "description": "Current daily or solve streak"
-        },
-        "updatedAt": {
+        "role": {
           "type": "string",
-          "description": "ISO timestamp of last update"
-        }
-      },
-      "required": ["userId", "displayName", "totalPoints", "solvesCount"]
-    },
-    "GameSolve": {
-      "title": "GameSolve",
-      "description": "Record of an individual completed solo game solve with point calculation",
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique solve document ID",
-          "maxLength": 128
+          "description": "User role (admin or shopper)",
+          "enum": ["admin", "shopper"]
         },
-        "userId": {
+        "status": {
           "type": "string",
-          "description": "Author UID",
-          "maxLength": 128
+          "description": "Approval status by admin",
+          "enum": ["pending_approval", "approved", "rejected"]
         },
-        "userName": {
+        "hubCity": {
           "type": "string",
-          "description": "Author display name",
+          "description": "Primary sourcing hub city (London, Paris, Milan, etc.)",
           "maxLength": 80
         },
-        "gameType": {
+        "phone": {
           "type": "string",
-          "description": "Type of game (rubiks_3x3, rubiks_2x2, slide_puzzle, lights_out)",
-          "enum": ["rubiks_3x3", "rubiks_2x2", "slide_puzzle", "lights_out"]
+          "description": "WhatsApp or contact number",
+          "maxLength": 40
         },
-        "timeMs": {
-          "type": "number",
-          "description": "Time to solve in milliseconds"
-        },
-        "movesCount": {
-          "type": "number",
-          "description": "Total moves used to solve"
-        },
-        "pointsEarned": {
-          "type": "number",
-          "description": "Points earned for this solo solve"
-        },
-        "scramble": {
+        "specialization": {
           "type": "string",
-          "description": "Scramble notation or initial puzzle state",
-          "maxLength": 500
-        },
-        "tps": {
-          "type": "number",
-          "description": "Turns or moves per second"
+          "description": "Luxury brand or category specialization",
+          "maxLength": 150
         },
         "createdAt": {
           "type": "string",
           "description": "ISO timestamp"
         }
       },
-      "required": ["userId", "userName", "gameType", "timeMs", "movesCount", "pointsEarned"]
+      "required": ["userId", "displayName", "role", "status"]
     },
-    "TutorialProgress": {
-      "title": "TutorialProgress",
-      "description": "Tracks progress through Rubik's interactive learning stages",
+    "SourcingOrder": {
+      "title": "SourcingOrder",
+      "description": "Luxury procurement job record tracked through the 7-stage pipeline",
       "type": "object",
       "properties": {
-        "stageId": {
+        "id": {
           "type": "string",
-          "description": "Identifier for the tutorial stage",
+          "description": "Unique Order ID (e.g. ORD-1001)",
           "maxLength": 64
         },
-        "userId": {
+        "shopperId": {
           "type": "string",
-          "description": "User UID",
+          "description": "UID of the personal shopper",
           "maxLength": 128
         },
-        "completed": {
-          "type": "boolean",
-          "description": "Whether the stage is completed"
-        },
-        "pointsAwarded": {
-          "type": "number",
-          "description": "Points awarded for completing this step"
-        },
-        "completedAt": {
+        "shopperName": {
           "type": "string",
-          "description": "ISO timestamp of completion"
+          "description": "Shopper name",
+          "maxLength": 80
+        },
+        "clientId": {
+          "type": "string",
+          "description": "VIP client ID",
+          "maxLength": 64
+        },
+        "clientName": {
+          "type": "string",
+          "description": "VIP client name",
+          "maxLength": 80
+        },
+        "brand": {
+          "type": "string",
+          "description": "Luxury house (Hermès, Chanel, Rolex, etc.)",
+          "maxLength": 64
+        },
+        "title": {
+          "type": "string",
+          "description": "Item description and model name",
+          "maxLength": 180
+        },
+        "size": {
+          "type": "string",
+          "description": "Item dimensions or sizing",
+          "maxLength": 64
+        },
+        "image": {
+          "type": "string",
+          "description": "Product photograph URL",
+          "maxLength": 512
+        },
+        "sourcingCity": {
+          "type": "string",
+          "description": "Boutique sourcing origin",
+          "maxLength": 80
+        },
+        "destinationCity": {
+          "type": "string",
+          "description": "Destination GCC city",
+          "maxLength": 80
+        },
+        "stage": {
+          "type": "string",
+          "description": "Current pipeline phase",
+          "maxLength": 40
+        },
+        "retailTagPrice": {
+          "type": "number",
+          "description": "European boutique retail price"
+        },
+        "totalLandedQuote": {
+          "type": "number",
+          "description": "Final landed quote in GCC currency"
+        },
+        "depositPaid": {
+          "type": "number",
+          "description": "Deposit collected in advance"
+        },
+        "balanceDue": {
+          "type": "number",
+          "description": "Remaining balance upon arrival"
+        },
+        "currency": {
+          "type": "string",
+          "description": "GCC currency code (KWD, SAR, AED, QAR)",
+          "maxLength": 10
+        },
+        "awb": {
+          "type": "string",
+          "description": "Air Waybill or courier tracking reference",
+          "maxLength": 80
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO timestamp"
         }
       },
-      "required": ["stageId", "userId", "completed"]
+      "required": ["id", "shopperId", "brand", "title", "stage", "totalLandedQuote", "currency"]
+    },
+    "VipClient": {
+      "title": "VipClient",
+      "description": "VIP patron dossier with apparel, footwear, and jewelry measurements",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Client ID (e.g. CLI-01)",
+          "maxLength": 64
+        },
+        "createdBy": {
+          "type": "string",
+          "description": "Shopper UID who registered the client",
+          "maxLength": 128
+        },
+        "name": {
+          "type": "string",
+          "description": "Full honorific and patron name",
+          "maxLength": 80
+        },
+        "phone": {
+          "type": "string",
+          "description": "WhatsApp contact number",
+          "maxLength": 40
+        },
+        "city": {
+          "type": "string",
+          "description": "GCC city and country",
+          "maxLength": 80
+        },
+        "shoeSize": {
+          "type": "string",
+          "description": "EU shoe measurement",
+          "maxLength": 30
+        },
+        "ringSize": {
+          "type": "string",
+          "description": "EU ring measurement",
+          "maxLength": 30
+        },
+        "rtwSize": {
+          "type": "string",
+          "description": "Ready-to-wear size (FR / IT)",
+          "maxLength": 40
+        },
+        "currency": {
+          "type": "string",
+          "description": "Preferred GCC currency code",
+          "maxLength": 10
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO timestamp"
+        }
+      },
+      "required": ["id", "name", "phone", "city"]
     }
   },
   "firestore": {
     "/users/{userId}": {
       "schema": "UserProfile",
-      "description": "Stores user profile and point totals"
+      "description": "User profiles with role and approval status"
     },
-    "/solves/{solveId}": {
-      "schema": "GameSolve",
-      "description": "Public arcade leaderboard and solve records"
+    "/sourcingOrders/{orderId}": {
+      "schema": "SourcingOrder",
+      "description": "Verified luxury sourcing orders"
     },
-    "/users/{userId}/tutorialProgress/{stageId}": {
-      "schema": "TutorialProgress",
-      "description": "Individual user tutorial completion records"
+    "/vipClients/{clientId}": {
+      "schema": "VipClient",
+      "description": "VIP patron directory and measurement dossier"
     }
   }
 }
