@@ -13,10 +13,8 @@ interface HeaderNavProps {
   pendingShoppersCount: number;
   onOpenNewOrder: () => void;
   onOpenNewClient: () => void;
-  onOpenAdminModal: () => void;
   onOpenPublicTracker: () => void;
   onOpenShopperRegister: () => void;
-  onLogin: () => void;
   onLogout: () => void;
   canManage: boolean;
 }
@@ -30,10 +28,8 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
   pendingShoppersCount,
   onOpenNewOrder,
   onOpenNewClient,
-  onOpenAdminModal,
   onOpenPublicTracker,
   onOpenShopperRegister,
-  onLogin,
   onLogout,
   canManage,
 }) => {
@@ -119,25 +115,8 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
             <span className="font-sans font-bold">{lang === 'en' ? 'العربية' : 'English'}</span>
           </button>
 
-          {/* Admin Panel Button */}
-          {isAdmin && (
-            <button
-              onClick={onOpenAdminModal}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-500/10 border border-purple-500/30 hover:bg-purple-500/20 text-purple-300 text-xs font-bold transition-all cursor-pointer"
-              title="Admin personal shoppers approvals panel"
-            >
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">{t.adminPanelBtn}</span>
-              {pendingShoppersCount > 0 && (
-                <span className="px-1.5 py-0.2 rounded-full bg-amber-400 text-zinc-950 font-mono text-[10px] font-extrabold animate-pulse">
-                  {pendingShoppersCount}
-                </span>
-              )}
-            </button>
-          )}
-
           {/* Apply as Personal Shopper */}
-          {!isAdmin && (
+          {!userProfile && (
             <button
               onClick={onOpenShopperRegister}
               className="hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-zinc-900 border border-zinc-800 hover:border-amber-500/40 text-xs font-semibold text-zinc-300 hover:text-amber-300 transition-all cursor-pointer"
@@ -168,38 +147,27 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
             </>
           )}
 
-          {/* Auth State */}
-          {user ? (
+          {/* Auth State (Personal Shopper Session) */}
+          {userProfile && (
             <div className="flex items-center gap-2">
               <div
                 className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-zinc-900 border border-zinc-800"
-                title={`Signed in as ${user.email} (${userProfile?.role || 'shopper'})`}
+                title={`Signed in as ${userProfile.displayName} (${userProfile.hubCity || 'Shopper'})`}
               >
-                {user.photoURL ? (
-                  <img
-                    src={user.photoURL}
-                    alt={user.displayName || 'Shopper'}
-                    className="w-5 h-5 rounded-lg object-cover"
-                    referrerPolicy="no-referrer"
-                  />
-                ) : (
-                  <div className="w-5 h-5 rounded-lg bg-amber-500/20 text-amber-300 flex items-center justify-center font-bold text-[10px]">
-                    <User className="w-3.5 h-3.5" />
-                  </div>
-                )}
+                <div className="w-5 h-5 rounded-lg bg-amber-500/20 text-amber-300 flex items-center justify-center font-bold text-[10px]">
+                  <User className="w-3.5 h-3.5" />
+                </div>
                 <span className="text-xs font-semibold text-zinc-200 max-w-[80px] truncate hidden sm:inline">
-                  {userProfile?.displayName || user.displayName}
+                  {userProfile.displayName}
                 </span>
                 <span
                   className={`text-[9px] font-mono px-1.5 py-0.5 rounded font-bold ${
-                    isAdmin
-                      ? 'bg-purple-500/20 text-purple-300'
-                      : isApproved
+                    isApproved
                       ? 'bg-emerald-500/20 text-emerald-300'
                       : 'bg-amber-500/20 text-amber-300'
                   }`}
                 >
-                  {isAdmin ? 'ADMIN' : isApproved ? 'APPROVED' : 'PENDING'}
+                  {isApproved ? 'APPROVED' : 'PENDING'}
                 </span>
               </div>
               <button
@@ -210,14 +178,6 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
                 <LogOut className="w-4 h-4" />
               </button>
             </div>
-          ) : (
-            <button
-              onClick={onLogin}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-amber-500 hover:bg-amber-400 text-zinc-950 rounded-xl text-xs font-bold transition-all active:scale-95 shadow-md shadow-amber-500/20 whitespace-nowrap cursor-pointer"
-            >
-              <LogIn className="w-3.5 h-3.5" />
-              <span>{t.signInBtn}</span>
-            </button>
           )}
         </div>
       </div>

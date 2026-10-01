@@ -23,9 +23,8 @@ import { NewOrderModal } from './components/NewOrderModal';
 import { NewClientModal } from './components/NewClientModal';
 import { PublicTrackingModal } from './components/PublicTrackingModal';
 import { OrderCreatedSuccessModal } from './components/OrderCreatedSuccessModal';
-import { AdminApprovalsModal } from './components/AdminApprovalsModal';
 import { ShopperRegisterModal } from './components/ShopperRegisterModal';
-import { AuthErrorModal } from './components/AuthErrorModal';
+import { AdminPortalPage } from './components/AdminPortalPage';
 import { useAuth } from './firebase/authContext';
 import {
   syncUserProfile,
@@ -36,14 +35,44 @@ import {
 
 type TabView = 'pipeline' | 'calculator' | 'clients' | 'tracking';
 
+const checkIsAdminRoute = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  const path = window.location.pathname.toLowerCase();
+  const search = window.location.search.toLowerCase();
+  const hash = window.location.hash.toLowerCase();
+  return (
+    path.includes('adminmarafie') ||
+    search.includes('adminmarafie') ||
+    hash.includes('adminmarafie')
+  );
+};
+
 export default function App() {
-  const { user, profile: authProfile, loginWithGoogle, logout } = useAuth();
+  const { user, profile: authProfile, logout } = useAuth();
+
+  // Page Routing: Secret Admin Page (arvecsouz.vercel.app/adminmarafie) vs Main Application
+  const [currentPage, setCurrentPage] = useState<'main' | 'admin'>(() => {
+    return checkIsAdminRoute() ? 'admin' : 'main';
+  });
 
   const [lang, setLang] = useState<Language>('en');
   const [activeTab, setActiveTab] = useState<TabView>('pipeline');
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
-  // Live Firestore collections (started empty with ZERO samples)
+  // Listen to browser navigation changes (e.g. going to /adminmarafie or back)
+  useEffect(() => {
+    const handleLocationChange = () => {
+      if (checkIsAdminRoute()) {
+        setCurrentPage('admin');
+      } else {
+        setCurrentPage('main');
+      }
+    };
+    window.addEventListener('popstate', handleLocationChange);
+    return () => window.removeEventListener('popstate', handleLocationChange);
+  }, []);
+
+  // Live Firestore collections
   const [orders, setOrders] = useState<SourcingOrder[]>([]);
   const [clients, setClients] = useState<VipClient[]>([]);
   const [shoppersList, setShoppersList] = useState<UserProfile[]>([]);
@@ -51,7 +80,6 @@ export default function App() {
   // Modals state
   const [isNewOrderOpen, setIsNewOrderOpen] = useState<boolean>(false);
   const [isNewClientOpen, setIsNewClientOpen] = useState<boolean>(false);
-  const [isAdminModalOpen, setIsAdminModalOpen] = useState<boolean>(false);
   const [isShopperRegisterOpen, setIsShopperRegisterOpen] = useState<boolean>(false);
   const [previewOrder, setPreviewOrder] = useState<SourcingOrder | null>(null);
   const [createdOrderSuccess, setCreatedOrderSuccess] = useState<SourcingOrder | null>(null);
@@ -143,13 +171,26 @@ export default function App() {
     deposit: number;
     currency: string;
   }) => {
-    if (!userProfile) {
-      loginWithGoogle();
-      return;
-    }
     setIsNewOrderOpen(true);
   };
 
+  // IF CURRENT VIEW IS ADMIN PORTAL: Render the independent Admin Page
+  if (currentPage === 'admin') {
+    return (
+      <AdminPortalPage
+        lang={lang}
+        onToggleLang={handleToggleLang}
+        onExitAdmin={() => {
+          setCurrentPage('main');
+          if (typeof window !== 'undefined' && window.history.pushState) {
+            window.history.pushState({}, '', '/');
+          }
+        }}
+      />
+    );
+  }
+
+  // MAIN USER & PERSONAL SHOPPER PORTAL
   return (
     <div
       dir={lang === 'ar' ? 'rtl' : 'ltr'}
@@ -167,10 +208,8 @@ export default function App() {
         pendingShoppersCount={pendingShoppersCount}
         onOpenNewOrder={() => setIsNewOrderOpen(true)}
         onOpenNewClient={() => setIsNewClientOpen(true)}
-        onOpenAdminModal={() => setIsAdminModalOpen(true)}
         onOpenPublicTracker={() => setActiveTab('tracking')}
         onOpenShopperRegister={() => setIsShopperRegisterOpen(true)}
-        onLogin={loginWithGoogle}
         onLogout={logout}
         canManage={Boolean(isApproved)}
       />
@@ -270,14 +309,8 @@ export default function App() {
           <ClientsTab
             clients={clients}
             lang={lang}
-            onOpenNewClient={() => {
-              if (!userProfile) loginWithGoogle();
-              else setIsNewClientOpen(true);
-            }}
-            onNewOrderForClient={(clientId) => {
-              if (!userProfile) loginWithGoogle();
-              else setIsNewOrderOpen(true);
-            }}
+            onOpenNewClient={() => setIsNewClientOpen(true)}
+            onNewOrderForClient={(clientId) => setIsNewOrderOpen(true)}
           />
         )}
 
@@ -331,15 +364,6 @@ export default function App() {
         lang={lang}
       />
 
-      {isAdmin && (
-        <AdminApprovalsModal
-          isOpen={isAdminModalOpen}
-          onClose={() => setIsAdminModalOpen(false)}
-          lang={lang}
-          currentAdminUid={userProfile?.userId || ''}
-        />
-      )}
-
       {/* Shopper Application Modal */}
       <ShopperRegisterModal
         isOpen={isShopperRegisterOpen}
@@ -350,7 +374,6 @@ export default function App() {
         }}
       />
 
-      <AuthErrorModal />
     </div>
   );
 }
