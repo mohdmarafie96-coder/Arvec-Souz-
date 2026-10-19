@@ -501,9 +501,15 @@ export function App() {
         shopperId={userProfile?.userId || 'shopper_marafie'}
         shopperName={userProfile?.displayName || 'Arvec Personal Shopper'}
         lang={lang}
+        prefillData={quoteTransferData || undefined}
+        prefillClientId={selectedClientIdForOrder || undefined}
         onOrderCreated={(order: SourcingOrder) => {
           setCreatedOrder(order);
+          setOrders((prev) => [order, ...prev.filter((o) => o.id !== order.id)]);
           setIsNewOrderOpen(false);
+        }}
+        onOpenNewClientModal={() => {
+          setIsNewClientOpen(true);
         }}
       />
 
@@ -513,6 +519,10 @@ export function App() {
         onClose={() => setIsNewClientOpen(false)}
         creatorId={userProfile?.userId || 'admin'}
         lang={lang}
+        onClientCreated={(newClient: VipClient) => {
+          setClients((prev) => [newClient, ...prev.filter((c) => c.id !== newClient.id)]);
+          setIsNewClientOpen(false);
+        }}
       />
 
       {/* Order Created Success Receipt Modal */}

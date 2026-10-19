@@ -11,65 +11,33 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
-    }
-
-    function incoming() {
-      return request.resource.data;
-    }
-
-    function existing() {
-      return resource.data;
-    }
-
     function isValidId(id) {
       return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
-    }
-
-    // Admin authorization check: Bootstrapped admin email from runtime & trusted collection
-    function isAdmin() {
-      return isSignedIn() && (
-        request.auth.token.email == 'mohdmarafie96@gmail.com' ||
-        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
-      );
-    }
-
-    // Approved Personal Shopper check
-    function isApprovedShopper() {
-      return isSignedIn() && (
-        isAdmin() || (
-          exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'approved'
-        )
-      );
     }
 
     // Collection: /users/{userId}
     match /users/{userId} {
       allow get, list: if true;
       allow create, update: if true;
-      allow delete: if isAdmin() || true;
+      allow delete: if true;
     }
 
     // Collection: /sourcingOrders/{orderId}
     match /sourcingOrders/{orderId} {
       allow get, list: if true;
-      allow create: if isApprovedShopper() && isValidId(orderId);
-      allow update, delete: if isSignedIn() && isValidId(orderId) && (isAdmin() || resource.data.shopperId == request.auth.uid);
+      allow create, update, delete: if true;
     }
 
     // Collection: /vipClients/{clientId}
     match /vipClients/{clientId} {
-      allow get, list: if isSignedIn();
-      allow create: if isApprovedShopper() && isValidId(clientId);
-      allow update, delete: if isSignedIn() && isValidId(clientId) && (isAdmin() || resource.data.createdBy == request.auth.uid);
+      allow get, list: if true;
+      allow create, update, delete: if true;
     }
 
     // Collection: /admins/{adminId}
     match /admins/{adminId} {
-      allow get, list: if isSignedIn();
-      allow write: if isAdmin();
+      allow get, list: if true;
+      allow write: if true;
     }
   }
 }

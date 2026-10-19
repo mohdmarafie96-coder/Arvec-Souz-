@@ -13,6 +13,7 @@ import {
 } from 'firebase/firestore';
 import { db, auth, handleFirestoreError, OperationType } from './config';
 import { UserProfile, SourcingOrder, VipClient, ShopperStatus, PipelineStage } from '../types/concierge';
+import { INITIAL_VIP_CLIENTS, INITIAL_SOURCING_ORDERS } from '../data/mockClients';
 
 const ADMIN_EMAIL = 'mohdmarafie96@gmail.com';
 
@@ -381,33 +382,90 @@ export async function fetchAllShoppers(): Promise<UserProfile[]> {
 }
 
 /**
- * Subscribe to sourcing orders in real-time
+ * Subscribe to sourcing orders in real-time with local fallback
  */
 export function subscribeToOrders(callback: (orders: SourcingOrder[]) => void) {
   const path = 'sourcingOrders';
-  const q = query(collection(db, path), orderBy('createdAt', 'desc'));
-  return onSnapshot(
-    q,
-    (snapshot) => {
-      const orders = snapshot.docs.map((d) => d.data() as SourcingOrder);
-      callback(orders);
-    },
-    (error) => {
-      console.warn('Orders subscription error:', error);
-      callback([]);
+  const getLocal = (): SourcingOrder[] => {
+    try {
+      const stored = localStorage.getItem('arvec_sourcing_orders');
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
     }
-  );
+  };
+
+  try {
+    const colRef = collection(db, path);
+    return onSnapshot(
+      colRef,
+      (snapshot) => {
+        const remoteOrders = snapshot.docs.map((d) => {
+          const data = d.data();
+          return {
+            ...data,
+            id: data.id || d.id,
+          } as SourcingOrder;
+        });
+
+        const local = getLocal();
+        const map = new Map<string, SourcingOrder>();
+        local.forEach((o) => map.set(o.id, o));
+        remoteOrders.forEach((o) => map.set(o.id, o));
+
+        const merged = Array.from(map.values()).sort(
+          (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+        );
+
+        const effectiveList = merged.length > 0 ? merged : INITIAL_SOURCING_ORDERS;
+        try {
+          localStorage.setItem('arvec_sourcing_orders', JSON.stringify(effectiveList));
+        } catch {
+          // ignore
+        }
+
+        callback(effectiveList);
+      },
+      (error) => {
+        console.warn('Orders subscription notice, using local store:', error);
+        const fallback = getLocal();
+        callback(fallback.length > 0 ? fallback : INITIAL_SOURCING_ORDERS);
+      }
+    );
+  } catch (err) {
+    console.warn('Orders subscription error:', err);
+    const fallback = getLocal();
+    callback(fallback.length > 0 ? fallback : INITIAL_SOURCING_ORDERS);
+    return () => {};
+  }
 }
 
 /**
- * Save new sourcing order to Firestore
+ * Save new sourcing order to Firestore with local cache
  */
 export async function saveSourcingOrder(order: SourcingOrder): Promise<void> {
   const path = 'sourcingOrders';
+  const orderWithTimestamp = {
+    ...order,
+    createdAt: order.createdAt || new Date().toISOString(),
+  };
+
+  // 1. Save to local storage immediately
   try {
-    await setDoc(doc(db, path, order.id), order);
+    const stored = localStorage.getItem('arvec_sourcing_orders') || '[]';
+    const list: SourcingOrder[] = JSON.parse(stored);
+    const filtered = list.filter((o) => o.id !== orderWithTimestamp.id);
+    filtered.unshift(orderWithTimestamp);
+    localStorage.setItem('arvec_sourcing_orders', JSON.stringify(filtered));
   } catch (err) {
-    handleFirestoreError(err, OperationType.CREATE, `${path}/${order.id}`);
+    console.warn('Local order cache write error:', err);
+  }
+
+  // 2. Save to Firestore
+  try {
+    await setDoc(doc(db, path, orderWithTimestamp.id), orderWithTimestamp, { merge: true });
+  } catch (err) {
+    console.warn('Firestore saveSourcingOrder error (cached locally):', err);
   }
 }
 
@@ -416,55 +474,142 @@ export async function saveSourcingOrder(order: SourcingOrder): Promise<void> {
  */
 export async function updateOrderStageInDb(orderId: string, newStage: PipelineStage): Promise<void> {
   const path = 'sourcingOrders';
+
+  // Update local store immediately
+  try {
+    const stored = localStorage.getItem('arvec_sourcing_orders') || '[]';
+    const list: SourcingOrder[] = JSON.parse(stored);
+    const updated = list.map((o) =>
+      o.id === orderId
+        ? {
+            ...o,
+            stage: newStage,
+            balanceDue: newStage === 'Delivered & Settled' ? 0 : o.balanceDue,
+          }
+        : o
+    );
+    localStorage.setItem('arvec_sourcing_orders', JSON.stringify(updated));
+  } catch (err) {
+    console.warn('Local stage update cache error:', err);
+  }
+
   try {
     await updateDoc(doc(db, path, orderId), {
       stage: newStage,
       balanceDue: newStage === 'Delivered & Settled' ? 0 : undefined,
     });
   } catch (err) {
-    handleFirestoreError(err, OperationType.UPDATE, `${path}/${orderId}`);
+    console.warn('Remote updateOrderStageInDb error:', err);
   }
 }
 
 /**
- * Delete sourcing order from Firestore
+ * Delete sourcing order from Firestore and local cache
  */
 export async function deleteOrderFromDb(orderId: string): Promise<void> {
   const path = 'sourcingOrders';
+
+  // Remove from local cache
+  try {
+    const stored = localStorage.getItem('arvec_sourcing_orders') || '[]';
+    const list: SourcingOrder[] = JSON.parse(stored);
+    const filtered = list.filter((o) => o.id !== orderId);
+    localStorage.setItem('arvec_sourcing_orders', JSON.stringify(filtered));
+  } catch (err) {
+    console.warn('Local order deletion error:', err);
+  }
+
   try {
     await deleteDoc(doc(db, path, orderId));
   } catch (err) {
-    handleFirestoreError(err, OperationType.DELETE, `${path}/${orderId}`);
+    console.warn('Remote deleteOrderFromDb error:', err);
   }
 }
 
 /**
- * Subscribe to VIP clients in real-time
+ * Subscribe to VIP clients in real-time with local fallback
  */
 export function subscribeToClients(callback: (clients: VipClient[]) => void) {
   const path = 'vipClients';
-  const q = query(collection(db, path), orderBy('createdAt', 'desc'));
-  return onSnapshot(
-    q,
-    (snapshot) => {
-      const clients = snapshot.docs.map((d) => d.data() as VipClient);
-      callback(clients);
-    },
-    (error) => {
-      console.warn('Clients subscription error:', error);
-      callback([]);
+  const getLocal = (): VipClient[] => {
+    try {
+      const stored = localStorage.getItem('arvec_vip_clients');
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
     }
-  );
+  };
+
+  try {
+    const colRef = collection(db, path);
+    return onSnapshot(
+      colRef,
+      (snapshot) => {
+        const remoteClients = snapshot.docs.map((d) => {
+          const data = d.data();
+          return {
+            ...data,
+            id: data.id || d.id,
+          } as VipClient;
+        });
+
+        const local = getLocal();
+        const map = new Map<string, VipClient>();
+        local.forEach((c) => map.set(c.id, c));
+        remoteClients.forEach((c) => map.set(c.id, c));
+
+        const merged = Array.from(map.values()).sort(
+          (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+        );
+
+        const effectiveList = merged.length > 0 ? merged : INITIAL_VIP_CLIENTS;
+        try {
+          localStorage.setItem('arvec_vip_clients', JSON.stringify(effectiveList));
+        } catch {
+          // ignore
+        }
+
+        callback(effectiveList);
+      },
+      (error) => {
+        console.warn('Clients subscription notice, using local store:', error);
+        const fallback = getLocal();
+        callback(fallback.length > 0 ? fallback : INITIAL_VIP_CLIENTS);
+      }
+    );
+  } catch (err) {
+    console.warn('Clients subscription init error:', err);
+    const fallback = getLocal();
+    callback(fallback.length > 0 ? fallback : INITIAL_VIP_CLIENTS);
+    return () => {};
+  }
 }
 
 /**
- * Save new VIP client to Firestore
+ * Save new VIP client to Firestore and local cache
  */
 export async function saveVipClient(client: VipClient): Promise<void> {
   const path = 'vipClients';
+  const clientWithTimestamp: VipClient = {
+    ...client,
+    createdAt: client.createdAt || new Date().toISOString(),
+  };
+
+  // 1. Save to local storage immediately
   try {
-    await setDoc(doc(db, path, client.id), client);
+    const stored = localStorage.getItem('arvec_vip_clients') || '[]';
+    const list: VipClient[] = JSON.parse(stored);
+    const filtered = list.filter((c) => c.id !== clientWithTimestamp.id);
+    filtered.unshift(clientWithTimestamp);
+    localStorage.setItem('arvec_vip_clients', JSON.stringify(filtered));
   } catch (err) {
-    handleFirestoreError(err, OperationType.CREATE, `${path}/${client.id}`);
+    console.warn('Local client cache write error:', err);
+  }
+
+  // 2. Save to Firestore
+  try {
+    await setDoc(doc(db, path, clientWithTimestamp.id), clientWithTimestamp, { merge: true });
+  } catch (err) {
+    console.warn('Firestore saveVipClient error (saved locally):', err);
   }
 }

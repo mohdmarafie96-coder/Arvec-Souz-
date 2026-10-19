@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, UserPlus, Phone, MapPin } from 'lucide-react';
-import { Language } from '../types/concierge';
+import { Language, VipClient } from '../types/concierge';
 import { saveVipClient } from '../firebase/conciergeService';
 
 interface NewClientModalProps {
@@ -8,6 +8,7 @@ interface NewClientModalProps {
   onClose: () => void;
   creatorId: string;
   lang: Language;
+  onClientCreated?: (client: VipClient) => void;
 }
 
 export const NewClientModal: React.FC<NewClientModalProps> = ({
@@ -15,6 +16,7 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({
   onClose,
   creatorId,
   lang,
+  onClientCreated,
 }) => {
   const [name, setName] = useState<string>('');
   const [phone, setPhone] = useState<string>('');
@@ -33,21 +35,31 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({
     setIsSubmitting(true);
     const clientId = `CLI-${Math.floor(100 + Math.random() * 900)}`;
 
+    const newClient: VipClient = {
+      id: clientId,
+      createdBy: creatorId,
+      name: name.trim(),
+      phone: phone.trim(),
+      city: city.trim(),
+      shoeSize: shoeSize.trim() || '—',
+      ringSize: ringSize.trim() || '—',
+      rtwSize: rtwSize.trim() || '—',
+      currency: city.includes('Kuwait') ? 'KWD' : city.includes('Saudi') ? 'SAR' : 'AED',
+      totalOrders: 0,
+      lifetimeSpend: '—',
+      createdAt: new Date().toISOString(),
+    };
+
     try {
-      await saveVipClient({
-        id: clientId,
-        createdBy: creatorId,
-        name: name.trim(),
-        phone: phone.trim(),
-        city: city.trim(),
-        shoeSize: shoeSize.trim() || '—',
-        ringSize: ringSize.trim() || '—',
-        rtwSize: rtwSize.trim() || '—',
-        currency: city.includes('Kuwait') ? 'KWD' : city.includes('Saudi') ? 'SAR' : 'AED',
-        totalOrders: 0,
-        lifetimeSpend: '—',
-        createdAt: new Date().toISOString(),
-      });
+      await saveVipClient(newClient);
+      setName('');
+      setPhone('');
+      setShoeSize('');
+      setRingSize('');
+      setRtwSize('');
+      if (onClientCreated) {
+        onClientCreated(newClient);
+      }
       onClose();
     } catch (err) {
       console.error('Failed to create VIP client:', err);
