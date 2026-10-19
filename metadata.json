@@ -1,6 +1,6 @@
 {
-  "name": "Rubik's Studio 3D",
-  "description": "An interactive 3D Rubik's Cube game with silky smooth face rotations, tactile drag physics, keyboard controls, WCA scramble generator, solver guide, and speedcubing timer.",
+  "name": "Arvec Souz | Concierge Sourcing OS",
+  "description": "High-end luxury personal shopping, landed-cost calculator, VIP client directory, and cross-border pipeline between Europe/UK and the GCC.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
