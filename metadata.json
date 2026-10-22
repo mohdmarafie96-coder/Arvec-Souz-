@@ -1,6 +1,6 @@
 {
-  "name": "Arvec Souz | Concierge Sourcing OS",
-  "description": "High-end luxury personal shopping, landed-cost calculator, VIP client directory, and cross-border pipeline between Europe/UK and the GCC.",
+  "name": "FinanceMe",
+  "description": "Production-ready personal finance & budgeting app with real-time multi-currency engine, all-accounts net worth, visual expense calendar, recurring subscriptions, and savings goal tracker.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

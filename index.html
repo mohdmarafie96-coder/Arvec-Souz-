@@ -1,22 +1,2261 @@
-<!doctype html>
-<html lang="en" class="h-full bg-zinc-950 text-zinc-100">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Arvec Souz | Concierge Sourcing OS</title>
-    <meta name="description" content="Arvec Souz Concierge Sourcing OS: High-end luxury personal shopping, landed-cost calculator, VIP client directory, and cross-border pipeline between Europe/UK and the GCC." />
-    <meta property="og:title" content="Arvec Souz | Concierge Sourcing OS" />
-    <meta property="og:description" content="Arvec Souz Concierge Sourcing OS: Luxury personal shopping, landed-cost engine, VIP client CRM, and cross-border procurement between Europe/UK and the GCC." />
-    <meta property="og:type" content="website" />
-    <meta name="twitter:card" content="summary_large_image" />
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-950 text-slate-100 dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>FinanceMe | Personal Wealth & Budgeting Operating System</title>
+  <meta name="description" content="Production-ready personal finance & budgeting app with real-time multi-currency engine, all-accounts net worth, visual expense calendar, recurring subscriptions, and savings goal tracker." />
+  <meta name="theme-color" content="#020617" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 
-    <!-- Google Fonts: Plus Jakarta Sans, Tajawal (Arabic), and JetBrains Mono -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Tajawal:wght@400;500;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  </head>
-  <body class="h-full bg-zinc-950 text-zinc-100 antialiased selection:bg-amber-500/30 selection:text-amber-200">
-    <div id="root" class="min-h-full"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+  <!-- OpenGraph -->
+  <meta property="og:title" content="FinanceMe | Wealth & Budgeting OS" />
+  <meta property="og:description" content="Manage your accounts, track expenses, monitor subscriptions, and forecast savings goals." />
+  <meta property="og:type" content="website" />
+
+  <!-- Google Fonts: Plus Jakarta Sans & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#ecfdf5',
+              100: '#d1fae5',
+              400: '#34d399',
+              500: '#10b981',
+              600: '#059669',
+              700: '#047857',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+
+  <!-- Canvas Confetti CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
+  <!-- Dynamic Web App Manifest Injection -->
+  <script>
+    const manifestJson = {
+      name: "FinanceMe Budgeting OS",
+      short_name: "FinanceMe",
+      description: "Personal Wealth & Multi-Currency Budgeting OS",
+      start_url: "./",
+      display: "standalone",
+      background_color: "#020617",
+      theme_color: "#10b981",
+      icons: [
+        {
+          src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='128' fill='%23020617'/%3E%3Cpath d='M256 96L384 224L256 352L128 224Z' fill='%2310b981'/%3E%3Ccircle cx='256' cy='256' r='64' fill='%2334d399'/%3E%3C/svg%3E",
+          sizes: "512x512",
+          type: "image/svg+xml",
+          purpose: "any maskable"
+        }
+      ]
+    };
+    const manifestBlob = new Blob([JSON.stringify(manifestJson)], { type: 'application/json' });
+    const manifestUrl = URL.createObjectURL(manifestBlob);
+    const linkEl = document.createElement('link');
+    linkEl.rel = 'manifest';
+    linkEl.href = manifestUrl;
+    document.head.appendChild(linkEl);
+  </script>
+
+  <style>
+    /* Custom Scrollbar & Utility */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #020617; }
+    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #334155; }
+    .privacy-masked { filter: blur(6px); user-select: none; }
+    @keyframes pulse-subtle { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+    .animate-pulse-subtle { animation: pulse-subtle 3s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+  </style>
+</head>
+<body class="min-h-full bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-emerald-500/30 selection:text-emerald-200 antialiased">
+
+  <!-- ================= TOP NAVIGATION BAR ================= -->
+  <header class="sticky top-0 z-40 border-b border-slate-800/80 bg-slate-950/85 backdrop-blur-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
+      
+      <!-- Brand Logo -->
+      <div class="flex items-center gap-3 shrink-0">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-600 via-teal-500 to-emerald-400 p-[1.5px] shadow-lg shadow-emerald-500/20">
+          <div class="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center font-bold text-emerald-400 text-lg">
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+            </svg>
+          </div>
+        </div>
+        <div class="flex flex-col">
+          <div class="flex items-center gap-1.5">
+            <span class="font-bold text-lg text-white tracking-tight">Finance<span class="text-emerald-400">Me</span></span>
+            <span id="cloudStatusBadge" class="hidden sm:inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/25">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span id="cloudStatusText">Cloud Synced</span>
+            </span>
+          </div>
+          <span class="text-[10px] font-mono text-slate-400 hidden sm:inline">Wealth & Budgeting OS</span>
+        </div>
+      </div>
+
+      <!-- Navigation & Controls -->
+      <div class="flex items-center gap-2 sm:gap-3">
+        
+        <!-- Multi-Currency Engine Selector -->
+        <div class="relative flex items-center">
+          <label for="currencySelect" class="sr-only">Currency</label>
+          <div class="relative flex items-center bg-slate-900 border border-slate-750 hover:border-slate-600 rounded-xl px-2.5 py-1.5 transition-colors">
+            <span class="text-xs font-mono text-emerald-400 font-bold mr-1.5" id="currencySymbolLabel">$</span>
+            <select id="currencySelect" class="bg-transparent text-xs font-bold text-white focus:outline-none cursor-pointer pr-4 appearance-none font-mono">
+              <option value="USD">USD ($)</option>
+              <option value="KWD">KWD (KD)</option>
+              <option value="EUR">EUR (€)</option>
+              <option value="GBP">GBP (£)</option>
+              <option value="SAR">SAR (SR)</option>
+              <option value="AED">AED (AED)</option>
+              <option value="QAR">QAR (QR)</option>
+              <option value="BHD">BHD (BD)</option>
+              <option value="OMR">OMR (OMR)</option>
+              <option value="CAD">CAD (C$)</option>
+              <option value="AUD">AUD (A$)</option>
+              <option value="JPY">JPY (¥)</option>
+              <option value="CHF">CHF (CHF)</option>
+              <option value="INR">INR (₹)</option>
+              <option value="CNY">CNY (¥)</option>
+              <option value="BRL">BRL (R$)</option>
+            </select>
+            <svg class="w-3.5 h-3.5 text-slate-400 pointer-events-none -ml-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+          </div>
+        </div>
+
+        <!-- Privacy Masking Toggle Button -->
+        <button id="privacyMaskToggle" title="Toggle Balance Privacy Masking" class="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer">
+          <svg id="privacyIconOpen" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>
+          </svg>
+          <svg id="privacyIconClosed" class="w-4 h-4 hidden text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m9.88 9.88a3 3 0 1 0 4.24 4.24M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61M2 2l20 20"/>
+          </svg>
+        </button>
+
+        <!-- Cloud Project Setup Button -->
+        <button id="openCloudConfigBtn" title="Firebase Cloud Project & Sync Configuration" class="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer">
+          <svg class="w-4 h-4 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>
+          </svg>
+        </button>
+
+        <!-- PWA Install / Backup Trigger -->
+        <button id="installPwaBtn" title="Install Web App on Device" class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs text-slate-300 font-semibold cursor-pointer transition-colors">
+          <svg class="w-3.5 h-3.5 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+          <span>Install</span>
+        </button>
+
+        <!-- Data Backup Modal Trigger -->
+        <button id="openBackupBtn" title="Backup & Restore Data" class="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22h14a2 2 0 0 0 2-2V7.5L14.5 2H6a2 2 0 0 0-2 2v4"/><polyline points="14 2 14 8 20 8"/><path d="M3 15h6"/><path d="M6 12l3 3-3 3"/></svg>
+        </button>
+
+        <!-- User Authentication Account Button -->
+        <button id="authBtn" class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md shadow-emerald-600/20 active:scale-95 transition-all cursor-pointer">
+          <span id="authBtnAvatar" class="w-5 h-5 rounded-full bg-emerald-700 flex items-center justify-center text-[10px] font-bold">G</span>
+          <span id="authBtnLabel">Sign In</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= SUB-NAVIGATION TABS ================= -->
+  <nav class="sticky top-16 z-30 border-b border-slate-800/80 bg-slate-950/95 backdrop-blur-md px-4 sm:px-6 lg:px-8">
+    <div class="max-w-7xl mx-auto flex items-center gap-2 overflow-x-auto py-2.5 no-scrollbar">
+      <button data-tab="dashboard" class="nav-tab-btn active flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap cursor-pointer transition-all bg-slate-800 text-emerald-400 border border-emerald-500/30 shadow-sm">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+        <span>Overview & Net Worth</span>
+      </button>
+
+      <button data-tab="transactions" class="nav-tab-btn flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap cursor-pointer transition-all text-slate-400 hover:text-slate-200">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 6v12"/></svg>
+        <span>Transactions Ledger</span>
+      </button>
+
+      <button data-tab="calendar" class="nav-tab-btn flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap cursor-pointer transition-all text-slate-400 hover:text-slate-200">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+        <span>Expense Calendar</span>
+      </button>
+
+      <button data-tab="subscriptions" class="nav-tab-btn flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap cursor-pointer transition-all text-slate-400 hover:text-slate-200">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
+        <span>Subscriptions & Bills</span>
+      </button>
+
+      <button data-tab="goals" class="nav-tab-btn flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap cursor-pointer transition-all text-slate-400 hover:text-slate-200">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+        <span>Savings Goals</span>
+      </button>
+
+      <button data-tab="analytics" class="nav-tab-btn flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap cursor-pointer transition-all text-slate-400 hover:text-slate-200">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+        <span>Visual Analytics</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ================= MAIN CONTENT VIEWPORT ================= -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+    <!-- TAB 1: OVERVIEW & NET WORTH -->
+    <section id="tab-dashboard" class="space-y-8">
+      
+      <!-- Net Worth Hero Banner -->
+      <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 border border-slate-800 p-6 sm:p-8 shadow-xl">
+        <div class="absolute -top-24 -right-24 w-80 h-80 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none"></div>
+        <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div class="space-y-1">
+            <span class="text-xs font-mono text-emerald-400 tracking-wider uppercase font-semibold">Consolidated Net Worth</span>
+            <div class="flex items-baseline gap-3">
+              <span id="heroNetWorthDisplay" class="text-3xl sm:text-5xl font-black text-white font-mono tracking-tight tabular-nums">$0.00</span>
+              <span id="debtRatioBadge" class="text-xs font-mono px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 border border-slate-700">Healthy (0% Debt)</span>
+            </div>
+            <p class="text-xs text-slate-400 pt-1">Aggregated across <span id="accountCountLabel" class="text-slate-200 font-semibold">6 accounts</span></p>
+          </div>
+
+          <!-- Total Assets vs Total Liabilities -->
+          <div class="grid grid-cols-2 gap-4 sm:gap-6 bg-slate-950/70 p-4 rounded-2xl border border-slate-800/80">
+            <div>
+              <span class="text-[11px] font-mono text-slate-400 block uppercase">Total Assets</span>
+              <span id="heroTotalAssetsDisplay" class="text-lg sm:text-xl font-bold text-emerald-400 font-mono tabular-nums">$0.00</span>
+            </div>
+            <div>
+              <span class="text-[11px] font-mono text-slate-400 block uppercase">Total Liabilities</span>
+              <span id="heroTotalLiabilitiesDisplay" class="text-lg sm:text-xl font-bold text-rose-400 font-mono tabular-nums">$0.00</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Primary Action Toolbar -->
+        <div class="pt-6 mt-6 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-2">
+            <button id="openNewTxBtn" class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg shadow-emerald-600/20 active:scale-95 transition-all cursor-pointer">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+              <span>Record Transaction</span>
+            </button>
+            <button id="openTransferBtn" class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-200 font-semibold text-xs border border-slate-700 active:scale-95 transition-all cursor-pointer">
+              <svg class="w-4 h-4 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 16V4M7 4 3 8M7 4l4 4M17 8v12M17 20l4-4M17 20l-4-4"/></svg>
+              <span>Transfer Funds</span>
+            </button>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button id="openAddAccountBtn" class="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-850 text-slate-300 font-medium text-xs border border-slate-800 transition-colors cursor-pointer">
+              <svg class="w-3.5 h-3.5 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+              <span>Add Account</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Financial Health Metrics Grid -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="p-4 sm:p-5 rounded-2xl bg-slate-900 border border-slate-800">
+          <span class="text-[11px] font-mono uppercase text-slate-400 block mb-1">Monthly Cash Inflow</span>
+          <div id="statIncomeDisplay" class="text-xl sm:text-2xl font-bold text-emerald-400 font-mono tabular-nums">$0.00</div>
+          <span class="text-[10px] text-slate-500 font-mono mt-1 block">Salary & Active Returns</span>
+        </div>
+
+        <div class="p-4 sm:p-5 rounded-2xl bg-slate-900 border border-slate-800">
+          <span class="text-[11px] font-mono uppercase text-slate-400 block mb-1">Monthly Outflow</span>
+          <div id="statExpenseDisplay" class="text-xl sm:text-2xl font-bold text-rose-400 font-mono tabular-nums">$0.00</div>
+          <span class="text-[10px] text-slate-500 font-mono mt-1 block">Living Expenses & Bills</span>
+        </div>
+
+        <div class="p-4 sm:p-5 rounded-2xl bg-slate-900 border border-slate-800">
+          <span class="text-[11px] font-mono uppercase text-slate-400 block mb-1">Net Monthly Savings</span>
+          <div id="statCashFlowDisplay" class="text-xl sm:text-2xl font-bold text-white font-mono tabular-nums">$0.00</div>
+          <span id="savingsRateLabel" class="text-[10px] text-emerald-400 font-mono mt-1 block">0% Savings Rate</span>
+        </div>
+
+        <div class="p-4 sm:p-5 rounded-2xl bg-slate-900 border border-slate-800">
+          <span class="text-[11px] font-mono uppercase text-slate-400 block mb-1">Subscriptions Burn</span>
+          <div id="statSubBurnDisplay" class="text-xl sm:text-2xl font-bold text-amber-300 font-mono tabular-nums">$0.00/mo</div>
+          <span id="statSubAnnualLabel" class="text-[10px] text-slate-500 font-mono mt-1 block">$0.00/yr annualized</span>
+        </div>
+      </div>
+
+      <!-- Accounts Roster (Assets vs Liabilities) -->
+      <div class="space-y-4">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <h3 class="text-base font-bold text-white">Your Managed Accounts</h3>
+            <span class="text-xs text-slate-500 font-mono">Real-time ledger balances</span>
+          </div>
+        </div>
+
+        <div id="accountsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+
+      <!-- Recent Transactions Mini-Feed -->
+      <div class="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4">
+        <div class="flex items-center justify-between">
+          <h3 class="text-base font-bold text-white">Recent Transactions</h3>
+          <button data-tab="transactions" class="text-xs text-emerald-400 hover:text-emerald-300 font-semibold cursor-pointer">
+            View All Ledger →
+          </button>
+        </div>
+        <div id="recentTransactionsList" class="divide-y divide-slate-800">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: TRANSACTIONS LEDGER -->
+    <section id="tab-transactions" class="hidden space-y-6">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 class="text-2xl font-bold text-white tracking-tight">Transactions Ledger</h2>
+          <p class="text-xs text-slate-400">Search, filter, categorize, and log your personal cash flow.</p>
+        </div>
+        <button id="ledgerNewTxBtn" class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md shadow-emerald-600/20 active:scale-95 transition-all cursor-pointer self-start sm:self-auto">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+          <span>Record Transaction</span>
+        </button>
+      </div>
+
+      <!-- Search & Filters -->
+      <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 bg-slate-900 p-4 rounded-2xl border border-slate-800">
+        <div class="sm:col-span-5 relative">
+          <input id="txSearchInput" type="text" placeholder="Search payee, title, or notes..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 font-sans" />
+        </div>
+        <div class="sm:col-span-4">
+          <select id="txCategoryFilter" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 cursor-pointer font-sans">
+            <option value="ALL">All Categories</option>
+            <option value="Salary">Salary & Income</option>
+            <option value="Groceries">Groceries</option>
+            <option value="Dining & Cafes">Dining & Cafes</option>
+            <option value="Housing">Housing & Rent</option>
+            <option value="Utilities">Utilities & Phone</option>
+            <option value="Transport">Transport & Fuel</option>
+            <option value="Shopping">Shopping & Tech</option>
+            <option value="Health">Health & Fitness</option>
+            <option value="Entertainment">Entertainment</option>
+            <option value="Investments">Investments</option>
+            <option value="Transfer">Internal Transfer</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="sm:col-span-3">
+          <select id="txTypeFilter" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 cursor-pointer font-sans">
+            <option value="ALL">All Types</option>
+            <option value="expense">Expenses Only</option>
+            <option value="income">Income Only</option>
+            <option value="transfer">Transfers Only</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Ledger Table -->
+      <div class="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-slate-950/80 text-slate-400 font-mono uppercase text-[10px] border-b border-slate-800">
+            <tr>
+              <th class="p-3.5">Date</th>
+              <th class="p-3.5">Description</th>
+              <th class="p-3.5">Category</th>
+              <th class="p-3.5">Account</th>
+              <th class="p-3.5 text-right">Amount</th>
+              <th class="p-3.5 text-center">Action</th>
+            </tr>
+          </thead>
+          <tbody id="fullLedgerTbody" class="divide-y divide-slate-800/80 text-slate-300">
+            <!-- Dynamically populated -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- TAB 3: EXPENSE CALENDAR & HEATMAP -->
+    <section id="tab-calendar" class="hidden space-y-6">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 class="text-2xl font-bold text-white tracking-tight">Expense Calendar & Heatmap</h2>
+          <p class="text-xs text-slate-400">Visual monthly spend density and recurring renewal dates.</p>
+        </div>
+
+        <!-- Month Navigation -->
+        <div class="flex items-center gap-2 bg-slate-900 border border-slate-800 p-1 rounded-xl">
+          <button id="calPrevMonthBtn" class="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+          </button>
+          <span id="calCurrentMonthLabel" class="text-xs font-bold text-white font-mono px-3">October 2026</span>
+          <button id="calNextMonthBtn" class="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Calendar Month Grid -->
+      <div class="rounded-3xl border border-slate-800 bg-slate-900 p-4 sm:p-6 shadow-xl space-y-3">
+        <div class="grid grid-cols-7 gap-2 text-center text-[11px] font-mono uppercase text-slate-500 pb-2 border-b border-slate-800">
+          <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+        </div>
+        <div id="calendarGrid" class="grid grid-cols-7 gap-1.5 sm:gap-2">
+          <!-- Dynamically populated calendar day blocks -->
+        </div>
+      </div>
+
+      <!-- Selected Day Details Drawer -->
+      <div id="calendarDayDetails" class="p-5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3">
+        <div class="flex items-center justify-between">
+          <h4 id="calendarSelectedDateTitle" class="text-sm font-bold text-white font-mono">Day Breakdown</h4>
+          <span id="calendarSelectedDateTotal" class="text-xs font-mono font-bold text-emerald-400">$0.00 spent</span>
+        </div>
+        <div id="calendarDayTransactionsList" class="space-y-2 text-xs divide-y divide-slate-800">
+          <p class="text-slate-500 italic py-2">Click any day cell above to inspect logged expenses.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: SUBSCRIPTIONS & RECURRING BILLS -->
+    <section id="tab-subscriptions" class="hidden space-y-6">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 class="text-2xl font-bold text-white tracking-tight">Subscriptions & Recurring Bills</h2>
+          <p class="text-xs text-slate-400">Track and optimize monthly burn rate, SaaS licenses, and renewals.</p>
+        </div>
+        <button id="openNewSubBtn" class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md shadow-emerald-600/20 active:scale-95 transition-all cursor-pointer">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+          <span>Add Subscription</span>
+        </button>
+      </div>
+
+      <!-- Burn Rate Strip -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800">
+          <span class="text-[11px] font-mono uppercase text-slate-400 block mb-1">Monthly Burn Rate</span>
+          <div id="subMonthlyBurnDisplay" class="text-2xl font-bold text-amber-300 font-mono tabular-nums">$0.00</div>
+          <span class="text-[10px] text-slate-500 font-mono mt-1 block">Recurring every 30 days</span>
+        </div>
+
+        <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800">
+          <span class="text-[11px] font-mono uppercase text-slate-400 block mb-1">Annualized Commit</span>
+          <div id="subAnnualBurnDisplay" class="text-2xl font-bold text-white font-mono tabular-nums">$0.00</div>
+          <span class="text-[10px] text-slate-500 font-mono mt-1 block">12-Month Projected Total</span>
+        </div>
+
+        <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800">
+          <span class="text-[11px] font-mono uppercase text-slate-400 block mb-1">Active Services</span>
+          <div id="subActiveCountDisplay" class="text-2xl font-bold text-emerald-400 font-mono tabular-nums">0 Active</div>
+          <span class="text-[10px] text-slate-500 font-mono mt-1 block">Toggle off paused subscriptions</span>
+        </div>
+      </div>
+
+      <!-- Subscriptions Grid -->
+      <div id="subscriptionsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <!-- Dynamically populated -->
+      </div>
+    </section>
+
+    <!-- TAB 5: SAVINGS GOALS & WISHLIST -->
+    <section id="tab-goals" class="hidden space-y-6">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 class="text-2xl font-bold text-white tracking-tight">Savings Goals & Wishlist</h2>
+          <p class="text-xs text-slate-400">Set targets, visualize progress milestones, and allocate deposits.</p>
+        </div>
+        <button id="openNewGoalBtn" class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md shadow-emerald-600/20 active:scale-95 transition-all cursor-pointer">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+          <span>Create Savings Goal</span>
+        </button>
+      </div>
+
+      <!-- Goals Grid -->
+      <div id="goalsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <!-- Dynamically populated -->
+      </div>
+    </section>
+
+    <!-- TAB 6: VISUAL ANALYTICS & CHARTS -->
+    <section id="tab-analytics" class="hidden space-y-8">
+      <div>
+        <h2 class="text-2xl font-bold text-white tracking-tight">Visual Financial Intelligence</h2>
+        <p class="text-xs text-slate-400">Distribution breakdowns, cash flow history, and asset allocation.</p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Category Doughnut Chart -->
+        <div class="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold text-white">Expense Distribution by Category</h3>
+            <span class="text-[11px] font-mono text-slate-500">All-time</span>
+          </div>
+          <div class="relative h-64 sm:h-72 flex items-center justify-center">
+            <canvas id="categoryChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Cash Flow Bar Chart -->
+        <div class="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold text-white">Cash Flow Comparison</h3>
+            <span class="text-[11px] font-mono text-slate-500">Income vs Expenses</span>
+          </div>
+          <div class="relative h-64 sm:h-72 flex items-center justify-center">
+            <canvas id="cashflowChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ================= FOOTER ================= -->
+  <footer class="border-t border-slate-900 bg-slate-950 py-6 text-xs text-slate-500 font-mono mt-auto">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3">
+      <div class="flex items-center gap-2">
+        <span class="font-bold text-slate-300">FinanceMe</span>
+        <span>·</span>
+        <span>Personal Wealth Operating System</span>
+      </div>
+      <div class="flex items-center gap-4">
+        <span>100% Client-Side Engine</span>
+        <span>·</span>
+        <button id="footerDemoBtn" class="text-emerald-400 hover:underline cursor-pointer">Reset Demo Data</button>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ================= MODALS & DIALOGS ================= -->
+
+  <!-- 1. AUTHENTICATION MODAL -->
+  <div id="authModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm hidden">
+    <div class="w-full max-w-md rounded-3xl bg-slate-900 border border-slate-800 p-6 sm:p-8 space-y-5 shadow-2xl relative">
+      <button id="closeAuthModalBtn" class="absolute top-5 right-5 text-slate-400 hover:text-white p-1 rounded-lg">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+
+      <div class="text-center space-y-1">
+        <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center mx-auto mb-2">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <h3 id="authModalTitle" class="text-xl font-bold text-white tracking-tight">Welcome to FinanceMe</h3>
+        <p class="text-xs text-slate-400">Sync your finances securely across all your devices in real-time.</p>
+      </div>
+
+      <!-- Auth Tabs: Sign In vs Create Account -->
+      <div class="flex p-1 bg-slate-950 rounded-xl border border-slate-800">
+        <button id="tabAuthSignIn" class="flex-1 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 text-white shadow-sm cursor-pointer">Sign In</button>
+        <button id="tabAuthSignUp" class="flex-1 py-1.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-slate-200 cursor-pointer">Create Account</button>
+      </div>
+
+      <!-- Google 1-Tap Auth Button -->
+      <button id="googleSignInBtn" class="w-full flex items-center justify-center gap-2.5 py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-750 text-white text-xs font-semibold border border-slate-700/80 transition-colors shadow-sm cursor-pointer">
+        <svg class="w-4 h-4" viewBox="0 0 24 24">
+          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+        </svg>
+        <span>Continue with Google</span>
+      </button>
+
+      <div class="relative flex items-center justify-center">
+        <div class="border-t border-slate-800 w-full"></div>
+        <span class="bg-slate-900 px-3 text-[10px] font-mono text-slate-500 uppercase absolute">or with email</span>
+      </div>
+
+      <!-- Email / Password Form -->
+      <form id="authForm" class="space-y-3 text-xs">
+        <div>
+          <label class="block text-slate-300 font-medium mb-1">Email Address</label>
+          <input id="authEmailInput" type="email" required placeholder="name@example.com" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500" />
+        </div>
+
+        <div>
+          <label class="block text-slate-300 font-medium mb-1">Password</label>
+          <input id="authPasswordInput" type="password" required minlength="6" placeholder="••••••••" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500" />
+        </div>
+
+        <div class="flex items-center justify-between text-[11px] pt-1">
+          <button type="button" id="forgotPasswordBtn" class="text-emerald-400 hover:underline">Forgot Password?</button>
+          <span class="text-slate-500 font-mono">Firebase v10 Auth</span>
+        </div>
+
+        <button type="submit" id="authSubmitBtn" class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg shadow-emerald-600/20 active:scale-95 transition-all cursor-pointer">
+          Sign In
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 2. CLOUD CONFIG SETUP MODAL -->
+  <div id="cloudConfigModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm hidden">
+    <div class="w-full max-w-lg rounded-3xl bg-slate-900 border border-slate-800 p-6 sm:p-8 space-y-5 shadow-2xl relative">
+      <button id="closeCloudModalBtn" class="absolute top-5 right-5 text-slate-400 hover:text-white p-1 rounded-lg">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+
+      <div class="space-y-1">
+        <div class="flex items-center gap-2">
+          <svg class="w-5 h-5 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>
+          <h3 class="text-lg font-bold text-white tracking-tight">Cloud Firestore & Auth Setup</h3>
+        </div>
+        <p class="text-xs text-slate-400 leading-relaxed">Connect your own Firebase project or use the pre-configured project credentials for real-time synchronization across all your devices.</p>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <label class="block text-slate-300 font-medium">Firebase Web Configuration JSON</label>
+        <textarea id="firebaseConfigTextarea" rows="7" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-[11px] font-mono text-emerald-300 focus:outline-none focus:border-emerald-500" placeholder='{ "apiKey": "...", "projectId": "...", "authDomain": "..." }'></textarea>
+        
+        <div class="flex items-center justify-between text-[11px] text-slate-500 font-mono">
+          <span>Target Path: users/{uid}/data/financeState</span>
+          <span class="text-emerald-400">Real-time onSnapshot</span>
+        </div>
+
+        <div class="flex items-center justify-end gap-2.5 pt-2">
+          <button id="useLocalModeBtn" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white text-xs font-semibold cursor-pointer">
+            Run in Local Mode (Offline)
+          </button>
+          <button id="saveCloudConfigBtn" class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md shadow-emerald-600/20 active:scale-95 cursor-pointer">
+            Save & Connect
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. ADD / EDIT TRANSACTION MODAL -->
+  <div id="txModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm hidden">
+    <div class="w-full max-w-lg rounded-3xl bg-slate-900 border border-slate-800 p-6 sm:p-8 space-y-5 shadow-2xl relative">
+      <button id="closeTxModalBtn" class="absolute top-5 right-5 text-slate-400 hover:text-white p-1 rounded-lg">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+
+      <div class="space-y-1">
+        <h3 class="text-lg font-bold text-white tracking-tight">Record Financial Transaction</h3>
+        <p class="text-xs text-slate-400">Log an income or expense with immediate account reconciliation.</p>
+      </div>
+
+      <!-- Type Toggle: Expense vs Income -->
+      <div class="grid grid-cols-2 gap-2 p-1 bg-slate-950 rounded-xl border border-slate-800">
+        <button id="txTypeExpenseBtn" type="button" class="py-2 text-xs font-bold rounded-lg bg-rose-600/20 text-rose-300 border border-rose-500/30 cursor-pointer">Expense (-)</button>
+        <button id="txTypeIncomeBtn" type="button" class="py-2 text-xs font-bold rounded-lg text-slate-400 hover:text-slate-200 cursor-pointer">Income (+)</button>
+      </div>
+
+      <form id="txForm" class="space-y-3.5 text-xs">
+        <div>
+          <label class="block text-slate-300 font-medium mb-1">Title / Payee *</label>
+          <input id="txTitleInput" type="text" required placeholder="e.g. Whole Foods Market, Salary Deposit" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 font-medium" />
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Amount (<span id="txCurrencyLabel">USD</span>) *</label>
+            <input id="txAmountInput" type="number" step="any" min="0.01" required placeholder="0.00" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-mono font-bold focus:outline-none focus:border-emerald-500" />
+          </div>
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Date *</label>
+            <input id="txDateInput" type="date" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-mono focus:outline-none focus:border-emerald-500" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Category *</label>
+            <select id="txCategorySelect" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-emerald-500 cursor-pointer">
+              <option value="Groceries">Groceries</option>
+              <option value="Dining & Cafes">Dining & Cafes</option>
+              <option value="Housing">Housing & Rent</option>
+              <option value="Utilities">Utilities & Phone</option>
+              <option value="Transport">Transport & Fuel</option>
+              <option value="Shopping">Shopping & Tech</option>
+              <option value="Health">Health & Fitness</option>
+              <option value="Entertainment">Entertainment</option>
+              <option value="Salary">Salary & Income</option>
+              <option value="Investments">Investments</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Account *</label>
+            <select id="txAccountSelect" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-emerald-500 cursor-pointer">
+              <!-- Dynamically populated -->
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-slate-300 font-medium mb-1">Notes (Optional)</label>
+          <input id="txNotesInput" type="text" placeholder="Tags, receipt notes, or memo..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500" />
+        </div>
+
+        <div class="flex items-center justify-end gap-3 pt-3">
+          <button type="button" id="cancelTxBtn" class="px-4 py-2 rounded-xl text-slate-400 hover:text-white cursor-pointer">Cancel</button>
+          <button type="submit" class="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold shadow-lg shadow-emerald-600/20 active:scale-95 cursor-pointer">Save Transaction</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 4. INTERNAL TRANSFER MODAL -->
+  <div id="transferModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm hidden">
+    <div class="w-full max-w-md rounded-3xl bg-slate-900 border border-slate-800 p-6 sm:p-8 space-y-5 shadow-2xl relative">
+      <button id="closeTransferModalBtn" class="absolute top-5 right-5 text-slate-400 hover:text-white p-1 rounded-lg">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+
+      <div class="space-y-1">
+        <h3 class="text-lg font-bold text-white tracking-tight">Internal Account Transfer</h3>
+        <p class="text-xs text-slate-400">Move funds between your checking, savings, or investment accounts.</p>
+      </div>
+
+      <form id="transferForm" class="space-y-3.5 text-xs">
+        <div>
+          <label class="block text-slate-300 font-medium mb-1">Source Account (From) *</label>
+          <select id="transferFromSelect" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-emerald-500 cursor-pointer"></select>
+        </div>
+
+        <div>
+          <label class="block text-slate-300 font-medium mb-1">Destination Account (To) *</label>
+          <select id="transferToSelect" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-emerald-500 cursor-pointer"></select>
+        </div>
+
+        <div>
+          <label class="block text-slate-300 font-medium mb-1">Transfer Amount (<span id="transferCurrencyLabel">USD</span>) *</label>
+          <input id="transferAmountInput" type="number" step="any" min="0.01" required placeholder="0.00" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-mono font-bold focus:outline-none focus:border-emerald-500" />
+        </div>
+
+        <div class="flex items-center justify-end gap-3 pt-3">
+          <button type="button" id="cancelTransferBtn" class="px-4 py-2 rounded-xl text-slate-400 hover:text-white cursor-pointer">Cancel</button>
+          <button type="submit" class="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold shadow-lg shadow-emerald-600/20 active:scale-95 cursor-pointer">Execute Transfer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 5. ADD / EDIT ACCOUNT MODAL -->
+  <div id="accountModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm hidden">
+    <div class="w-full max-w-md rounded-3xl bg-slate-900 border border-slate-800 p-6 sm:p-8 space-y-5 shadow-2xl relative">
+      <button id="closeAccountModalBtn" class="absolute top-5 right-5 text-slate-400 hover:text-white p-1 rounded-lg">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+
+      <div class="space-y-1">
+        <h3 class="text-lg font-bold text-white tracking-tight">Add Financial Account</h3>
+        <p class="text-xs text-slate-400">Classify as Asset (checking/savings) or Liability (credit/loan).</p>
+      </div>
+
+      <form id="accountForm" class="space-y-3.5 text-xs">
+        <div>
+          <label class="block text-slate-300 font-medium mb-1">Account Name *</label>
+          <input id="accountNameInput" type="text" required placeholder="e.g. High-Yield Savings, Apple Card" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500" />
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Classification *</label>
+            <select id="accountTypeSelect" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-emerald-500 cursor-pointer">
+              <option value="Checking">Checking (Asset)</option>
+              <option value="Savings">Savings (Asset)</option>
+              <option value="Investment">Investment (Asset)</option>
+              <option value="Cash">Physical Cash (Asset)</option>
+              <option value="Credit Card">Credit Card (Liability)</option>
+              <option value="Loan">Loan / Debt (Liability)</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Starting Balance *</label>
+            <input id="accountBalanceInput" type="number" step="any" required placeholder="0.00" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-mono focus:outline-none focus:border-emerald-500" />
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-3 pt-3">
+          <button type="button" id="cancelAccountBtn" class="px-4 py-2 rounded-xl text-slate-400 hover:text-white cursor-pointer">Cancel</button>
+          <button type="submit" class="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold shadow-lg shadow-emerald-600/20 active:scale-95 cursor-pointer">Save Account</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 6. ADD SUBSCRIPTION MODAL -->
+  <div id="subModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm hidden">
+    <div class="w-full max-w-md rounded-3xl bg-slate-900 border border-slate-800 p-6 sm:p-8 space-y-5 shadow-2xl relative">
+      <button id="closeSubModalBtn" class="absolute top-5 right-5 text-slate-400 hover:text-white p-1 rounded-lg">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+
+      <div class="space-y-1">
+        <h3 class="text-lg font-bold text-white tracking-tight">Add Subscription / Recurring Bill</h3>
+        <p class="text-xs text-slate-400">Track recurring software, streaming, utilities, and memberships.</p>
+      </div>
+
+      <form id="subForm" class="space-y-3.5 text-xs">
+        <div>
+          <label class="block text-slate-300 font-medium mb-1">Service / Bill Name *</label>
+          <input id="subNameInput" type="text" required placeholder="e.g. Netflix 4K, OpenAI ChatGPT Plus" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500" />
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Billing Amount *</label>
+            <input id="subAmountInput" type="number" step="any" min="0.01" required placeholder="0.00" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-mono font-bold focus:outline-none focus:border-emerald-500" />
+          </div>
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Cadence *</label>
+            <select id="subCadenceSelect" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-emerald-500 cursor-pointer">
+              <option value="monthly">Monthly</option>
+              <option value="annual">Annual</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Next Renewal Date *</label>
+            <input id="subNextDateInput" type="date" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-mono focus:outline-none focus:border-emerald-500" />
+          </div>
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Billing Account</label>
+            <select id="subAccountSelect" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-emerald-500 cursor-pointer"></select>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-3 pt-3">
+          <button type="button" id="cancelSubBtn" class="px-4 py-2 rounded-xl text-slate-400 hover:text-white cursor-pointer">Cancel</button>
+          <button type="submit" class="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold shadow-lg shadow-emerald-600/20 active:scale-95 cursor-pointer">Save Subscription</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 7. ADD GOAL MODAL -->
+  <div id="goalModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm hidden">
+    <div class="w-full max-w-md rounded-3xl bg-slate-900 border border-slate-800 p-6 sm:p-8 space-y-5 shadow-2xl relative">
+      <button id="closeGoalModalBtn" class="absolute top-5 right-5 text-slate-400 hover:text-white p-1 rounded-lg">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+
+      <div class="space-y-1">
+        <h3 class="text-lg font-bold text-white tracking-tight">Create Savings Goal</h3>
+        <p class="text-xs text-slate-400">Target amount, projected deadline, and milestone tracker.</p>
+      </div>
+
+      <form id="goalForm" class="space-y-3.5 text-xs">
+        <div>
+          <label class="block text-slate-300 font-medium mb-1">Goal Name *</label>
+          <input id="goalNameInput" type="text" required placeholder="e.g. 6-Month Emergency Fund, Japan Trip" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500" />
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Target Amount *</label>
+            <input id="goalTargetInput" type="number" step="any" min="1" required placeholder="10000" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-mono font-bold focus:outline-none focus:border-emerald-500" />
+          </div>
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Current Saved</label>
+            <input id="goalCurrentInput" type="number" step="any" min="0" placeholder="0.00" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-mono focus:outline-none focus:border-emerald-500" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-slate-300 font-medium mb-1">Target Date (Optional)</label>
+          <input id="goalDateInput" type="date" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-mono focus:outline-none focus:border-emerald-500" />
+        </div>
+
+        <div class="flex items-center justify-end gap-3 pt-3">
+          <button type="button" id="cancelGoalBtn" class="px-4 py-2 rounded-xl text-slate-400 hover:text-white cursor-pointer">Cancel</button>
+          <button type="submit" class="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold shadow-lg shadow-emerald-600/20 active:scale-95 cursor-pointer">Save Goal</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 8. DEPOSIT TO GOAL MODAL -->
+  <div id="depositModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm hidden">
+    <div class="w-full max-w-md rounded-3xl bg-slate-900 border border-slate-800 p-6 sm:p-8 space-y-5 shadow-2xl relative">
+      <button id="closeDepositModalBtn" class="absolute top-5 right-5 text-slate-400 hover:text-white p-1 rounded-lg">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+
+      <div class="space-y-1">
+        <h3 class="text-lg font-bold text-white tracking-tight">Allocate Deposit to Goal</h3>
+        <p id="depositGoalSubtitle" class="text-xs text-slate-400">Deduct from checking or savings and credit towards your goal.</p>
+      </div>
+
+      <form id="depositForm" class="space-y-3.5 text-xs">
+        <input type="hidden" id="depositGoalIdInput" />
+        
+        <div>
+          <label class="block text-slate-300 font-medium mb-1">Deduct From Account *</label>
+          <select id="depositSourceAccountSelect" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-emerald-500 cursor-pointer"></select>
+        </div>
+
+        <div>
+          <label class="block text-slate-300 font-medium mb-1">Deposit Amount (<span id="depositCurrencyLabel">USD</span>) *</label>
+          <input id="depositAmountInput" type="number" step="any" min="0.01" required placeholder="0.00" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-mono font-bold focus:outline-none focus:border-emerald-500" />
+        </div>
+
+        <div class="flex items-center justify-end gap-3 pt-3">
+          <button type="button" id="cancelDepositBtn" class="px-4 py-2 rounded-xl text-slate-400 hover:text-white cursor-pointer">Cancel</button>
+          <button type="submit" class="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold shadow-lg shadow-emerald-600/20 active:scale-95 cursor-pointer">Confirm Deposit</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 9. BACKUP & RESTORE MODAL -->
+  <div id="backupModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm hidden">
+    <div class="w-full max-w-md rounded-3xl bg-slate-900 border border-slate-800 p-6 sm:p-8 space-y-5 shadow-2xl relative">
+      <button id="closeBackupModalBtn" class="absolute top-5 right-5 text-slate-400 hover:text-white p-1 rounded-lg">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+
+      <div class="space-y-1">
+        <h3 class="text-lg font-bold text-white tracking-tight">Data Backup & Portability</h3>
+        <p class="text-xs text-slate-400">Export your complete financial records as an encrypted or plain JSON file.</p>
+      </div>
+
+      <div class="space-y-4 text-xs">
+        <div class="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+          <span class="font-bold text-slate-200 block">Export JSON File</span>
+          <p class="text-slate-400 text-[11px]">Download all accounts, ledgers, recurring bills, and savings milestones to your local device.</p>
+          <button id="exportBackupBtn" class="w-full py-2 rounded-xl bg-slate-800 hover:bg-slate-750 text-white font-semibold flex items-center justify-center gap-2 cursor-pointer transition-colors">
+            <svg class="w-4 h-4 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+            <span>Download JSON Backup</span>
+          </button>
+        </div>
+
+        <div class="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+          <span class="font-bold text-slate-200 block">Restore from Backup</span>
+          <p class="text-slate-400 text-[11px]">Upload a previously exported FinanceMe backup file to restore your database.</p>
+          <input type="file" id="importBackupInput" accept=".json" class="hidden" />
+          <button id="triggerImportBtn" class="w-full py-2 rounded-xl bg-slate-800 hover:bg-slate-750 text-white font-semibold flex items-center justify-center gap-2 cursor-pointer transition-colors">
+            <svg class="w-4 h-4 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+            <span>Select Backup File (.json)</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 10. TOAST CONTAINER -->
+  <div id="toastContainer" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none"></div>
+
+  <!-- ================= APPLICATION LOGIC (MODULAR FIREBASE V10 + VANILLA ES MODULES) ================= -->
+  <script type="module">
+    // Modular Firebase SDK v10 CDN Imports
+    import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+    import { 
+      getAuth, 
+      signInWithPopup, 
+      GoogleAuthProvider, 
+      onAuthStateChanged, 
+      signInWithEmailAndPassword, 
+      createUserWithEmailAndPassword, 
+      signOut, 
+      sendPasswordResetEmail 
+    } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+    import { 
+      getFirestore, 
+      doc, 
+      setDoc, 
+      getDoc, 
+      onSnapshot 
+    } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+    // Global Pre-Configured Firebase credentials from applet
+    const DEFAULT_APPLET_CONFIG = {
+      projectId: "gen-lang-client-0805549924",
+      appId: "1:630130736464:web:4de8ac8d741646868a4055",
+      apiKey: "AIzaSyDl9HOzTYCrTKqSnwn2ymyAiK6LLSqWyw0",
+      authDomain: "gen-lang-client-0805549924.firebaseapp.com",
+      firestoreDatabaseId: "ai-studio-rubiksstudio3d-0955b89f-4a59-4c54-8c48-ee90ad95557f",
+      storageBucket: "gen-lang-client-0805549924.firebasestorage.app",
+      messagingSenderId: "630130736464"
+    };
+
+    // Multi-Currency Exchange Rates normalized to USD = 1.0
+    const CURRENCIES = {
+      USD: { symbol: '$', name: 'US Dollar', rate: 1.0, decimals: 2 },
+      KWD: { symbol: 'KD', name: 'Kuwaiti Dinar', rate: 0.307, decimals: 3 },
+      EUR: { symbol: '€', name: 'Euro', rate: 0.92, decimals: 2 },
+      GBP: { symbol: '£', name: 'British Pound', rate: 0.79, decimals: 2 },
+      SAR: { symbol: 'SR', name: 'Saudi Riyal', rate: 3.75, decimals: 2 },
+      AED: { symbol: 'AED', name: 'UAE Dirham', rate: 3.67, decimals: 2 },
+      QAR: { symbol: 'QR', name: 'Qatari Riyal', rate: 3.64, decimals: 2 },
+      BHD: { symbol: 'BD', name: 'Bahraini Dinar', rate: 0.376, decimals: 3 },
+      OMR: { symbol: 'OMR', name: 'Omani Rial', rate: 0.385, decimals: 3 },
+      CAD: { symbol: 'C$', name: 'Canadian Dollar', rate: 1.37, decimals: 2 },
+      AUD: { symbol: 'A$', name: 'Australian Dollar', rate: 1.52, decimals: 2 },
+      JPY: { symbol: '¥', name: 'Japanese Yen', rate: 153.5, decimals: 0 },
+      CHF: { symbol: 'CHF', name: 'Swiss Franc', rate: 0.89, decimals: 2 },
+      INR: { symbol: '₹', name: 'Indian Rupee', rate: 83.5, decimals: 2 },
+      CNY: { symbol: '¥', name: 'Chinese Yuan', rate: 7.23, decimals: 2 },
+      BRL: { symbol: 'R$', name: 'Brazilian Real', rate: 5.45, decimals: 2 }
+    };
+
+    // Default Seed Data
+    const INITIAL_DEMO_DATA = {
+      currency: 'USD',
+      privacyMask: false,
+      accounts: [
+        { id: 'acc_1', name: 'Primary Checking (Chase)', type: 'Checking', balanceUsd: 6420.50 },
+        { id: 'acc_2', name: 'High-Yield Savings (Marcus 4.5%)', type: 'Savings', balanceUsd: 28500.00 },
+        { id: 'acc_3', name: 'Brokerage (Vanguard S&P 500)', type: 'Investment', balanceUsd: 41800.00 },
+        { id: 'acc_4', name: 'Physical Cash Vault', type: 'Cash', balanceUsd: 1250.00 },
+        { id: 'acc_5', name: 'Sapphire Preferred Credit Card', type: 'Credit Card', balanceUsd: 1420.80 },
+        { id: 'acc_6', name: 'Auto Loan (Tesla Model 3)', type: 'Loan', balanceUsd: 12400.00 }
+      ],
+      transactions: [
+        { id: 'tx_1', title: 'Monthly Salary (Software Engineer)', amountUsd: 6850.00, type: 'income', category: 'Salary', accountId: 'acc_1', date: '2026-10-01', notes: 'Direct deposit' },
+        { id: 'tx_2', title: 'Luxury Apartment Rent', amountUsd: 2200.00, type: 'expense', category: 'Housing', accountId: 'acc_1', date: '2026-10-02', notes: 'Wire transfer' },
+        { id: 'tx_3', title: 'Whole Foods Market Organic Groceries', amountUsd: 184.50, type: 'expense', category: 'Groceries', accountId: 'acc_5', date: '2026-10-05', notes: 'Produce and pantry' },
+        { id: 'tx_4', title: 'Blue Bottle Coffee & Breakfast', amountUsd: 22.40, type: 'expense', category: 'Dining & Cafes', accountId: 'acc_5', date: '2026-10-08', notes: 'Espresso' },
+        { id: 'tx_5', title: 'Equinox Gym & Spa Membership', amountUsd: 280.00, type: 'expense', category: 'Health', accountId: 'acc_5', date: '2026-10-10', notes: 'Monthly dues' },
+        { id: 'tx_6', title: 'Apple Store Studio Display Monitor', amountUsd: 1599.00, type: 'expense', category: 'Shopping', accountId: 'acc_5', date: '2026-10-14', notes: 'Office upgrade' },
+        { id: 'tx_7', title: 'Freelance Architectural Consulting', amountUsd: 2400.00, type: 'income', category: 'Salary', accountId: 'acc_1', date: '2026-10-18', notes: 'Client invoice #104' },
+        { id: 'tx_8', title: 'Uber Black Airport Ride', amountUsd: 78.50, type: 'expense', category: 'Transport', accountId: 'acc_5', date: '2026-10-20', notes: 'JFK Airport ride' }
+      ],
+      subscriptions: [
+        { id: 'sub_1', name: 'Netflix Premium 4K', amountUsd: 22.99, cadence: 'monthly', nextRenewalDate: '2026-10-28', accountId: 'acc_5', status: 'active' },
+        { id: 'sub_2', name: 'OpenAI ChatGPT Plus', amountUsd: 20.00, cadence: 'monthly', nextRenewalDate: '2026-10-25', accountId: 'acc_5', status: 'active' },
+        { id: 'sub_3', name: 'Amazon Prime Membership', amountUsd: 139.00, cadence: 'annual', nextRenewalDate: '2026-11-15', accountId: 'acc_5', status: 'active' },
+        { id: 'sub_4', name: 'Spotify Duo Family Plan', amountUsd: 14.99, cadence: 'monthly', nextRenewalDate: '2026-10-29', accountId: 'acc_5', status: 'active' },
+        { id: 'sub_5', name: 'AWS Cloud Hosting & DB', amountUsd: 48.50, cadence: 'monthly', nextRenewalDate: '2026-11-01', accountId: 'acc_5', status: 'active' }
+      ],
+      goals: [
+        { id: 'goal_1', name: 'Emergency Liquid Reserve (6 Months)', targetAmountUsd: 25000.00, currentAmountUsd: 18500.00, targetDate: '2027-04-01' },
+        { id: 'goal_2', name: 'Tokyo & Kyoto Autumn Holiday', targetAmountUsd: 6500.00, currentAmountUsd: 4200.00, targetDate: '2026-11-20' },
+        { id: 'goal_3', name: 'Residential Villa Down Payment', targetAmountUsd: 100000.00, currentAmountUsd: 46000.00, targetDate: '2028-12-31' }
+      ]
+    };
+
+    // State Store with LocalStorage hydration
+    let state = loadInitialState();
+    let firebaseApp = null;
+    let auth = null;
+    let db = null;
+    let currentUser = null;
+    let firestoreUnsubscribe = null;
+    let deferredInstallPrompt = null;
+    let activeCalDate = new Date();
+    let selectedCalDayStr = null;
+
+    // Charts instances
+    let categoryChartInstance = null;
+    let cashflowChartInstance = null;
+
+    // Helper: Toast Dispatcher
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      const isSuccess = type === 'success';
+      const isWarn = type === 'warning';
+      
+      toast.className = `p-4 rounded-2xl border shadow-2xl flex items-center gap-3 transition-all transform translate-y-4 opacity-0 pointer-events-auto text-xs ${
+        isSuccess ? 'bg-slate-900 border-emerald-500/40 text-emerald-200' :
+        isWarn ? 'bg-slate-900 border-amber-500/40 text-amber-200' :
+        'bg-slate-900 border-rose-500/40 text-rose-200'
+      }`;
+      toast.innerHTML = `
+        <span class="w-2 h-2 rounded-full ${isSuccess ? 'bg-emerald-400' : isWarn ? 'bg-amber-400' : 'bg-rose-400'}"></span>
+        <span class="font-medium text-slate-100 flex-1">${message}</span>
+        <button class="text-slate-400 hover:text-white ml-2 text-sm font-bold">×</button>
+      `;
+
+      toast.querySelector('button').onclick = () => toast.remove();
+      container.appendChild(toast);
+
+      requestAnimationFrame(() => {
+        toast.classList.remove('translate-y-4', 'opacity-0');
+      });
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 4000);
+    }
+
+    // Helper: Format Money with privacy masking and currency precision
+    function formatMoney(amountUsd, targetCurrency = state.currency) {
+      if (state.privacyMask) {
+        return '••••••';
+      }
+      const curr = CURRENCIES[targetCurrency] || CURRENCIES.USD;
+      const converted = amountUsd * curr.rate;
+      const formattedNum = converted.toLocaleString(undefined, {
+        minimumFractionDigits: curr.decimals,
+        maximumFractionDigits: curr.decimals
+      });
+
+      return `${curr.symbol} ${formattedNum}`;
+    }
+
+    // Currency Conversion: Target Currency -> USD base
+    function toUsd(amountInTargetCurrency, fromCurrency = state.currency) {
+      const curr = CURRENCIES[fromCurrency] || CURRENCIES.USD;
+      return amountInTargetCurrency / curr.rate;
+    }
+
+    // Save and Sync Engine
+    function saveState(skipCloud = false) {
+      try {
+        localStorage.setItem('financeme_state_v1', JSON.stringify(state));
+      } catch (err) {
+        console.warn('LocalStorage save error:', err);
+      }
+
+      // Sync to Firestore if authenticated
+      if (!skipCloud && db && currentUser) {
+        const userDocRef = doc(db, 'users', currentUser.uid, 'data', 'financeState');
+        setDoc(userDocRef, {
+          ...state,
+          lastUpdated: new Date().toISOString()
+        }, { merge: true }).catch(err => {
+          console.warn('Firestore cloud sync notice:', err);
+        });
+      }
+
+      renderAll();
+    }
+
+    function loadInitialState() {
+      try {
+        const stored = localStorage.getItem('financeme_state_v1');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed && Array.isArray(parsed.accounts) && parsed.accounts.length > 0) {
+            return parsed;
+          }
+        }
+      } catch (e) {
+        console.warn('Error reading stored state:', e);
+      }
+      return JSON.parse(JSON.stringify(INITIAL_DEMO_DATA));
+    }
+
+    // ================= FIREBASE SETUP & SYNC =================
+    function initFirebase() {
+      let config = null;
+      try {
+        const storedConfig = localStorage.getItem('financeme_firebase_config');
+        if (storedConfig) {
+          config = JSON.parse(storedConfig);
+        } else if (window.FIREBASE_CONFIG) {
+          config = window.FIREBASE_CONFIG;
+        } else {
+          config = DEFAULT_APPLET_CONFIG;
+        }
+      } catch {
+        config = DEFAULT_APPLET_CONFIG;
+      }
+
+      document.getElementById('firebaseConfigTextarea').value = JSON.stringify(config, null, 2);
+
+      try {
+        if (!getApps().length) {
+          firebaseApp = initializeApp(config);
+        } else {
+          firebaseApp = getApps()[0];
+        }
+
+        auth = getAuth(firebaseApp);
+        db = getFirestore(firebaseApp, config.firestoreDatabaseId || undefined);
+
+        // Listen for Authentication state
+        onAuthStateChanged(auth, (user) => {
+          currentUser = user;
+          updateAuthUI(user);
+
+          if (user) {
+            // Subscribe to real-time Firestore Document
+            const userDocRef = doc(db, 'users', user.uid, 'data', 'financeState');
+            if (firestoreUnsubscribe) firestoreUnsubscribe();
+
+            firestoreUnsubscribe = onSnapshot(userDocRef, (snap) => {
+              if (snap.exists()) {
+                const cloudData = snap.data();
+                if (cloudData && Array.isArray(cloudData.accounts)) {
+                  state = {
+                    ...state,
+                    ...cloudData
+                  };
+                  localStorage.setItem('financeme_state_v1', JSON.stringify(state));
+                  renderAll();
+                }
+              } else {
+                // First time sign-in: push existing state to cloud
+                setDoc(userDocRef, state);
+              }
+            }, (error) => {
+              console.warn('Firestore sync subscription:', error);
+            });
+
+            updateCloudStatus(true);
+          } else {
+            if (firestoreUnsubscribe) firestoreUnsubscribe();
+            updateCloudStatus(false);
+          }
+        });
+      } catch (err) {
+        console.warn('Firebase initialization notice (running in local mode):', err);
+        updateCloudStatus(false);
+      }
+    }
+
+    function updateCloudStatus(isCloud) {
+      const badge = document.getElementById('cloudStatusBadge');
+      const text = document.getElementById('cloudStatusText');
+      if (isCloud) {
+        badge.className = 'inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/25';
+        badge.querySelector('span').className = 'w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse';
+        text.textContent = 'Cloud Synced';
+      } else {
+        badge.className = 'inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/25';
+        badge.querySelector('span').className = 'w-1.5 h-1.5 rounded-full bg-amber-400';
+        text.textContent = 'Local Mode';
+      }
+    }
+
+    function updateAuthUI(user) {
+      const authBtn = document.getElementById('authBtn');
+      const authAvatar = document.getElementById('authBtnAvatar');
+      const authLabel = document.getElementById('authBtnLabel');
+
+      if (user) {
+        authAvatar.textContent = (user.displayName || user.email || 'U').charAt(0).toUpperCase();
+        authLabel.textContent = user.displayName ? user.displayName.split(' ')[0] : (user.email ? user.email.split('@')[0] : 'Profile');
+        authBtn.onclick = () => {
+          if (confirm(`Signed in as ${user.email || user.displayName}. Do you want to sign out?`)) {
+            signOut(auth).then(() => showToast('Signed out successfully'));
+          }
+        };
+      } else {
+        authAvatar.textContent = 'G';
+        authLabel.textContent = 'Sign In';
+        authBtn.onclick = () => openModal('authModal');
+      }
+    }
+
+    // ================= MODAL CONTROLLER =================
+    function openModal(id) {
+      const el = document.getElementById(id);
+      if (el) el.classList.remove('hidden');
+    }
+
+    function closeModal(id) {
+      const el = document.getElementById(id);
+      if (el) el.classList.add('hidden');
+    }
+
+    // ================= RENDER ENGINES =================
+
+    function renderAll() {
+      renderCurrencyHeader();
+      renderNetWorth();
+      renderHealthStats();
+      renderAccounts();
+      renderRecentTransactions();
+      renderLedgerTable();
+      renderSubscriptions();
+      renderGoals();
+      renderCalendar();
+      renderCharts();
+    }
+
+    function renderCurrencyHeader() {
+      const select = document.getElementById('currencySelect');
+      select.value = state.currency;
+      const curr = CURRENCIES[state.currency] || CURRENCIES.USD;
+      document.getElementById('currencySymbolLabel').textContent = curr.symbol;
+      document.getElementById('txCurrencyLabel').textContent = state.currency;
+      document.getElementById('transferCurrencyLabel').textContent = state.currency;
+      document.getElementById('depositCurrencyLabel').textContent = state.currency;
+
+      // Privacy icon state
+      document.getElementById('privacyIconOpen').classList.toggle('hidden', state.privacyMask);
+      document.getElementById('privacyIconClosed').classList.toggle('hidden', !state.privacyMask);
+    }
+
+    function renderNetWorth() {
+      let totalAssetsUsd = 0;
+      let totalLiabilitiesUsd = 0;
+
+      state.accounts.forEach(acc => {
+        const isLiability = acc.type === 'Credit Card' || acc.type === 'Loan';
+        if (isLiability) {
+          totalLiabilitiesUsd += Math.abs(acc.balanceUsd);
+        } else {
+          totalAssetsUsd += Math.max(0, acc.balanceUsd);
+        }
+      });
+
+      const netWorthUsd = totalAssetsUsd - totalLiabilitiesUsd;
+
+      document.getElementById('heroNetWorthDisplay').textContent = formatMoney(netWorthUsd);
+      document.getElementById('heroTotalAssetsDisplay').textContent = formatMoney(totalAssetsUsd);
+      document.getElementById('heroTotalLiabilitiesDisplay').textContent = formatMoney(totalLiabilitiesUsd);
+      document.getElementById('accountCountLabel').textContent = `${state.accounts.length} accounts`;
+
+      // Debt to Asset ratio
+      const ratio = totalAssetsUsd > 0 ? Math.round((totalLiabilitiesUsd / totalAssetsUsd) * 100) : 0;
+      const debtBadge = document.getElementById('debtRatioBadge');
+      if (ratio <= 20) {
+        debtBadge.textContent = `Pristine (${ratio}% Debt)`;
+        debtBadge.className = 'text-xs font-mono px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/30';
+      } else if (ratio <= 40) {
+        debtBadge.textContent = `Balanced (${ratio}% Debt)`;
+        debtBadge.className = 'text-xs font-mono px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 border border-slate-700';
+      } else {
+        debtBadge.textContent = `Elevated (${ratio}% Debt)`;
+        debtBadge.className = 'text-xs font-mono px-2.5 py-1 rounded-full bg-rose-500/10 text-rose-300 border border-rose-500/30';
+      }
+    }
+
+    function renderHealthStats() {
+      let incomeUsd = 0;
+      let expenseUsd = 0;
+
+      state.transactions.forEach(t => {
+        if (t.type === 'income') incomeUsd += t.amountUsd;
+        if (t.type === 'expense') expenseUsd += t.amountUsd;
+      });
+
+      const cashFlowUsd = incomeUsd - expenseUsd;
+      const savingsRate = incomeUsd > 0 ? Math.max(0, Math.round((cashFlowUsd / incomeUsd) * 100)) : 0;
+
+      document.getElementById('statIncomeDisplay').textContent = formatMoney(incomeUsd);
+      document.getElementById('statExpenseDisplay').textContent = formatMoney(expenseUsd);
+      document.getElementById('statCashFlowDisplay').textContent = formatMoney(cashFlowUsd);
+      document.getElementById('savingsRateLabel').textContent = `${savingsRate}% Net Savings Rate`;
+
+      // Subscription burn
+      let monthlySubUsd = 0;
+      state.subscriptions.forEach(s => {
+        if (s.status === 'active') {
+          monthlySubUsd += s.cadence === 'annual' ? (s.amountUsd / 12) : s.amountUsd;
+        }
+      });
+      document.getElementById('statSubBurnDisplay').textContent = `${formatMoney(monthlySubUsd)}/mo`;
+      document.getElementById('statSubAnnualLabel').textContent = `${formatMoney(monthlySubUsd * 12)}/yr annualized`;
+    }
+
+    function renderAccounts() {
+      const grid = document.getElementById('accountsGrid');
+      grid.innerHTML = '';
+
+      state.accounts.forEach(acc => {
+        const isLiability = acc.type === 'Credit Card' || acc.type === 'Loan';
+        const card = document.createElement('div');
+        card.className = 'group p-5 rounded-2xl bg-slate-900 border border-slate-800 hover:border-slate-700 transition-all space-y-3';
+        
+        card.innerHTML = `
+          <div class="flex items-start justify-between">
+            <div>
+              <span class="text-[10px] font-mono tracking-wider uppercase font-semibold ${isLiability ? 'text-rose-400' : 'text-emerald-400'}">${acc.type}</span>
+              <h4 class="text-sm font-bold text-white group-hover:text-emerald-300 transition-colors">${acc.name}</h4>
+            </div>
+            <button class="delete-acc-btn text-slate-500 hover:text-rose-400 text-xs p-1" data-id="${acc.id}" title="Remove account">×</button>
+          </div>
+          <div class="pt-2 flex items-baseline justify-between">
+            <span class="text-xs text-slate-400">Balance:</span>
+            <span class="text-lg font-bold font-mono tabular-nums ${isLiability ? 'text-rose-300' : 'text-white'}">${formatMoney(acc.balanceUsd)}</span>
+          </div>
+        `;
+
+        card.querySelector('.delete-acc-btn').onclick = (e) => {
+          e.stopPropagation();
+          if (confirm(`Remove account "${acc.name}"?`)) {
+            state.accounts = state.accounts.filter(a => a.id !== acc.id);
+            saveState();
+            showToast('Account removed');
+          }
+        };
+
+        grid.appendChild(card);
+      });
+
+      // Populate selects
+      populateAccountDropdowns();
+    }
+
+    function populateAccountDropdowns() {
+      const txSelect = document.getElementById('txAccountSelect');
+      const fromSelect = document.getElementById('transferFromSelect');
+      const toSelect = document.getElementById('transferToSelect');
+      const subSelect = document.getElementById('subAccountSelect');
+      const depSelect = document.getElementById('depositSourceAccountSelect');
+
+      const optionsHtml = state.accounts.map(a => `<option value="${a.id}">${a.name} (${formatMoney(a.balanceUsd)})</option>`).join('');
+
+      if (txSelect) txSelect.innerHTML = optionsHtml;
+      if (fromSelect) fromSelect.innerHTML = optionsHtml;
+      if (toSelect) toSelect.innerHTML = optionsHtml;
+      if (subSelect) subSelect.innerHTML = optionsHtml;
+      if (depSelect) depSelect.innerHTML = optionsHtml;
+    }
+
+    function renderRecentTransactions() {
+      const container = document.getElementById('recentTransactionsList');
+      container.innerHTML = '';
+
+      const recents = state.transactions.slice(0, 5);
+      if (recents.length === 0) {
+        container.innerHTML = '<p class="text-xs text-slate-500 py-3 italic">No transactions recorded yet. Click "Record Transaction" above.</p>';
+        return;
+      }
+
+      recents.forEach(t => {
+        const acc = state.accounts.find(a => a.id === t.accountId);
+        const isIncome = t.type === 'income';
+        const isTransfer = t.type === 'transfer';
+        const row = document.createElement('div');
+        row.className = 'py-3 flex items-center justify-between gap-3 text-xs';
+        row.innerHTML = `
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${isIncome ? 'bg-emerald-500/10 text-emerald-400' : isTransfer ? 'bg-indigo-500/10 text-indigo-400' : 'bg-slate-800 text-slate-300'} font-bold">
+              ${isIncome ? '↓' : isTransfer ? '⇄' : '↑'}
+            </div>
+            <div class="truncate">
+              <span class="font-bold text-white block truncate">${t.title}</span>
+              <span class="text-[10px] text-slate-400 font-mono">${t.date} · ${t.category} · ${acc?.name || 'Account'}</span>
+            </div>
+          </div>
+          <div class="text-right shrink-0">
+            <span class="font-bold font-mono tabular-nums ${isIncome ? 'text-emerald-400' : 'text-slate-200'}">
+              ${isIncome ? '+' : '-'}${formatMoney(t.amountUsd)}
+            </span>
+          </div>
+        `;
+        container.appendChild(row);
+      });
+    }
+
+    function renderLedgerTable() {
+      const tbody = document.getElementById('fullLedgerTbody');
+      tbody.innerHTML = '';
+
+      const query = (document.getElementById('txSearchInput')?.value || '').toLowerCase();
+      const catFilter = document.getElementById('txCategoryFilter')?.value || 'ALL';
+      const typeFilter = document.getElementById('txTypeFilter')?.value || 'ALL';
+
+      const filtered = state.transactions.filter(t => {
+        const matchesQuery = t.title.toLowerCase().includes(query) || (t.notes || '').toLowerCase().includes(query);
+        const matchesCat = catFilter === 'ALL' || t.category === catFilter;
+        const matchesType = typeFilter === 'ALL' || t.type === typeFilter;
+        return matchesQuery && matchesCat && matchesType;
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="p-8 text-center text-slate-500">No transactions match the selected filters.</td></tr>';
+        return;
+      }
+
+      filtered.forEach(t => {
+        const acc = state.accounts.find(a => a.id === t.accountId);
+        const isIncome = t.type === 'income';
+        const isTransfer = t.type === 'transfer';
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-850/50 transition-colors';
+        tr.innerHTML = `
+          <td class="p-3.5 font-mono text-slate-400 text-[11px]">${t.date}</td>
+          <td class="p-3.5 font-semibold text-white">${t.title}</td>
+          <td class="p-3.5"><span class="px-2 py-0.5 rounded-full text-[10px] font-mono bg-slate-800 text-slate-300">${t.category}</span></td>
+          <td class="p-3.5 text-slate-400 text-[11px]">${acc?.name || 'Account'}</td>
+          <td class="p-3.5 text-right font-mono font-bold ${isIncome ? 'text-emerald-400' : 'text-slate-100'}">${isIncome ? '+' : '-'}${formatMoney(t.amountUsd)}</td>
+          <td class="p-3.5 text-center">
+            <button class="delete-tx-btn text-slate-500 hover:text-rose-400 font-bold p-1 cursor-pointer" data-id="${t.id}" title="Delete record">×</button>
+          </td>
+        `;
+
+        tr.querySelector('.delete-tx-btn').onclick = () => {
+          if (confirm(`Delete transaction "${t.title}"? Account balance will be restored.`)) {
+            // Revert account balance
+            const account = state.accounts.find(a => a.id === t.accountId);
+            if (account) {
+              if (t.type === 'expense') account.balanceUsd += t.amountUsd;
+              if (t.type === 'income') account.balanceUsd -= t.amountUsd;
+            }
+            state.transactions = state.transactions.filter(item => item.id !== t.id);
+            saveState();
+            showToast('Transaction removed & balance adjusted');
+          }
+        };
+
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderSubscriptions() {
+      const grid = document.getElementById('subscriptionsGrid');
+      grid.innerHTML = '';
+
+      let monthlyTotalUsd = 0;
+      let activeCount = 0;
+
+      state.subscriptions.forEach(sub => {
+        const isActive = sub.status === 'active';
+        if (isActive) {
+          activeCount++;
+          monthlyTotalUsd += sub.cadence === 'annual' ? (sub.amountUsd / 12) : sub.amountUsd;
+        }
+
+        const daysToRenewal = Math.ceil((new Date(sub.nextRenewalDate).getTime() - new Date().getTime()) / (1000 * 3600 * 24));
+        const card = document.createElement('div');
+        card.className = `p-5 rounded-2xl border transition-all space-y-4 ${isActive ? 'bg-slate-900 border-slate-800 hover:border-slate-700' : 'bg-slate-950/40 border-slate-900 opacity-60'}`;
+        
+        card.innerHTML = `
+          <div class="flex items-start justify-between">
+            <div class="space-y-0.5">
+              <span class="text-[10px] font-mono tracking-wider uppercase ${sub.cadence === 'annual' ? 'text-amber-400' : 'text-indigo-400'}">${sub.cadence}</span>
+              <h4 class="text-sm font-bold text-white">${sub.name}</h4>
+            </div>
+            <button class="toggle-sub-btn px-2.5 py-1 rounded-full text-[10px] font-mono font-bold cursor-pointer transition-colors ${isActive ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' : 'bg-slate-800 text-slate-400'}">
+              ${isActive ? 'Active' : 'Paused'}
+            </button>
+          </div>
+
+          <div class="flex items-baseline justify-between pt-1">
+            <span class="text-xs text-slate-400">Cost:</span>
+            <span class="text-lg font-bold font-mono text-white">${formatMoney(sub.amountUsd)} <span class="text-[10px] font-normal text-slate-400">/${sub.cadence === 'annual' ? 'yr' : 'mo'}</span></span>
+          </div>
+
+          <div class="flex items-center justify-between text-[11px] font-mono text-slate-400 pt-2 border-t border-slate-800/80">
+            <span>Next: ${sub.nextRenewalDate}</span>
+            <span class="${daysToRenewal <= 3 && daysToRenewal >= 0 ? 'text-amber-400 font-bold' : 'text-slate-500'}">${daysToRenewal >= 0 ? `In ${daysToRenewal}d` : 'Due'}</span>
+          </div>
+        `;
+
+        card.querySelector('.toggle-sub-btn').onclick = () => {
+          sub.status = isActive ? 'paused' : 'active';
+          saveState();
+          showToast(`Subscription ${isActive ? 'paused' : 'resumed'}`);
+        };
+
+        grid.appendChild(card);
+      });
+
+      document.getElementById('subMonthlyBurnDisplay').textContent = formatMoney(monthlyTotalUsd);
+      document.getElementById('subAnnualBurnDisplay').textContent = formatMoney(monthlyTotalUsd * 12);
+      document.getElementById('subActiveCountDisplay').textContent = `${activeCount} Active`;
+    }
+
+    function renderGoals() {
+      const grid = document.getElementById('goalsGrid');
+      grid.innerHTML = '';
+
+      state.goals.forEach(goal => {
+        const percent = Math.min(100, Math.round((goal.currentAmountUsd / goal.targetAmountUsd) * 100));
+        const card = document.createElement('div');
+        card.className = 'p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4 shadow-sm';
+        
+        card.innerHTML = `
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <span class="text-[10px] font-mono uppercase text-emerald-400 font-bold">Goal Target</span>
+              <h4 class="text-base font-bold text-white mt-0.5">${goal.name}</h4>
+              ${goal.targetDate ? `<span class="text-[11px] text-slate-400 font-mono">Target Date: ${goal.targetDate}</span>` : ''}
+            </div>
+            <button class="open-deposit-btn px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md shadow-emerald-600/20 active:scale-95 transition-all cursor-pointer">
+              + Deposit
+            </button>
+          </div>
+
+          <div class="space-y-1.5 pt-2">
+            <div class="flex items-center justify-between text-xs font-mono">
+              <span class="text-slate-300 font-bold">${formatMoney(goal.currentAmountUsd)}</span>
+              <span class="text-slate-500">of ${formatMoney(goal.targetAmountUsd)} (${percent}%)</span>
+            </div>
+            <div class="w-full h-2.5 bg-slate-950 rounded-full overflow-hidden p-[1px] border border-slate-800">
+              <div class="h-full bg-gradient-to-r from-teal-500 to-emerald-400 rounded-full transition-all duration-500" style="width: ${percent}%"></div>
+            </div>
+          </div>
+        `;
+
+        card.querySelector('.open-deposit-btn').onclick = () => {
+          document.getElementById('depositGoalIdInput').value = goal.id;
+          document.getElementById('depositGoalSubtitle').textContent = `Adding funds to "${goal.name}".`;
+          openModal('depositModal');
+        };
+
+        grid.appendChild(card);
+      });
+    }
+
+    function renderCalendar() {
+      const year = activeCalDate.getFullYear();
+      const month = activeCalDate.getMonth();
+      const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+      document.getElementById('calCurrentMonthLabel').textContent = `${monthNames[month]} ${year}`;
+
+      const firstDayIndex = new Date(year, month, 1).getDay();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const grid = document.getElementById('calendarGrid');
+      grid.innerHTML = '';
+
+      // Leading blank days
+      for (let i = 0; i < firstDayIndex; i++) {
+        const blank = document.createElement('div');
+        blank.className = 'h-20 sm:h-24 rounded-xl bg-slate-950/20 border border-slate-900/50';
+        grid.appendChild(blank);
+      }
+
+      // Populate days
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        
+        // Compute daily spend
+        let daySpendUsd = 0;
+        state.transactions.forEach(t => {
+          if (t.date === dateStr && t.type === 'expense') {
+            daySpendUsd += t.amountUsd;
+          }
+        });
+
+        // Check subscriptions due
+        const hasSubDue = state.subscriptions.some(s => s.nextRenewalDate === dateStr && s.status === 'active');
+
+        const dayCell = document.createElement('div');
+        dayCell.className = `h-20 sm:h-24 p-2 rounded-xl border flex flex-col justify-between transition-all cursor-pointer ${
+          selectedCalDayStr === dateStr ? 'bg-slate-800 border-emerald-500/50 shadow-md ring-1 ring-emerald-500/30' :
+          daySpendUsd > 1000 ? 'bg-rose-950/20 border-rose-500/30 hover:border-rose-500/50' :
+          daySpendUsd > 200 ? 'bg-amber-950/20 border-amber-500/30 hover:border-amber-500/50' :
+          daySpendUsd > 0 ? 'bg-emerald-950/20 border-emerald-500/25 hover:border-emerald-500/40' :
+          'bg-slate-950 border-slate-800/80 hover:border-slate-700'
+        }`;
+
+        dayCell.innerHTML = `
+          <div class="flex items-center justify-between text-xs font-mono">
+            <span class="font-bold text-slate-300">${day}</span>
+            ${hasSubDue ? '<span class="w-2 h-2 rounded-full bg-amber-400" title="Subscription Due"></span>' : ''}
+          </div>
+          ${daySpendUsd > 0 ? `<span class="text-[10px] font-mono font-bold text-emerald-300 truncate">${formatMoney(daySpendUsd)}</span>` : '<span class="text-[9px] text-slate-600 font-mono">—</span>'}
+        `;
+
+        dayCell.onclick = () => {
+          selectedCalDayStr = dateStr;
+          renderCalendarDayDetails(dateStr);
+          renderCalendar();
+        };
+
+        grid.appendChild(dayCell);
+      }
+    }
+
+    function renderCalendarDayDetails(dateStr) {
+      document.getElementById('calendarSelectedDateTitle').textContent = `Day Activity · ${dateStr}`;
+      const dayList = document.getElementById('calendarDayTransactionsList');
+      dayList.innerHTML = '';
+
+      const dayTxs = state.transactions.filter(t => t.date === dateStr);
+      let totalSpentUsd = 0;
+
+      if (dayTxs.length === 0) {
+        dayList.innerHTML = '<p class="text-slate-500 py-2 italic text-xs">No transactions recorded for this day.</p>';
+      } else {
+        dayTxs.forEach(t => {
+          if (t.type === 'expense') totalSpentUsd += t.amountUsd;
+          const row = document.createElement('div');
+          row.className = 'py-2 flex items-center justify-between';
+          row.innerHTML = `
+            <div>
+              <span class="font-bold text-white block">${t.title}</span>
+              <span class="text-[10px] text-slate-400 font-mono">${t.category}</span>
+            </div>
+            <span class="font-mono font-bold ${t.type === 'income' ? 'text-emerald-400' : 'text-slate-200'}">
+              ${t.type === 'income' ? '+' : '-'}${formatMoney(t.amountUsd)}
+            </span>
+          `;
+          dayList.appendChild(row);
+        });
+      }
+
+      document.getElementById('calendarSelectedDateTotal').textContent = `${formatMoney(totalSpentUsd)} total spent`;
+    }
+
+    function renderCharts() {
+      if (typeof Chart === 'undefined') return;
+
+      // 1. Doughnut Chart: Categories
+      const catCtx = document.getElementById('categoryChart')?.getContext('2d');
+      if (catCtx) {
+        const catTotals = {};
+        state.transactions.forEach(t => {
+          if (t.type === 'expense') {
+            catTotals[t.category] = (catTotals[t.category] || 0) + t.amountUsd;
+          }
+        });
+
+        const labels = Object.keys(catTotals);
+        const data = Object.values(catTotals).map(amtUsd => {
+          const curr = CURRENCIES[state.currency] || CURRENCIES.USD;
+          return Number((amtUsd * curr.rate).toFixed(curr.decimals));
+        });
+
+        if (categoryChartInstance) categoryChartInstance.destroy();
+        categoryChartInstance = new Chart(catCtx, {
+          type: 'doughnut',
+          data: {
+            labels: labels.length ? labels : ['No Expenses Yet'],
+            datasets: [{
+              data: data.length ? data : [1],
+              backgroundColor: [
+                '#10b981', '#6366f1', '#f59e0b', '#ec4899', '#3b82f6', '#8b5cf6', '#14b8a6', '#f43f5e'
+              ],
+              borderWidth: 2,
+              borderColor: '#020617'
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { position: 'bottom', labels: { color: '#94a3b8', font: { family: 'Plus Jakarta Sans', size: 11 } } }
+            }
+          }
+        });
+      }
+
+      // 2. Bar Chart: Cash Flow
+      const cashCtx = document.getElementById('cashflowChart')?.getContext('2d');
+      if (cashCtx) {
+        let totalIncome = 0;
+        let totalExpense = 0;
+        state.transactions.forEach(t => {
+          if (t.type === 'income') totalIncome += t.amountUsd;
+          if (t.type === 'expense') totalExpense += t.amountUsd;
+        });
+
+        const curr = CURRENCIES[state.currency] || CURRENCIES.USD;
+        const incVal = Number((totalIncome * curr.rate).toFixed(curr.decimals));
+        const expVal = Number((totalExpense * curr.rate).toFixed(curr.decimals));
+
+        if (cashflowChartInstance) cashflowChartInstance.destroy();
+        cashflowChartInstance = new Chart(cashCtx, {
+          type: 'bar',
+          data: {
+            labels: ['Total Inflow', 'Total Outflow'],
+            datasets: [{
+              label: state.currency,
+              data: [incVal, expVal],
+              backgroundColor: ['#10b981', '#f43f5e'],
+              borderRadius: 8
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              x: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' } },
+              y: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' } }
+            }
+          }
+        });
+      }
+    }
+
+    // ================= EVENT LISTENERS & SETUP =================
+    document.addEventListener('DOMContentLoaded', () => {
+      // 1. Navigation Tabs
+      document.querySelectorAll('.nav-tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const target = btn.dataset.tab;
+          document.querySelectorAll('.nav-tab-btn').forEach(b => {
+            b.classList.remove('active', 'bg-slate-800', 'text-emerald-400', 'border', 'border-emerald-500/30', 'shadow-sm');
+            b.classList.add('text-slate-400');
+          });
+          btn.classList.add('active', 'bg-slate-800', 'text-emerald-400', 'border', 'border-emerald-500/30', 'shadow-sm');
+          btn.classList.remove('text-slate-400');
+
+          // Hide all sections
+          ['dashboard', 'transactions', 'calendar', 'subscriptions', 'goals', 'analytics'].forEach(tabName => {
+            document.getElementById(`tab-${tabName}`).classList.add('hidden');
+          });
+          document.getElementById(`tab-${target}`).classList.remove('hidden');
+
+          if (target === 'analytics') renderCharts();
+          if (target === 'calendar') renderCalendar();
+        });
+      });
+
+      // 2. Currency Change Event
+      document.getElementById('currencySelect').addEventListener('change', (e) => {
+        state.currency = e.target.value;
+        saveState();
+        showToast(`Currency converted to ${state.currency} across all ledgers`);
+      });
+
+      // 3. Privacy Masking Toggle
+      document.getElementById('privacyMaskToggle').addEventListener('click', () => {
+        state.privacyMask = !state.privacyMask;
+        saveState();
+        showToast(state.privacyMask ? 'Privacy mode enabled (numbers masked)' : 'Privacy mode disabled');
+      });
+
+      // 4. Modal Open/Close wiring
+      document.getElementById('openNewTxBtn').onclick = () => openModal('txModal');
+      document.getElementById('ledgerNewTxBtn').onclick = () => openModal('txModal');
+      document.getElementById('closeTxModalBtn').onclick = () => closeModal('txModal');
+      document.getElementById('cancelTxBtn').onclick = () => closeModal('txModal');
+
+      document.getElementById('openTransferBtn').onclick = () => openModal('transferModal');
+      document.getElementById('closeTransferModalBtn').onclick = () => closeModal('transferModal');
+      document.getElementById('cancelTransferBtn').onclick = () => closeModal('transferModal');
+
+      document.getElementById('openAddAccountBtn').onclick = () => openModal('accountModal');
+      document.getElementById('closeAccountModalBtn').onclick = () => closeModal('accountModal');
+      document.getElementById('cancelAccountBtn').onclick = () => closeModal('accountModal');
+
+      document.getElementById('openNewSubBtn').onclick = () => openModal('subModal');
+      document.getElementById('closeSubModalBtn').onclick = () => closeModal('subModal');
+      document.getElementById('cancelSubBtn').onclick = () => closeModal('subModal');
+
+      document.getElementById('openNewGoalBtn').onclick = () => openModal('goalModal');
+      document.getElementById('closeGoalModalBtn').onclick = () => closeModal('goalModal');
+      document.getElementById('cancelGoalBtn').onclick = () => closeModal('goalModal');
+
+      document.getElementById('closeDepositModalBtn').onclick = () => closeModal('depositModal');
+      document.getElementById('cancelDepositBtn').onclick = () => closeModal('depositModal');
+
+      document.getElementById('openCloudConfigBtn').onclick = () => openModal('cloudConfigModal');
+      document.getElementById('closeCloudModalBtn').onclick = () => closeModal('cloudConfigModal');
+
+      document.getElementById('closeAuthModalBtn').onclick = () => closeModal('authModal');
+      document.getElementById('openBackupBtn').onclick = () => openModal('backupModal');
+      document.getElementById('closeBackupModalBtn').onclick = () => closeModal('backupModal');
+
+      // 5. Transaction Type Toggle in Modal
+      let activeTxType = 'expense';
+      const expBtn = document.getElementById('txTypeExpenseBtn');
+      const incBtn = document.getElementById('txTypeIncomeBtn');
+
+      expBtn.onclick = () => {
+        activeTxType = 'expense';
+        expBtn.className = 'py-2 text-xs font-bold rounded-lg bg-rose-600/20 text-rose-300 border border-rose-500/30 cursor-pointer';
+        incBtn.className = 'py-2 text-xs font-bold rounded-lg text-slate-400 hover:text-slate-200 cursor-pointer';
+      };
+
+      incBtn.onclick = () => {
+        activeTxType = 'income';
+        incBtn.className = 'py-2 text-xs font-bold rounded-lg bg-emerald-600/20 text-emerald-300 border border-emerald-500/30 cursor-pointer';
+        expBtn.className = 'py-2 text-xs font-bold rounded-lg text-slate-400 hover:text-slate-200 cursor-pointer';
+      };
+
+      // Set today as default date
+      document.getElementById('txDateInput').value = new Date().toISOString().split('T')[0];
+      document.getElementById('subNextDateInput').value = new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString().split('T')[0];
+
+      // 6. Submit Transaction Form
+      document.getElementById('txForm').onsubmit = (e) => {
+        e.preventDefault();
+        const title = document.getElementById('txTitleInput').value.trim();
+        const rawAmount = parseFloat(document.getElementById('txAmountInput').value) || 0;
+        const date = document.getElementById('txDateInput').value;
+        const category = document.getElementById('txCategorySelect').value;
+        const accountId = document.getElementById('txAccountSelect').value;
+        const notes = document.getElementById('txNotesInput').value.trim();
+
+        if (!title || rawAmount <= 0) return;
+
+        const amountUsd = toUsd(rawAmount, state.currency);
+
+        const newTx = {
+          id: `tx_${Date.now()}`,
+          title,
+          amountUsd,
+          type: activeTxType,
+          category,
+          accountId,
+          date,
+          notes
+        };
+
+        // Adjust target account balance
+        const account = state.accounts.find(a => a.id === accountId);
+        if (account) {
+          if (activeTxType === 'expense') {
+            account.balanceUsd -= amountUsd;
+          } else {
+            account.balanceUsd += amountUsd;
+          }
+        }
+
+        state.transactions.unshift(newTx);
+        saveState();
+        closeModal('txModal');
+        showToast('Transaction logged successfully');
+        document.getElementById('txForm').reset();
+        document.getElementById('txDateInput').value = new Date().toISOString().split('T')[0];
+      };
+
+      // 7. Submit Transfer Form
+      document.getElementById('transferForm').onsubmit = (e) => {
+        e.preventDefault();
+        const fromId = document.getElementById('transferFromSelect').value;
+        const toId = document.getElementById('transferToSelect').value;
+        const rawAmount = parseFloat(document.getElementById('transferAmountInput').value) || 0;
+
+        if (fromId === toId) {
+          showToast('Source and destination accounts must be different.', 'warning');
+          return;
+        }
+
+        const amountUsd = toUsd(rawAmount, state.currency);
+        const fromAcc = state.accounts.find(a => a.id === fromId);
+        const toAcc = state.accounts.find(a => a.id === toId);
+
+        if (!fromAcc || !toAcc) return;
+
+        fromAcc.balanceUsd -= amountUsd;
+        toAcc.balanceUsd += amountUsd;
+
+        const transferTx = {
+          id: `tx_${Date.now()}`,
+          title: `Transfer: ${fromAcc.name} → ${toAcc.name}`,
+          amountUsd,
+          type: 'transfer',
+          category: 'Transfer',
+          accountId: fromId,
+          date: new Date().toISOString().split('T')[0],
+          notes: 'Internal account movement'
+        };
+
+        state.transactions.unshift(transferTx);
+        saveState();
+        closeModal('transferModal');
+        showToast('Funds transferred successfully');
+        document.getElementById('transferForm').reset();
+      };
+
+      // 8. Submit Account Form
+      document.getElementById('accountForm').onsubmit = (e) => {
+        e.preventDefault();
+        const name = document.getElementById('accountNameInput').value.trim();
+        const type = document.getElementById('accountTypeSelect').value;
+        const rawBalance = parseFloat(document.getElementById('accountBalanceInput').value) || 0;
+
+        const newAcc = {
+          id: `acc_${Date.now()}`,
+          name,
+          type,
+          balanceUsd: toUsd(rawBalance, state.currency)
+        };
+
+        state.accounts.push(newAcc);
+        saveState();
+        closeModal('accountModal');
+        showToast(`Account "${name}" created`);
+        document.getElementById('accountForm').reset();
+      };
+
+      // 9. Submit Subscription Form
+      document.getElementById('subForm').onsubmit = (e) => {
+        e.preventDefault();
+        const name = document.getElementById('subNameInput').value.trim();
+        const rawAmount = parseFloat(document.getElementById('subAmountInput').value) || 0;
+        const cadence = document.getElementById('subCadenceSelect').value;
+        const nextRenewalDate = document.getElementById('subNextDateInput').value;
+        const accountId = document.getElementById('subAccountSelect').value;
+
+        const newSub = {
+          id: `sub_${Date.now()}`,
+          name,
+          amountUsd: toUsd(rawAmount, state.currency),
+          cadence,
+          nextRenewalDate,
+          accountId,
+          status: 'active'
+        };
+
+        state.subscriptions.push(newSub);
+        saveState();
+        closeModal('subModal');
+        showToast(`Subscription "${name}" added`);
+        document.getElementById('subForm').reset();
+      };
+
+      // 10. Submit Goal Form
+      document.getElementById('goalForm').onsubmit = (e) => {
+        e.preventDefault();
+        const name = document.getElementById('goalNameInput').value.trim();
+        const rawTarget = parseFloat(document.getElementById('goalTargetInput').value) || 0;
+        const rawCurrent = parseFloat(document.getElementById('goalCurrentInput').value) || 0;
+        const targetDate = document.getElementById('goalDateInput').value;
+
+        const newGoal = {
+          id: `goal_${Date.now()}`,
+          name,
+          targetAmountUsd: toUsd(rawTarget, state.currency),
+          currentAmountUsd: toUsd(rawCurrent, state.currency),
+          targetDate: targetDate || undefined
+        };
+
+        state.goals.push(newGoal);
+        saveState();
+        closeModal('goalModal');
+        showToast(`Savings goal "${name}" created`);
+        document.getElementById('goalForm').reset();
+      };
+
+      // 11. Deposit to Goal Form
+      document.getElementById('depositForm').onsubmit = (e) => {
+        e.preventDefault();
+        const goalId = document.getElementById('depositGoalIdInput').value;
+        const sourceAccId = document.getElementById('depositSourceAccountSelect').value;
+        const rawAmount = parseFloat(document.getElementById('depositAmountInput').value) || 0;
+
+        const goal = state.goals.find(g => g.id === goalId);
+        const account = state.accounts.find(a => a.id === sourceAccId);
+        const amountUsd = toUsd(rawAmount, state.currency);
+
+        if (!goal || !account || amountUsd <= 0) return;
+
+        account.balanceUsd -= amountUsd;
+        goal.currentAmountUsd += amountUsd;
+
+        // Log transaction
+        state.transactions.unshift({
+          id: `tx_${Date.now()}`,
+          title: `Goal Deposit: ${goal.name}`,
+          amountUsd,
+          type: 'expense',
+          category: 'Investments',
+          accountId: sourceAccId,
+          date: new Date().toISOString().split('T')[0],
+          notes: `Allocated to ${goal.name}`
+        });
+
+        // Trigger confetti celebration if reached!
+        if (goal.currentAmountUsd >= goal.targetAmountUsd && typeof confetti === 'function') {
+          confetti({ particleCount: 120, spread: 70, origin: { y: 0.6 } });
+          showToast(`Congratulations! You reached your goal for "${goal.name}"!`);
+        } else {
+          showToast(`Deposited ${formatMoney(amountUsd)} towards "${goal.name}"`);
+        }
+
+        saveState();
+        closeModal('depositModal');
+        document.getElementById('depositForm').reset();
+      };
+
+      // 12. Save Cloud Config
+      document.getElementById('saveCloudConfigBtn').onclick = () => {
+        const text = document.getElementById('firebaseConfigTextarea').value.trim();
+        try {
+          const parsed = JSON.parse(text);
+          localStorage.setItem('financeme_firebase_config', JSON.stringify(parsed));
+          closeModal('cloudConfigModal');
+          showToast('Firebase configuration saved. Re-connecting...');
+          setTimeout(() => location.reload(), 1000);
+        } catch {
+          showToast('Invalid JSON. Please verify your Firebase Web Config format.', 'error');
+        }
+      };
+
+      document.getElementById('useLocalModeBtn').onclick = () => {
+        localStorage.removeItem('financeme_firebase_config');
+        closeModal('cloudConfigModal');
+        showToast('Switched to Local Mode (offline).');
+        updateCloudStatus(false);
+      };
+
+      // 13. Backup Export & Import
+      document.getElementById('exportBackupBtn').onclick = () => {
+        const jsonStr = JSON.stringify(state, null, 2);
+        const blob = new Blob([jsonStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `financeme-backup-${new Date().toISOString().split('T')[0]}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast('Backup JSON downloaded');
+      };
+
+      document.getElementById('triggerImportBtn').onclick = () => {
+        document.getElementById('importBackupInput').click();
+      };
+
+      document.getElementById('importBackupInput').onchange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          try {
+            const imported = JSON.parse(event.target.result);
+            if (imported && Array.isArray(imported.accounts)) {
+              state = imported;
+              saveState();
+              closeModal('backupModal');
+              showToast('Backup restored successfully!');
+            } else {
+              showToast('Invalid backup file structure.', 'error');
+            }
+          } catch {
+            showToast('Failed to parse JSON file.', 'error');
+          }
+        };
+        reader.readAsText(file);
+      };
+
+      // 14. Reset Demo Data
+      document.getElementById('footerDemoBtn').onclick = () => {
+        if (confirm('Reset to initial demo data with sample accounts, ledgers, and goals?')) {
+          state = JSON.parse(JSON.stringify(INITIAL_DEMO_DATA));
+          saveState();
+          showToast('Reset to demo data');
+        }
+      };
+
+      // 15. Ledger search filter listeners
+      document.getElementById('txSearchInput')?.addEventListener('input', renderLedgerTable);
+      document.getElementById('txCategoryFilter')?.addEventListener('change', renderLedgerTable);
+      document.getElementById('txTypeFilter')?.addEventListener('change', renderLedgerTable);
+
+      // 16. Month navigation
+      document.getElementById('calPrevMonthBtn').onclick = () => {
+        activeCalDate.setMonth(activeCalDate.getMonth() - 1);
+        renderCalendar();
+      };
+      document.getElementById('calNextMonthBtn').onclick = () => {
+        activeCalDate.setMonth(activeCalDate.getMonth() + 1);
+        renderCalendar();
+      };
+
+      // 17. Authentication modal tabs & actions
+      let isSignUpTab = false;
+      document.getElementById('tabAuthSignIn').onclick = () => {
+        isSignUpTab = false;
+        document.getElementById('tabAuthSignIn').className = 'flex-1 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 text-white shadow-sm cursor-pointer';
+        document.getElementById('tabAuthSignUp').className = 'flex-1 py-1.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-slate-200 cursor-pointer';
+        document.getElementById('authSubmitBtn').textContent = 'Sign In';
+      };
+
+      document.getElementById('tabAuthSignUp').onclick = () => {
+        isSignUpTab = true;
+        document.getElementById('tabAuthSignUp').className = 'flex-1 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 text-white shadow-sm cursor-pointer';
+        document.getElementById('tabAuthSignIn').className = 'flex-1 py-1.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-slate-200 cursor-pointer';
+        document.getElementById('authSubmitBtn').textContent = 'Create Account';
+      };
+
+      document.getElementById('googleSignInBtn').onclick = async () => {
+        if (!auth) {
+          showToast('Firebase Auth not connected. Running in Local Mode.', 'warning');
+          return;
+        }
+        try {
+          const provider = new GoogleAuthProvider();
+          await signInWithPopup(auth, provider);
+          closeModal('authModal');
+          showToast('Signed in with Google!');
+        } catch (err) {
+          console.warn('Google sign in error:', err);
+          showToast('Google sign in: running in Local Mode', 'warning');
+        }
+      };
+
+      document.getElementById('forgotPasswordBtn').onclick = async () => {
+        const email = document.getElementById('authEmailInput').value.trim();
+        if (!email) {
+          showToast('Please enter your email address first.', 'warning');
+          return;
+        }
+        if (!auth) {
+          showToast('Firebase Auth not connected yet.', 'warning');
+          return;
+        }
+        try {
+          await sendPasswordResetEmail(auth, email);
+          showToast(`Password reset email sent to ${email}`);
+        } catch (err) {
+          showToast('Password reset error: ' + err.message, 'error');
+        }
+      };
+
+      document.getElementById('authForm').onsubmit = async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('authEmailInput').value.trim();
+        const pass = document.getElementById('authPasswordInput').value.trim();
+        if (!auth) {
+          showToast('Firebase Auth not connected. Please connect in cloud settings.', 'warning');
+          return;
+        }
+
+        try {
+          if (isSignUpTab) {
+            await createUserWithEmailAndPassword(auth, email, pass);
+            showToast('Account created & logged in!');
+          } else {
+            await signInWithEmailAndPassword(auth, email, pass);
+            showToast('Logged in successfully!');
+          }
+          closeModal('authModal');
+        } catch (err) {
+          showToast(`Authentication error: ${err.message}`, 'error');
+        }
+      };
+
+      // 18. PWA Service Worker & Install Prompt
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredInstallPrompt = e;
+        const installBtn = document.getElementById('installPwaBtn');
+        if (installBtn) installBtn.classList.remove('hidden');
+      });
+
+      document.getElementById('installPwaBtn').onclick = async () => {
+        if (deferredInstallPrompt) {
+          deferredInstallPrompt.prompt();
+          const { outcome } = await deferredInstallPrompt.userChoice;
+          if (outcome === 'accepted') showToast('FinanceMe installed!');
+          deferredInstallPrompt = null;
+        } else {
+          showToast('iOS Safari: Tap Share (box with arrow) → Add to Home Screen', 'warning');
+        }
+      };
+
+      // Register In-Memory Service Worker for Offline Execution
+      if ('serviceWorker' in navigator) {
+        const swScript = `
+          const CACHE_NAME = 'financeme-cache-v1';
+          self.addEventListener('install', (e) => self.skipWaiting());
+          self.addEventListener('activate', (e) => e.waitUntil(self.clients.claim()));
+          self.addEventListener('fetch', (e) => {
+            if (e.request.method !== 'GET') return;
+            e.respondWith(
+              fetch(e.request).catch(() => caches.match(e.request))
+            );
+          });
+        `;
+        const blob = new Blob([swScript], { type: 'application/javascript' });
+        navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(() => {});
+      }
+
+      // Initial Bootstrap
+      initFirebase();
+      renderAll();
+    });
+  </script>
+</body>
 </html>
