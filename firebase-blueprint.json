@@ -1,230 +1,55 @@
 {
   "entities": {
-    "UserProfile": {
-      "title": "UserProfile",
-      "description": "User profile with Personal Shopper verification status and Admin RBAC",
+    "FinanceState": {
+      "title": "FinanceState",
+      "description": "User personal finance state including accounts, transactions, subscriptions, goals, debts, and payoff simulation preferences",
       "type": "object",
       "properties": {
-        "userId": {
-          "type": "string",
-          "description": "User auth UID",
-          "maxLength": 128
-        },
-        "email": {
-          "type": "string",
-          "description": "Email address",
-          "maxLength": 128
-        },
-        "displayName": {
-          "type": "string",
-          "description": "Public display name",
-          "maxLength": 80
-        },
-        "photoURL": {
-          "type": "string",
-          "description": "Avatar image URL",
-          "maxLength": 512
-        },
-        "role": {
-          "type": "string",
-          "description": "User role (admin or shopper)",
-          "enum": ["admin", "shopper"]
-        },
-        "status": {
-          "type": "string",
-          "description": "Approval status by admin",
-          "enum": ["pending_approval", "approved", "rejected"]
-        },
-        "hubCity": {
-          "type": "string",
-          "description": "Primary sourcing hub city (London, Paris, Milan, etc.)",
-          "maxLength": 80
-        },
-        "phone": {
-          "type": "string",
-          "description": "WhatsApp or contact number",
-          "maxLength": 40
-        },
-        "specialization": {
-          "type": "string",
-          "description": "Luxury brand or category specialization",
-          "maxLength": 150
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "ISO timestamp"
-        }
-      },
-      "required": ["userId", "displayName", "role", "status"]
-    },
-    "SourcingOrder": {
-      "title": "SourcingOrder",
-      "description": "Luxury procurement job record tracked through the 7-stage pipeline",
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique Order ID (e.g. ORD-1001)",
-          "maxLength": 64
-        },
-        "shopperId": {
-          "type": "string",
-          "description": "UID of the personal shopper",
-          "maxLength": 128
-        },
-        "shopperName": {
-          "type": "string",
-          "description": "Shopper name",
-          "maxLength": 80
-        },
-        "clientId": {
-          "type": "string",
-          "description": "VIP client ID",
-          "maxLength": 64
-        },
-        "clientName": {
-          "type": "string",
-          "description": "VIP client name",
-          "maxLength": 80
-        },
-        "brand": {
-          "type": "string",
-          "description": "Luxury house (Hermès, Chanel, Rolex, etc.)",
-          "maxLength": 64
-        },
-        "title": {
-          "type": "string",
-          "description": "Item description and model name",
-          "maxLength": 180
-        },
-        "size": {
-          "type": "string",
-          "description": "Item dimensions or sizing",
-          "maxLength": 64
-        },
-        "image": {
-          "type": "string",
-          "description": "Product photograph URL",
-          "maxLength": 512
-        },
-        "sourcingCity": {
-          "type": "string",
-          "description": "Boutique sourcing origin",
-          "maxLength": 80
-        },
-        "destinationCity": {
-          "type": "string",
-          "description": "Destination GCC city",
-          "maxLength": 80
-        },
-        "stage": {
-          "type": "string",
-          "description": "Current pipeline phase",
-          "maxLength": 40
-        },
-        "retailTagPrice": {
-          "type": "number",
-          "description": "European boutique retail price"
-        },
-        "totalLandedQuote": {
-          "type": "number",
-          "description": "Final landed quote in GCC currency"
-        },
-        "depositPaid": {
-          "type": "number",
-          "description": "Deposit collected in advance"
-        },
-        "balanceDue": {
-          "type": "number",
-          "description": "Remaining balance upon arrival"
-        },
         "currency": {
           "type": "string",
-          "description": "GCC currency code (KWD, SAR, AED, QAR)",
+          "description": "Base active currency code (USD, KWD, EUR, GBP, SAR, etc.)",
           "maxLength": 10
         },
-        "awb": {
-          "type": "string",
-          "description": "Air Waybill or courier tracking reference",
-          "maxLength": 80
+        "privacyMask": {
+          "type": "boolean",
+          "description": "Whether financial numbers are obfuscated in UI"
         },
-        "createdAt": {
+        "accounts": {
+          "type": "array",
+          "description": "Asset and liability bank accounts, credit cards, investments, and cash"
+        },
+        "transactions": {
+          "type": "array",
+          "description": "Income, expense, and transfer ledger records"
+        },
+        "subscriptions": {
+          "type": "array",
+          "description": "Recurring subscription billing items and cycles"
+        },
+        "goals": {
+          "type": "array",
+          "description": "Savings targets and target deadlines"
+        },
+        "debts": {
+          "type": "array",
+          "description": "Active debt liabilities with APR, minimum payments, and balances"
+        },
+        "debtSimulator": {
+          "type": "object",
+          "description": "Debt snowball/avalanche settings and extra payment simulation parameters"
+        },
+        "lastUpdated": {
           "type": "string",
-          "description": "ISO timestamp"
+          "description": "ISO timestamp of last cloud state synchronization"
         }
       },
-      "required": ["id", "shopperId", "brand", "title", "stage", "totalLandedQuote", "currency"]
-    },
-    "VipClient": {
-      "title": "VipClient",
-      "description": "VIP patron dossier with apparel, footwear, and jewelry measurements",
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Client ID (e.g. CLI-01)",
-          "maxLength": 64
-        },
-        "createdBy": {
-          "type": "string",
-          "description": "Shopper UID who registered the client",
-          "maxLength": 128
-        },
-        "name": {
-          "type": "string",
-          "description": "Full honorific and patron name",
-          "maxLength": 80
-        },
-        "phone": {
-          "type": "string",
-          "description": "WhatsApp contact number",
-          "maxLength": 40
-        },
-        "city": {
-          "type": "string",
-          "description": "GCC city and country",
-          "maxLength": 80
-        },
-        "shoeSize": {
-          "type": "string",
-          "description": "EU shoe measurement",
-          "maxLength": 30
-        },
-        "ringSize": {
-          "type": "string",
-          "description": "EU ring measurement",
-          "maxLength": 30
-        },
-        "rtwSize": {
-          "type": "string",
-          "description": "Ready-to-wear size (FR / IT)",
-          "maxLength": 40
-        },
-        "currency": {
-          "type": "string",
-          "description": "Preferred GCC currency code",
-          "maxLength": 10
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "ISO timestamp"
-        }
-      },
-      "required": ["id", "name", "phone", "city"]
+      "required": ["currency", "accounts", "transactions"]
     }
   },
   "firestore": {
-    "/users/{userId}": {
-      "schema": "UserProfile",
-      "description": "User profiles with role and approval status"
-    },
-    "/sourcingOrders/{orderId}": {
-      "schema": "SourcingOrder",
-      "description": "Verified luxury sourcing orders"
-    },
-    "/vipClients/{clientId}": {
-      "schema": "VipClient",
-      "description": "VIP patron directory and measurement dossier"
+    "/users/{userId}/data/financeState": {
+      "schema": "FinanceState",
+      "description": "User personal financial portfolio and settings store"
     }
   }
 }

@@ -15,29 +15,16 @@ service cloud.firestore {
       return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
     }
 
-    // Collection: /users/{userId}
+    // User Private Financial Workspace & Real-time Cloud Sync
     match /users/{userId} {
-      allow get, list: if true;
-      allow create, update: if true;
-      allow delete: if true;
-    }
+      allow get: if isSignedIn() && request.auth.uid == userId && isValidId(userId);
+      allow create, update: if isSignedIn() && request.auth.uid == userId && isValidId(userId);
+      allow delete: if isSignedIn() && request.auth.uid == userId && isValidId(userId);
 
-    // Collection: /sourcingOrders/{orderId}
-    match /sourcingOrders/{orderId} {
-      allow get, list: if true;
-      allow create, update, delete: if true;
-    }
-
-    // Collection: /vipClients/{clientId}
-    match /vipClients/{clientId} {
-      allow get, list: if true;
-      allow create, update, delete: if true;
-    }
-
-    // Collection: /admins/{adminId}
-    match /admins/{adminId} {
-      allow get, list: if true;
-      allow write: if true;
+      // Subcollections including /users/{userId}/data/financeState
+      match /{allSubcollections=**} {
+        allow read, write: if isSignedIn() && request.auth.uid == userId && isValidId(userId);
+      }
     }
   }
 }

@@ -51,6 +51,9 @@
   <!-- Canvas Confetti CDN -->
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 
+  <!-- html2pdf.js CDN for Debt Amortization & Strategy PDF Export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
   <!-- Dynamic Web App Manifest Injection -->
   <script>
     const manifestJson = {
@@ -87,6 +90,26 @@
     .privacy-masked { filter: blur(6px); user-select: none; }
     @keyframes pulse-subtle { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
     .animate-pulse-subtle { animation: pulse-subtle 3s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+
+    /* Clean Printable Stylesheet for Debt Payoff Audit & Amortization PDF Report */
+    @media print {
+      body * {
+        visibility: hidden !important;
+      }
+      #printableDebtReport, #printableDebtReport * {
+        visibility: visible !important;
+      }
+      #printableDebtReport {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        background: #ffffff !important;
+        color: #0f172a !important;
+        display: block !important;
+        padding: 20px !important;
+      }
+    }
   </style>
 </head>
 <body class="min-h-full bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-emerald-500/30 selection:text-emerald-200 antialiased">
@@ -174,6 +197,18 @@
           <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22h14a2 2 0 0 0 2-2V7.5L14.5 2H6a2 2 0 0 0-2 2v4"/><polyline points="14 2 14 8 20 8"/><path d="M3 15h6"/><path d="M6 12l3 3-3 3"/></svg>
         </button>
 
+        <!-- Header Live Demo Launcher Button -->
+        <button id="headerDemoBtn" title="Launch Interactive Demo Dashboard" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs text-emerald-400 font-semibold cursor-pointer transition-colors">
+          <svg class="w-3.5 h-3.5 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          <span id="headerDemoLabel">Live Demo</span>
+        </button>
+
+        <!-- Toggle Landing / Dashboard Button (visible when authenticated or in demo) -->
+        <button id="headerToggleViewBtn" class="hidden items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-emerald-500/30 text-xs text-emerald-300 font-semibold cursor-pointer transition-colors">
+          <svg class="w-3.5 h-3.5 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+          <span id="headerToggleViewLabel">Preview Showcase</span>
+        </button>
+
         <!-- User Authentication Account Button -->
         <button id="authBtn" class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md shadow-emerald-600/20 active:scale-95 transition-all cursor-pointer">
           <span id="authBtnAvatar" class="w-5 h-5 rounded-full bg-emerald-700 flex items-center justify-center text-[10px] font-bold">G</span>
@@ -183,8 +218,8 @@
     </div>
   </header>
 
-  <!-- ================= SUB-NAVIGATION TABS ================= -->
-  <nav class="sticky top-16 z-30 border-b border-slate-800/80 bg-slate-950/95 backdrop-blur-md px-4 sm:px-6 lg:px-8">
+  <!-- ================= SUB-NAVIGATION TABS (Dedicated to Authenticated Dashboard) ================= -->
+  <nav id="mainAppNav" class="sticky top-16 z-30 border-b border-slate-800/80 bg-slate-950/95 backdrop-blur-md px-4 sm:px-6 lg:px-8 hidden">
     <div class="max-w-7xl mx-auto flex items-center gap-2 overflow-x-auto py-2.5 no-scrollbar">
       <button data-tab="dashboard" class="nav-tab-btn active flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap cursor-pointer transition-all bg-slate-800 text-emerald-400 border border-emerald-500/30 shadow-sm">
         <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
@@ -194,6 +229,11 @@
       <button data-tab="transactions" class="nav-tab-btn flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap cursor-pointer transition-all text-slate-400 hover:text-slate-200">
         <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 6v12"/></svg>
         <span>Transactions Ledger</span>
+      </button>
+
+      <button data-tab="debts" class="nav-tab-btn flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap cursor-pointer transition-all text-slate-400 hover:text-slate-200">
+        <svg class="w-4 h-4 text-rose-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+        <span>Debt Payoff & Simulator</span>
       </button>
 
       <button data-tab="calendar" class="nav-tab-btn flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap cursor-pointer transition-all text-slate-400 hover:text-slate-200">
@@ -215,108 +255,501 @@
         <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
         <span>Visual Analytics</span>
       </button>
+
+      <div class="ml-auto pl-3 flex items-center">
+        <button id="navSwitchToLandingBtn" class="text-[11px] font-mono text-slate-400 hover:text-emerald-400 flex items-center gap-1 cursor-pointer transition-colors" title="View the public marketing showcase">
+          <span>Website Preview</span>
+          <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        </button>
+      </div>
     </div>
   </nav>
 
   <!-- ================= MAIN CONTENT VIEWPORT ================= -->
   <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
 
-    <!-- ================= LAUNCH SHOWCASE & EXECUTIVE COPYWRITING ================= -->
-    <div id="launchShowcaseBanner" class="relative overflow-hidden rounded-3xl bg-gradient-to-b from-slate-900 via-slate-900/90 to-slate-950 border border-emerald-500/30 p-6 sm:p-10 shadow-2xl transition-all">
-      <!-- Glow & Ambient Background -->
-      <div class="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-emerald-500/15 blur-3xl pointer-events-none"></div>
-      <div class="absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-teal-500/10 blur-3xl pointer-events-none"></div>
+    <!-- ================= PUBLIC HOMEPAGE / PREVIEW SHOWCASE VIEW ================= -->
+    <div id="publicLandingView" class="space-y-12">
+      
+      <!-- 1. Executive Masterclass Hero -->
+      <section class="relative overflow-hidden rounded-3xl bg-gradient-to-b from-slate-900 via-slate-900/90 to-slate-950 border border-emerald-500/30 p-6 sm:p-12 shadow-2xl">
+        <div class="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-emerald-500/15 blur-3xl pointer-events-none"></div>
+        <div class="absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-teal-500/10 blur-3xl pointer-events-none"></div>
 
-      <div class="relative z-10 space-y-6">
-        <!-- Top Status Bar & Toggle -->
-        <div class="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-800/80">
-          <div class="flex items-center gap-2">
+        <div class="relative z-10 max-w-4xl space-y-6">
+          <div class="flex flex-wrap items-center gap-2.5">
             <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-mono font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
               <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
               OFFICIAL LAUNCH MVP v1.0
             </span>
-            <span class="text-xs text-slate-400 hidden sm:inline font-mono">· Sovereign Wealth & Multi-Currency OS</span>
+            <span class="text-xs text-slate-400 font-mono">· Sovereign Wealth & Multi-Currency OS</span>
+            <span class="text-xs text-cyan-400 font-mono hidden md:inline">· 100% Client-Side Privacy Guaranteed</span>
           </div>
 
-          <div class="flex items-center gap-2">
-            <button id="toggleShowcaseBtn" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-300 border border-slate-700 text-xs font-semibold cursor-pointer transition-colors">
-              <span id="toggleShowcaseLabel">Minimize Showcase</span>
-              <svg id="toggleShowcaseIcon" class="w-3.5 h-3.5 text-slate-400 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m18 15-6-6-6 6"/></svg>
-            </button>
-          </div>
-        </div>
-
-        <!-- Copywriter Masterclass Hero -->
-        <div id="showcaseContent" class="space-y-6">
-          <div class="max-w-3xl space-y-3">
+          <div class="space-y-4">
             <span class="text-xs font-mono font-bold uppercase tracking-widest text-emerald-400 block">Personal Finance Re-Engineered For High Performers</span>
-            <h1 class="text-3xl sm:text-5xl font-black text-white tracking-tight leading-[1.12]">
+            <h1 class="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-[1.08]">
               Stop Flying Blind With Your Money.<br/>
               <span class="bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 bg-clip-text text-transparent">Total Sovereign Wealth Clarity in 16 Currencies.</span>
             </h1>
-            <p class="text-sm sm:text-base text-slate-300 leading-relaxed pt-1">
-              Engineered for founders, expats, and ambitious wealth-builders who demand mathematical truth. No third-party bank scrapers breaking every Tuesday. No intrusive ad brokers harvesting your receipts. Just pure, multi-currency precision with per-account debt shields, silent burn rate tracking, and sub-second encrypted cloud synchronization.
+            <p class="text-sm sm:text-base text-slate-300 leading-relaxed max-w-3xl pt-1">
+              Engineered for founders, expats, and ambitious wealth-builders who demand mathematical truth. No third-party bank scrapers breaking every Tuesday. No intrusive ad brokers harvesting your receipts. Just pure, multi-currency precision with per-account debt shields, repayment accelerators, and encrypted real-time cloud synchronization.
             </p>
           </div>
 
-          <!-- 4 Core Pillars of FinanceMe -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
-            <div class="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 hover:border-emerald-500/40 transition-all space-y-2">
-              <div class="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m12 6 4 6h-8l4-6Z"/></svg>
-              </div>
-              <h4 class="text-xs font-bold text-white">16-Currency ISO Engine</h4>
-              <p class="text-[11px] text-slate-400 leading-normal">
-                Seamless normalization across USD, EUR, GBP, and Gulf currencies (KWD, BHD, OMR) with native 3-decimal precision.
-              </p>
-            </div>
-
-            <div class="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 hover:border-amber-500/40 transition-all space-y-2">
-              <div class="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
-                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-              </div>
-              <h4 class="text-xs font-bold text-white">Per-Account Debt Shield</h4>
-              <p class="text-[11px] text-slate-400 leading-normal">
-                Live credit utilization monitoring, APR interest bleed trackers, and rapid paydown triggers for every credit card and loan.
-              </p>
-            </div>
-
-            <div class="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 hover:border-indigo-500/40 transition-all space-y-2">
-              <div class="w-8 h-8 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
-                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
-              </div>
-              <h4 class="text-xs font-bold text-white">Silent Burn Rate Sentinel</h4>
-              <p class="text-[11px] text-slate-400 leading-normal">
-                Unmask sneaky recurring software, streaming services, and memberships with annualized cost calculations and renewal alarms.
-              </p>
-            </div>
-
-            <div class="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 hover:border-teal-500/40 transition-all space-y-2">
-              <div class="w-8 h-8 rounded-xl bg-teal-500/10 border border-teal-500/20 flex items-center justify-center text-teal-400">
-                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-              </div>
-              <h4 class="text-xs font-bold text-white">Client-First Sovereign Privacy</h4>
-              <p class="text-[11px] text-slate-400 leading-normal">
-                One-tap public masking blurs balances instantly. Data stays in your browser and your private encrypted Firebase Firestore.
-              </p>
-            </div>
+          <!-- Primary CTAs -->
+          <div class="pt-2 flex flex-wrap items-center gap-3.5">
+            <button id="landingLaunchDemoBtn" class="flex items-center gap-2.5 px-6 py-3 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-sm shadow-xl shadow-emerald-600/25 active:scale-95 transition-all cursor-pointer">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              <span>Launch App Dashboard (Live Demo)</span>
+            </button>
+            <button id="landingSignInBtn" class="flex items-center gap-2 px-6 py-3 rounded-2xl bg-slate-800 hover:bg-slate-750 text-white font-semibold text-sm border border-slate-700 active:scale-95 transition-all cursor-pointer">
+              <svg class="w-4 h-4 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              <span>Sign In / Create Account</span>
+            </button>
+            <span class="text-xs font-mono text-slate-400 flex items-center gap-1.5 pl-1">
+              <svg class="w-3.5 h-3.5 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              <span>Instant browser sandbox. Zero installation.</span>
+            </span>
           </div>
 
-          <!-- Quick Action Buttons inside showcase -->
-          <div class="pt-2 flex flex-wrap items-center gap-3">
-            <button id="showcaseAddAccountBtn" class="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg shadow-emerald-600/20 active:scale-95 transition-all cursor-pointer">
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
-              <span>+ Add Your First Account</span>
-            </button>
-            <button id="showcaseRecordTxBtn" class="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-200 font-semibold text-xs border border-slate-700 active:scale-95 transition-all cursor-pointer">
-              <svg class="w-4 h-4 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
-              <span>Record A Transaction</span>
-            </button>
-            <span class="text-[11px] font-mono text-slate-400">⚡ Zero setup required. Runs instantly.</span>
+          <!-- Feature Tag Strip -->
+          <div class="pt-4 border-t border-slate-800/80 flex flex-wrap items-center gap-4 text-xs font-mono text-slate-400">
+            <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> 16 ISO Currencies (KWD, USD, EUR, GBP, SAR...)</span>
+            <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span> Avalanche & Snowball Debt Engine</span>
+            <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span> 50% Milestone Celebration Alerts</span>
+            <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span> Printable PDF Financial Audit</span>
           </div>
         </div>
-      </div>
-    </div>
+      </section>
+
+      <!-- 2. Interactive Sliding Showcase Photos Carousel (Interactive App Preview) -->
+      <section class="space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+              <h2 class="text-xl sm:text-2xl font-bold text-white tracking-tight">Interactive Application Preview</h2>
+            </div>
+            <p class="text-xs text-slate-400 mt-0.5">Explore the 4 core pillars of FinanceMe in action before logging into your private workspace.</p>
+          </div>
+
+          <!-- Slider Controls & Tab Switches -->
+          <div class="flex items-center gap-2 self-start sm:self-auto">
+            <button id="sliderPrevBtn" class="p-2 rounded-xl bg-slate-900 hover:bg-slate-850 text-slate-400 hover:text-white border border-slate-800 transition-colors cursor-pointer" title="Previous preview photo">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+            </button>
+            <div class="flex items-center gap-1.5 px-2">
+              <button class="slider-dot w-2.5 h-2.5 rounded-full bg-emerald-400 transition-all cursor-pointer" data-slide="0"></button>
+              <button class="slider-dot w-2.5 h-2.5 rounded-full bg-slate-700 hover:bg-slate-500 transition-all cursor-pointer" data-slide="1"></button>
+              <button class="slider-dot w-2.5 h-2.5 rounded-full bg-slate-700 hover:bg-slate-500 transition-all cursor-pointer" data-slide="2"></button>
+              <button class="slider-dot w-2.5 h-2.5 rounded-full bg-slate-700 hover:bg-slate-500 transition-all cursor-pointer" data-slide="3"></button>
+            </div>
+            <button id="sliderNextBtn" class="p-2 rounded-xl bg-slate-900 hover:bg-slate-850 text-slate-400 hover:text-white border border-slate-800 transition-colors cursor-pointer" title="Next preview photo">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Pillar Switcher Tabs -->
+        <div class="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+          <button class="slider-tab-btn active px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap cursor-pointer transition-all bg-emerald-600/20 text-emerald-300 border border-emerald-500/30" data-slide="0">
+            1. Consolidated Net Worth
+          </button>
+          <button class="slider-tab-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap cursor-pointer transition-all text-slate-400 hover:text-slate-200 bg-slate-900 border border-slate-800" data-slide="1">
+            2. Debt Payoff Simulator
+          </button>
+          <button class="slider-tab-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap cursor-pointer transition-all text-slate-400 hover:text-slate-200 bg-slate-900 border border-slate-800" data-slide="2">
+            3. Spending Growth Analytics
+          </button>
+          <button class="slider-tab-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap cursor-pointer transition-all text-slate-400 hover:text-slate-200 bg-slate-900 border border-slate-800" data-slide="3">
+            4. Silent Burn Subscriptions
+          </button>
+        </div>
+
+        <!-- Sliding Showcase Carousel Viewport -->
+        <div id="previewSliderContainer" class="relative overflow-hidden rounded-3xl border border-slate-800 bg-slate-900 shadow-2xl min-h-[460px]">
+          
+          <!-- SLIDE 0: CONSOLIDATED NET WORTH & 16-CURRENCY BALANCE SHEET -->
+          <div class="preview-slide transition-opacity duration-500 p-6 sm:p-8 space-y-6 block" data-slide-index="0">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+              <div class="space-y-1">
+                <span class="text-[11px] font-mono text-emerald-400 font-bold uppercase tracking-wider">Preview · Module 01</span>
+                <h3 class="text-xl sm:text-2xl font-black text-white">Consolidated Net Worth Across 16 Currencies</h3>
+                <p class="text-xs text-slate-400">Aggregate checking, savings, brokerage portfolios, and liabilities with 3-decimal Gulf precision and 1-tap privacy masking.</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] font-mono px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/25">Live Currency Engine</span>
+                <button class="preview-launch-tab-btn px-3 py-1 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-300 text-xs font-semibold cursor-pointer border border-slate-700" data-tab="dashboard">
+                  Open In Dashboard →
+                </button>
+              </div>
+            </div>
+
+            <!-- Realistic UI Mockup Card -->
+            <div class="rounded-2xl bg-slate-950 p-5 sm:p-6 border border-slate-800/90 shadow-xl space-y-5">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div class="space-y-1">
+                  <span class="text-[10px] font-mono text-slate-400 uppercase tracking-widest">Live Portfolio Valuation</span>
+                  <div class="flex items-baseline gap-3">
+                    <span class="text-3xl sm:text-4xl font-mono font-black text-white tabular-nums">KD 56,410.250</span>
+                    <span class="text-xs font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">+$4,250.00 MoM</span>
+                  </div>
+                  <span class="text-[11px] text-slate-500 font-mono">Equivalent: $184,520.00 USD · €171,200.00 EUR · £145,800.00 GBP</span>
+                </div>
+                <div class="grid grid-cols-2 gap-3 bg-slate-900 p-3 rounded-xl border border-slate-800">
+                  <div>
+                    <span class="text-[10px] font-mono uppercase text-slate-400 block">Total Assets</span>
+                    <span class="text-sm sm:text-base font-bold font-mono text-emerald-400">$242,020.00</span>
+                  </div>
+                  <div>
+                    <span class="text-[10px] font-mono uppercase text-slate-400 block">Total Liabilities</span>
+                    <span class="text-sm sm:text-base font-bold font-mono text-rose-400">$57,500.00</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Mockup Accounts Strip -->
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+                <div class="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 space-y-1">
+                  <span class="text-[10px] font-mono text-emerald-400 font-bold uppercase">Liquid Checking (Asset)</span>
+                  <div class="text-base font-bold text-white font-mono">$18,450.00</div>
+                  <span class="text-[10px] text-slate-500 font-mono">Chase Private Client</span>
+                </div>
+                <div class="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 space-y-1">
+                  <span class="text-[10px] font-mono text-emerald-400 font-bold uppercase">High-Yield Savings (Asset)</span>
+                  <div class="text-base font-bold text-white font-mono">KD 32,150.000</div>
+                  <span class="text-[10px] text-slate-500 font-mono">National Bank of Kuwait (5.1% APY)</span>
+                </div>
+                <div class="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 space-y-1">
+                  <span class="text-[10px] font-mono text-amber-400 font-bold uppercase">Global Brokerage (Asset)</span>
+                  <div class="text-base font-bold text-white font-mono">$118,500.00</div>
+                  <span class="text-[10px] text-slate-500 font-mono">Interactive Brokers All-World ETF</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SLIDE 1: DEBT PAYOFF SIMULATOR & AVALANCHE/SNOWBALL ENGINE -->
+          <div class="preview-slide transition-opacity duration-500 p-6 sm:p-8 space-y-6 hidden" data-slide-index="1">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+              <div class="space-y-1">
+                <span class="text-[11px] font-mono text-rose-400 font-bold uppercase tracking-wider">Preview · Module 02</span>
+                <h3 class="text-xl sm:text-2xl font-black text-white">Debt Payoff Tracker & Amortization Simulator</h3>
+                <p class="text-xs text-slate-400">Model Avalanche vs. Snowball payoff trajectories, simulate monthly prepayments, and celebrate 50% payoff milestones.</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] font-mono px-3 py-1 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/25">Snowball & Avalanche</span>
+                <button class="preview-launch-tab-btn px-3 py-1 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-300 text-xs font-semibold cursor-pointer border border-slate-700" data-tab="debts">
+                  Test Simulator →
+                </button>
+              </div>
+            </div>
+
+            <!-- Milestone Alert Preview & Strategy Comparison -->
+            <div class="space-y-4">
+              <!-- Visual Milestone Banner Preview -->
+              <div class="p-4 rounded-2xl bg-gradient-to-r from-emerald-950/60 via-slate-900 to-amber-950/40 border-2 border-emerald-500/50 shadow-lg flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-300 text-lg">
+                    🏆
+                  </div>
+                  <div>
+                    <span class="text-xs font-mono font-bold text-emerald-400 flex items-center gap-1.5 uppercase">
+                      Milestone Unlocked: 50% Debt Eliminated!
+                    </span>
+                    <p class="text-xs text-slate-300">You've cleared more than half your loan balance ($28,750 principal repaid). The halfway mark is conquered!</p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
+                  <span class="text-[10px] font-mono px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold">50.0% Cleared</span>
+                  <span class="text-[10px] font-mono px-2.5 py-1 rounded-lg bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-bold">PDF Export Ready</span>
+                </div>
+              </div>
+
+              <!-- Side-by-side Strategy Metric Mockup -->
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs font-mono">
+                <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
+                  <span class="text-slate-400 block text-[10px] uppercase">1. Minimum Only Baseline</span>
+                  <div class="text-base font-bold text-white">48 Months Payoff</div>
+                  <span class="text-rose-400 block">$8,940 Total Interest</span>
+                </div>
+                <div class="p-4 rounded-xl bg-slate-950 border-2 border-emerald-500/60 space-y-1 shadow-md shadow-emerald-500/10">
+                  <span class="text-emerald-400 block text-[10px] font-bold uppercase">2. Accelerated Avalanche (+150/mo)</span>
+                  <div class="text-base font-bold text-emerald-400">19 Months Payoff</div>
+                  <span class="text-emerald-300 font-bold block">$6,420 Interest Saved</span>
+                </div>
+                <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
+                  <span class="text-cyan-400 block text-[10px] uppercase">3. Accelerated Snowball (+150/mo)</span>
+                  <div class="text-base font-bold text-cyan-400">21 Months Payoff</div>
+                  <span class="text-emerald-300 font-bold block">$5,890 Interest Saved</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SLIDE 2: 6-MONTH CATEGORY SPENDING TRENDS & VISUAL ANALYTICS -->
+          <div class="preview-slide transition-opacity duration-500 p-6 sm:p-8 space-y-6 hidden" data-slide-index="2">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+              <div class="space-y-1">
+                <span class="text-[11px] font-mono text-cyan-400 font-bold uppercase tracking-wider">Preview · Module 03</span>
+                <h3 class="text-xl sm:text-2xl font-black text-white">Visual Analytics & 6-Month Category Spend Trend</h3>
+                <p class="text-xs text-slate-400">Monitor cash outflow velocity and category spending spikes across the last 180 days with MoM growth calculations.</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] font-mono px-3 py-1 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/25">MoM Velocity Radar</span>
+                <button class="preview-launch-tab-btn px-3 py-1 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-300 text-xs font-semibold cursor-pointer border border-slate-700" data-tab="analytics">
+                  View Analytics →
+                </button>
+              </div>
+            </div>
+
+            <!-- Analytics Mockup Visual -->
+            <div class="rounded-2xl bg-slate-950 p-5 border border-slate-800 space-y-4">
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div class="p-3 rounded-xl bg-slate-900 border border-slate-800">
+                  <span class="text-[10px] font-mono uppercase text-slate-400 block">6-Mo Total Spend</span>
+                  <div class="text-base font-bold font-mono text-white">$14,820.00</div>
+                </div>
+                <div class="p-3 rounded-xl bg-slate-900 border border-slate-800">
+                  <span class="text-[10px] font-mono uppercase text-slate-400 block">Current Month</span>
+                  <div class="text-base font-bold font-mono text-emerald-400">$2,140.00</div>
+                </div>
+                <div class="p-3 rounded-xl bg-slate-900 border border-slate-800">
+                  <span class="text-[10px] font-mono uppercase text-slate-400 block">Prior Month</span>
+                  <div class="text-base font-bold font-mono text-slate-300">$2,380.00</div>
+                </div>
+                <div class="p-3 rounded-xl bg-slate-900 border border-slate-800">
+                  <span class="text-[10px] font-mono uppercase text-slate-400 block">MoM Spending Growth</span>
+                  <div class="text-base font-bold font-mono text-emerald-400">-10.1%</div>
+                </div>
+              </div>
+
+              <!-- Graphic Vector Curves representation -->
+              <div class="h-32 rounded-xl bg-slate-900/80 border border-slate-800/80 p-3 flex items-end justify-between gap-3 font-mono text-[10px] text-slate-400">
+                <div class="flex-1 flex flex-col items-center gap-1.5 h-full justify-end">
+                  <div class="w-full bg-slate-800 rounded-t h-[65%]"></div>
+                  <span>May</span>
+                </div>
+                <div class="flex-1 flex flex-col items-center gap-1.5 h-full justify-end">
+                  <div class="w-full bg-slate-800 rounded-t h-[80%]"></div>
+                  <span>Jun</span>
+                </div>
+                <div class="flex-1 flex flex-col items-center gap-1.5 h-full justify-end">
+                  <div class="w-full bg-slate-800 rounded-t h-[90%]"></div>
+                  <span>Jul</span>
+                </div>
+                <div class="flex-1 flex flex-col items-center gap-1.5 h-full justify-end">
+                  <div class="w-full bg-rose-500/60 rounded-t h-[75%]"></div>
+                  <span>Aug</span>
+                </div>
+                <div class="flex-1 flex flex-col items-center gap-1.5 h-full justify-end">
+                  <div class="w-full bg-indigo-500/70 rounded-t h-[70%]"></div>
+                  <span>Sep</span>
+                </div>
+                <div class="flex-1 flex flex-col items-center gap-1.5 h-full justify-end">
+                  <div class="w-full bg-emerald-500 rounded-t h-[55%]"></div>
+                  <span class="text-emerald-400 font-bold">Oct</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SLIDE 3: SILENT BURN SENTINEL & SUBSCRIPTIONS TRACKER -->
+          <div class="preview-slide transition-opacity duration-500 p-6 sm:p-8 space-y-6 hidden" data-slide-index="3">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+              <div class="space-y-1">
+                <span class="text-[11px] font-mono text-indigo-400 font-bold uppercase tracking-wider">Preview · Module 04</span>
+                <h3 class="text-xl sm:text-2xl font-black text-white">Silent Burn Sentinel & Subscriptions Tracker</h3>
+                <p class="text-xs text-slate-400">Unmask hidden recurring memberships and SaaS subscriptions with annualized burn rate metrics and renewal alarms.</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] font-mono px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/25">Burn Sentinel</span>
+                <button class="preview-launch-tab-btn px-3 py-1 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-300 text-xs font-semibold cursor-pointer border border-slate-700" data-tab="subscriptions">
+                  View Subscriptions →
+                </button>
+              </div>
+            </div>
+
+            <!-- Subscriptions Mockup Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs font-mono">
+              <div class="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-[10px] uppercase text-indigo-400 font-bold">Monthly SaaS</span>
+                  <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400">Active</span>
+                </div>
+                <div class="text-sm font-bold text-white">ChatGPT Plus 4.5</div>
+                <div class="text-base font-bold text-white">$20.00 <span class="text-[10px] text-slate-500 font-normal">/mo</span></div>
+                <div class="text-[10px] text-slate-400 border-t border-slate-800 pt-1.5 flex justify-between">
+                  <span>Annual Burn:</span><span class="text-amber-300 font-bold">$240.00/yr</span>
+                </div>
+              </div>
+
+              <div class="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-[10px] uppercase text-amber-400 font-bold">Annual Bill</span>
+                  <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400">Active</span>
+                </div>
+                <div class="text-sm font-bold text-white">AWS Cloud Dedicated Server</div>
+                <div class="text-base font-bold text-white">$1,200.00 <span class="text-[10px] text-slate-500 font-normal">/yr</span></div>
+                <div class="text-[10px] text-slate-400 border-t border-slate-800 pt-1.5 flex justify-between">
+                  <span>Renewal Date:</span><span class="text-emerald-400 font-bold">In 18 days</span>
+                </div>
+              </div>
+
+              <div class="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-[10px] uppercase text-indigo-400 font-bold">Wellness / Gym</span>
+                  <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400">Active</span>
+                </div>
+                <div class="text-sm font-bold text-white">Equinox Health Club</div>
+                <div class="text-base font-bold text-white">$280.00 <span class="text-[10px] text-slate-500 font-normal">/mo</span></div>
+                <div class="text-[10px] text-slate-400 border-t border-slate-800 pt-1.5 flex justify-between">
+                  <span>Annual Burn:</span><span class="text-amber-300 font-bold">$3,360.00/yr</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- 3. Interactive Sandbox Simulator: "Experience The Prepayment Math Before Joining" -->
+      <section class="rounded-3xl bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 border border-slate-800 p-6 sm:p-10 space-y-6 shadow-xl">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+          <div class="space-y-1">
+            <span class="text-xs font-mono font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m13 2-2 2.5h3L11 8h3l-5 8 2-5H8l2-9Z"/></svg>
+              Live Interactive Prepayment Sandbox
+            </span>
+            <h3 class="text-xl sm:text-2xl font-black text-white">Experience The Debt Freedom Accelerator</h3>
+            <p class="text-xs text-slate-400">Slide the extra monthly prepayment below to calculate instant interest saved and time shaved off your debts.</p>
+          </div>
+          <span class="text-xs font-mono px-3 py-1 rounded-full bg-slate-950 text-slate-400 border border-slate-800 self-start sm:self-auto">
+            100% Real Calculation
+          </span>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+          <div class="space-y-4">
+            <div class="flex items-center justify-between">
+              <label class="text-xs font-bold text-slate-300 uppercase font-mono">Extra Monthly Payment</label>
+              <div class="text-xl font-bold font-mono text-emerald-400 bg-slate-950 px-3.5 py-1.5 rounded-xl border border-slate-800">
+                +<span id="sandboxExtraVal">150</span> <span class="text-xs text-slate-400 font-normal">/mo</span>
+              </div>
+            </div>
+            <input id="sandboxSlider" type="range" min="0" max="1000" step="25" value="150" class="w-full h-2.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500" />
+            
+            <div class="flex flex-wrap items-center gap-2 pt-1">
+              <span class="text-[10px] font-mono text-slate-500">Quick presets:</span>
+              <button class="sandbox-preset-btn px-2.5 py-1 rounded-lg bg-slate-950 hover:bg-slate-800 text-slate-300 font-mono text-[11px] border border-slate-800 cursor-pointer" data-val="50">+$50</button>
+              <button class="sandbox-preset-btn px-2.5 py-1 rounded-lg bg-slate-950 hover:bg-slate-800 text-slate-300 font-mono text-[11px] border border-slate-800 cursor-pointer" data-val="100">+$100</button>
+              <button class="sandbox-preset-btn px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 font-mono text-[11px] border border-emerald-500/30 cursor-pointer" data-val="150">+$150</button>
+              <button class="sandbox-preset-btn px-2.5 py-1 rounded-lg bg-slate-950 hover:bg-slate-800 text-slate-300 font-mono text-[11px] border border-slate-800 cursor-pointer" data-val="300">+$300</button>
+              <button class="sandbox-preset-btn px-2.5 py-1 rounded-lg bg-slate-950 hover:bg-slate-800 text-slate-300 font-mono text-[11px] border border-slate-800 cursor-pointer" data-val="500">+$500</button>
+            </div>
+          </div>
+
+          <!-- Sandbox Live Feedback Cards -->
+          <div class="grid grid-cols-2 gap-3.5">
+            <div class="p-4 rounded-2xl bg-slate-950 border border-slate-800/90 space-y-1">
+              <span class="text-[10px] font-mono uppercase text-slate-400 block">Total Interest Eliminated</span>
+              <div id="sandboxInterestSaved" class="text-2xl font-black font-mono text-emerald-400 tabular-nums">$5,700.00</div>
+              <span class="text-[10px] text-emerald-500 font-mono">Kept directly in your wallet</span>
+            </div>
+
+            <div class="p-4 rounded-2xl bg-slate-950 border border-slate-800/90 space-y-1">
+              <span class="text-[10px] font-mono uppercase text-slate-400 block">Time Shaved Off Loans</span>
+              <div id="sandboxTimeSaved" class="text-2xl font-black font-mono text-cyan-300 tabular-nums">2y 4m</div>
+              <span class="text-[10px] text-cyan-500 font-mono">28 months freed up</span>
+            </div>
+
+            <div class="p-4 rounded-2xl bg-slate-950 border border-slate-800/90 space-y-1 col-span-2 flex items-center justify-between">
+              <div>
+                <span class="text-[10px] font-mono uppercase text-slate-400 block">Accelerated Debt-Free Date</span>
+                <div id="sandboxDebtFreeDate" class="text-lg font-bold font-mono text-white">August 2028</div>
+              </div>
+              <button id="sandboxApplyBtn" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md shadow-emerald-600/20 active:scale-95 transition-all cursor-pointer">
+                Apply To My Accounts →
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. Four Core Pillars of Sovereign Wealth -->
+      <section class="space-y-4">
+        <div class="space-y-1">
+          <span class="text-xs font-mono font-bold uppercase tracking-wider text-emerald-400">Architectural Precision</span>
+          <h2 class="text-xl sm:text-2xl font-black text-white">Built For Total Sovereign Control</h2>
+          <p class="text-xs text-slate-400">Why thousands of founders and expats replace third-party bank scrapers with FinanceMe.</p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800 hover:border-emerald-500/40 transition-all space-y-2.5">
+            <div class="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m12 6 4 6h-8l4-6Z"/></svg>
+            </div>
+            <h4 class="text-sm font-bold text-white">16-Currency ISO Engine</h4>
+            <p class="text-xs text-slate-400 leading-relaxed">
+              Seamless normalization across USD, EUR, GBP, and Gulf currencies (KWD, BHD, OMR) with native 3-decimal precision.
+            </p>
+          </div>
+
+          <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800 hover:border-rose-500/40 transition-all space-y-2.5">
+            <div class="w-9 h-9 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
+              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+            <h4 class="text-sm font-bold text-white">Per-Account Debt Shield</h4>
+            <p class="text-xs text-slate-400 leading-relaxed">
+              Live credit utilization monitoring, APR interest bleed trackers, and 50% milestone alerts for every loan and credit card.
+            </p>
+          </div>
+
+          <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800 hover:border-indigo-500/40 transition-all space-y-2.5">
+            <div class="w-9 h-9 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
+            </div>
+            <h4 class="text-sm font-bold text-white">Silent Burn Rate Sentinel</h4>
+            <p class="text-xs text-slate-400 leading-relaxed">
+              Unmask sneaky recurring software, streaming services, and gym bills with annualized burn rate metrics and renewal alarms.
+            </p>
+          </div>
+
+          <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800 hover:border-teal-500/40 transition-all space-y-2.5">
+            <div class="w-9 h-9 rounded-xl bg-teal-500/10 border border-teal-500/20 flex items-center justify-center text-teal-400">
+              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+            </div>
+            <h4 class="text-sm font-bold text-white">Client-First Sovereign Privacy</h4>
+            <p class="text-xs text-slate-400 leading-relaxed">
+              One-tap public masking blurs balances instantly. Data stays in your browser and your private encrypted Firebase Firestore.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 5. Closing CTA Banner -->
+      <section class="rounded-3xl bg-gradient-to-r from-emerald-950/80 via-slate-900 to-slate-950 border border-emerald-500/30 p-8 sm:p-12 text-center space-y-6 shadow-2xl relative overflow-hidden">
+        <div class="relative z-10 max-w-2xl mx-auto space-y-3">
+          <h2 class="text-2xl sm:text-4xl font-black text-white tracking-tight">Ready to Take Sovereign Control of Your Wealth?</h2>
+          <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+            Join the personal finance revolution designed for mathematical truth. Launch immediately in your browser with zero friction.
+          </p>
+          <div class="pt-2 flex flex-wrap items-center justify-center gap-3">
+            <button id="ctaLaunchDemoBtn" class="px-6 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-xl shadow-emerald-600/20 active:scale-95 transition-all cursor-pointer">
+              ⚡ Open Interactive Demo Dashboard
+            </button>
+            <button id="ctaSignInBtn" class="px-6 py-3 rounded-2xl bg-slate-800 hover:bg-slate-750 text-white font-semibold text-xs border border-slate-700 active:scale-95 transition-all cursor-pointer">
+              🚀 Sign In / Create Account
+            </button>
+          </div>
+        </div>
+      </section>
+
+    </div> <!-- /#publicLandingView -->
+
+    <!-- ================= AUTHENTICATED USER DASHBOARD WORKSPACE ================= -->
+    <div id="authenticatedAppView" class="hidden space-y-8">
 
     <!-- TAB 1: OVERVIEW & NET WORTH -->
     <section id="tab-dashboard" class="space-y-8">
@@ -408,8 +841,14 @@
               <p class="text-[10px] text-slate-400">Institutional credit line monitoring & debt service tracking</p>
             </div>
           </div>
-          <div id="consolidatedDebtHealthBadge" class="text-[10px] font-mono px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 self-start sm:self-auto font-semibold">
-            0% Aggregate Utilization · Pristine
+          <div class="flex items-center gap-2">
+            <div id="consolidatedDebtHealthBadge" class="text-[10px] font-mono px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 self-start sm:self-auto font-semibold">
+              0% Aggregate Utilization · Pristine
+            </div>
+            <button data-tab="debts" class="jump-to-debts-btn px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-750 text-rose-300 border border-rose-500/30 text-[11px] font-semibold cursor-pointer transition-colors flex items-center gap-1">
+              <span>Payoff Simulator</span>
+              <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </button>
           </div>
         </div>
 
@@ -523,6 +962,365 @@
             <!-- Dynamically populated -->
           </tbody>
         </table>
+      </div>
+    </section>
+
+    <!-- TAB: DEBT PAYOFF TRACKER & REPAYMENT SIMULATOR -->
+    <section id="tab-debts" class="hidden space-y-8">
+      <!-- Header & Top Actions -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse"></span>
+            <h2 class="text-2xl font-bold text-white tracking-tight">Debt Payoff Tracker & Repayment Simulator</h2>
+          </div>
+          <p class="text-xs text-slate-400 mt-1">Accelerate your journey to debt-free sovereign wealth using Avalanche & Snowball engines with real-time prepayment simulations.</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <button id="exportDebtPdfBtn" class="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-850 text-cyan-300 font-semibold text-xs border border-cyan-500/30 transition-colors cursor-pointer shadow-sm" title="Generate printable PDF of Debt Amortization and Strategy Comparison">
+            <svg class="w-3.5 h-3.5 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            <span>Export Printable PDF Report</span>
+          </button>
+          <button id="importAccountsToDebtBtn" class="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-200 font-semibold text-xs border border-slate-700 transition-colors cursor-pointer">
+            <svg class="w-3.5 h-3.5 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+            <span>Sync Accounts</span>
+          </button>
+          <button id="openPrepayModalBtn" class="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-850 text-emerald-300 font-semibold text-xs border border-emerald-500/30 transition-colors cursor-pointer">
+            <svg class="w-3.5 h-3.5 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            <span>Log Bank Prepayment</span>
+          </button>
+          <button id="openNewDebtBtn" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md shadow-emerald-600/20 active:scale-95 transition-all cursor-pointer">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+            <span>Add Debt</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 0. Visual Milestone Notification / Alert Banner -->
+      <div id="debtMilestoneBanner" class="transition-all duration-300">
+        <!-- Dynamically populated via renderDebtMilestones() -->
+      </div>
+
+      <!-- 1. Summary Metrics Banner (5 Cards) -->
+      <div class="grid grid-cols-2 lg:grid-cols-5 gap-3.5">
+        <div class="p-4 rounded-2xl bg-slate-900 border border-slate-800">
+          <span class="text-[10px] font-mono uppercase text-slate-400 block mb-1">Total Debt Outstanding</span>
+          <div id="debtSummaryTotalBalance" class="text-xl sm:text-2xl font-bold text-rose-400 font-mono tabular-nums">$0.00</div>
+          <span class="text-[10px] text-slate-500 font-mono mt-1 block">Principal across all lines</span>
+        </div>
+
+        <div class="p-4 rounded-2xl bg-slate-900 border border-slate-800">
+          <span class="text-[10px] font-mono uppercase text-slate-400 block mb-1">Weighted Avg APR</span>
+          <div id="debtSummaryWeightedApr" class="text-xl sm:text-2xl font-bold text-amber-300 font-mono tabular-nums">0.0%</div>
+          <span class="text-[10px] text-slate-500 font-mono mt-1 block">Annual cost of capital</span>
+        </div>
+
+        <div class="p-4 rounded-2xl bg-slate-900 border border-slate-800">
+          <span class="text-[10px] font-mono uppercase text-slate-400 block mb-1">Total Monthly Min Due</span>
+          <div id="debtSummaryMonthlyMin" class="text-xl sm:text-2xl font-bold text-slate-100 font-mono tabular-nums">$0.00/mo</div>
+          <span class="text-[10px] text-slate-500 font-mono mt-1 block">Baseline monthly obligation</span>
+        </div>
+
+        <div class="p-4 rounded-2xl bg-slate-900 border border-slate-800">
+          <span class="text-[10px] font-mono uppercase text-slate-400 block mb-1">Baseline Debt-Free Date</span>
+          <div id="debtSummaryBaselineDate" class="text-xl sm:text-2xl font-bold text-white font-mono tabular-nums">—</div>
+          <span id="debtSummaryBaselineMonths" class="text-[10px] text-slate-500 font-mono mt-1 block">Minimum payments only</span>
+        </div>
+
+        <div class="p-4 rounded-2xl bg-slate-900 border border-slate-800 col-span-2 lg:col-span-1">
+          <span class="text-[10px] font-mono uppercase text-slate-400 block mb-1">Total Baseline Interest</span>
+          <div id="debtSummaryBaselineInterest" class="text-xl sm:text-2xl font-bold text-rose-400 font-mono tabular-nums">$0.00</div>
+          <span class="text-[10px] text-slate-500 font-mono mt-1 block">Future interest bleed</span>
+        </div>
+      </div>
+
+      <!-- 2. Repayment Strategy Engine (Snowball vs. Avalanche) -->
+      <div class="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-5">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div class="space-y-0.5">
+            <h3 class="text-base font-bold text-white flex items-center gap-2">
+              <span>Repayment Strategy Engine</span>
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Mathematical Paydown Optimizer</span>
+            </h3>
+            <p class="text-xs text-slate-400">Choose your payoff philosophy: minimize interest expense or build psychological momentum.</p>
+          </div>
+
+          <!-- Strategy Toggle Buttons -->
+          <div class="flex items-center p-1 bg-slate-950 rounded-xl border border-slate-800 self-start sm:self-auto">
+            <button id="strategyAvalancheBtn" class="strategy-toggle-btn active px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-emerald-600 text-white shadow-sm cursor-pointer transition-all flex items-center gap-1.5">
+              <span>⚡ Debt Avalanche</span>
+              <span class="text-[10px] opacity-80">(Highest APR)</span>
+            </button>
+            <button id="strategySnowballBtn" class="strategy-toggle-btn px-3.5 py-1.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-white cursor-pointer transition-all flex items-center gap-1.5">
+              <span>❄️ Debt Snowball</span>
+              <span class="text-[10px] opacity-80">(Lowest Balance)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Strategy Timeline Comparison Cards (3 Columns) -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <!-- Baseline Card -->
+          <div class="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] font-mono uppercase text-slate-400 font-bold">1. Minimum Only (Baseline)</span>
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-800 text-slate-400">No Prepayment</span>
+            </div>
+            <div>
+              <span class="text-xs text-slate-400 block">Debt-Free Date:</span>
+              <div id="stratBaselineDate" class="text-lg font-bold font-mono text-white">—</div>
+            </div>
+            <div class="grid grid-cols-2 gap-2 pt-1 border-t border-slate-800/80 text-xs font-mono">
+              <div>
+                <span class="text-slate-500 text-[10px] block">Duration</span>
+                <span id="stratBaselineDuration" class="text-slate-300 font-bold">—</span>
+              </div>
+              <div>
+                <span class="text-slate-500 text-[10px] block">Total Interest</span>
+                <span id="stratBaselineInterest" class="text-rose-400 font-bold">$0.00</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Avalanche Card -->
+          <div id="cardStratAvalanche" class="p-5 rounded-2xl bg-slate-950/80 border-2 border-emerald-500/60 shadow-lg shadow-emerald-500/5 space-y-3 relative overflow-hidden">
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] font-mono uppercase text-emerald-400 font-bold flex items-center gap-1">
+                <span>⚡ Debt Avalanche</span>
+              </span>
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-semibold">Minimizes Interest</span>
+            </div>
+            <div>
+              <span class="text-xs text-slate-400 block">Accelerated Debt-Free Date:</span>
+              <div id="stratAvalancheDate" class="text-lg font-bold font-mono text-emerald-400">—</div>
+            </div>
+            <div class="grid grid-cols-2 gap-2 pt-1 border-t border-slate-800/80 text-xs font-mono">
+              <div>
+                <span class="text-slate-500 text-[10px] block">Duration</span>
+                <span id="stratAvalancheDuration" class="text-slate-200 font-bold">—</span>
+              </div>
+              <div>
+                <span class="text-slate-500 text-[10px] block">Interest Saved</span>
+                <span id="stratAvalancheSaved" class="text-emerald-400 font-bold">$0.00</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Snowball Card -->
+          <div id="cardStratSnowball" class="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3 relative overflow-hidden">
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] font-mono uppercase text-cyan-400 font-bold flex items-center gap-1">
+                <span>❄️ Debt Snowball</span>
+              </span>
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/30">Rapid Wins</span>
+            </div>
+            <div>
+              <span class="text-xs text-slate-400 block">Accelerated Debt-Free Date:</span>
+              <div id="stratSnowballDate" class="text-lg font-bold font-mono text-cyan-400">—</div>
+            </div>
+            <div class="grid grid-cols-2 gap-2 pt-1 border-t border-slate-800/80 text-xs font-mono">
+              <div>
+                <span class="text-slate-500 text-[10px] block">Duration</span>
+                <span id="stratSnowballDuration" class="text-slate-200 font-bold">—</span>
+              </div>
+              <div>
+                <span class="text-slate-500 text-[10px] block">Interest Saved</span>
+                <span id="stratSnowballSaved" class="text-emerald-400 font-bold">$0.00</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Extra Payments & Downpayment Simulator (Core Feature) -->
+      <div class="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-4">
+          <div>
+            <h3 class="text-base font-bold text-white flex items-center gap-2">
+              <svg class="w-5 h-5 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m13 2-2 2.5h3L11 8h3l-5 8 2-5H8l2-9Z"/></svg>
+              <span>Extra Payments & Downpayment Accelerator</span>
+            </h3>
+            <p class="text-xs text-slate-400">Simulate recurring monthly boosts and one-time cash lump-sums (bonus, savings) to visualize interest eliminated.</p>
+          </div>
+          <button id="resetSimBtn" class="text-xs text-slate-400 hover:text-white font-mono cursor-pointer self-start sm:self-auto">Reset Simulation</button>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <!-- Parameter 1: Extra Recurring Monthly Payment -->
+          <div class="p-5 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-4">
+            <div class="flex items-center justify-between">
+              <label class="text-xs font-bold text-slate-200 uppercase font-mono tracking-wider">Extra Recurring Monthly Payment</label>
+              <div class="flex items-center gap-1 font-mono text-emerald-400 font-bold text-sm bg-slate-900 px-3 py-1 rounded-xl border border-slate-800">
+                <span id="simExtraCurrencyPrefix">$</span>
+                <input id="simExtraMonthlyInput" type="number" min="0" step="any" value="0" class="w-20 bg-transparent text-right font-mono font-bold focus:outline-none text-white" />
+                <span class="text-xs text-slate-400 font-normal">/mo</span>
+              </div>
+            </div>
+
+            <input id="simExtraMonthlySlider" type="range" min="0" max="2000" step="10" value="0" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500" />
+
+            <!-- Quick Add Chips -->
+            <div class="flex flex-wrap items-center gap-2 pt-1">
+              <span class="text-[10px] font-mono text-slate-500">Quick presets:</span>
+              <button class="sim-extra-chip px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 font-mono text-[11px] border border-slate-800 cursor-pointer" data-val="0">+$0</button>
+              <button class="sim-extra-chip px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 font-mono text-[11px] border border-slate-800 cursor-pointer" data-val="50">+$50</button>
+              <button class="sim-extra-chip px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 font-mono text-[11px] border border-slate-800 cursor-pointer" data-val="100">+$100</button>
+              <button class="sim-extra-chip px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 font-mono text-[11px] border border-slate-800 cursor-pointer" data-val="250">+$250</button>
+              <button class="sim-extra-chip px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 font-mono text-[11px] border border-slate-800 cursor-pointer" data-val="500">+$500</button>
+              <button class="sim-extra-chip px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 font-mono text-[11px] border border-slate-800 cursor-pointer" data-val="1000">+$1,000</button>
+            </div>
+          </div>
+
+          <!-- Parameter 2: One-Time Lump-Sum / Downpayment -->
+          <div class="p-5 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-4">
+            <div class="flex items-center justify-between">
+              <label class="text-xs font-bold text-slate-200 uppercase font-mono tracking-wider">One-Time Lump-Sum Downpayment</label>
+              <div class="flex items-center gap-1 font-mono text-amber-300 font-bold text-sm bg-slate-900 px-3 py-1 rounded-xl border border-slate-800">
+                <span id="simLumpCurrencyPrefix">$</span>
+                <input id="simLumpSumInput" type="number" min="0" step="any" value="0" placeholder="0.00" class="w-24 bg-transparent text-right font-mono font-bold focus:outline-none text-white" />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="text-[10px] font-mono text-slate-400 block mb-1">Apply In Month</label>
+                <select id="simLumpSumMonthSelect" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-emerald-500 cursor-pointer font-mono">
+                  <option value="1">Month 1 (Immediately)</option>
+                  <option value="2">Month 2</option>
+                  <option value="3">Month 3</option>
+                  <option value="6">Month 6</option>
+                  <option value="12">Month 12 (1 Year)</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="text-[10px] font-mono text-slate-400 block mb-1">Target Debt Priority</label>
+                <select id="simLumpSumTargetSelect" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-emerald-500 cursor-pointer font-mono">
+                  <option value="strategy">Active Strategy (Optimal)</option>
+                  <!-- Dynamically populated debt targets -->
+                </select>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between pt-1">
+              <span class="text-[10px] font-mono text-slate-500">Apply from live bank balance:</span>
+              <button id="openPrepayModalBtn2" class="text-xs text-emerald-400 hover:text-emerald-300 font-semibold cursor-pointer underline flex items-center gap-1">
+                <span>Deduct from Account & Log →</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. "Saved Money & Time" Comparison Card (Hero Highlight) -->
+        <div class="p-6 rounded-3xl bg-gradient-to-r from-emerald-950/40 via-slate-900 to-teal-950/40 border border-emerald-500/40 shadow-xl space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-emerald-500/20 pb-3">
+            <div class="flex items-center gap-2">
+              <div class="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">✓</div>
+              <h4 class="text-sm font-bold text-white tracking-wide uppercase font-mono">Accelerated Payoff Outcome</h4>
+            </div>
+            <span class="text-xs font-mono text-emerald-400">Baseline vs Accelerated Plan</span>
+          </div>
+
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+              <span class="text-[10px] font-mono uppercase text-slate-400 block mb-0.5">Total Interest Saved</span>
+              <div id="simTotalInterestSaved" class="text-2xl sm:text-3xl font-black text-emerald-400 font-mono tabular-nums">$0.00</div>
+              <span class="text-[10px] text-emerald-500 font-mono mt-0.5 block">Avoided lender charges</span>
+            </div>
+
+            <div>
+              <span class="text-[10px] font-mono uppercase text-slate-400 block mb-0.5">Time Shaved Off Payoff</span>
+              <div id="simTimeSaved" class="text-2xl sm:text-3xl font-black text-white font-mono tabular-nums">0 Months</div>
+              <span id="simTimeSavedSubtext" class="text-[10px] text-slate-400 font-mono mt-0.5 block">Faster debt freedom</span>
+            </div>
+
+            <div>
+              <span class="text-[10px] font-mono uppercase text-slate-400 block mb-0.5">New Debt-Free Date</span>
+              <div id="simNewDebtFreeDate" class="text-2xl sm:text-3xl font-black text-cyan-300 font-mono tabular-nums">—</div>
+              <span id="simNewDebtFreeSubtext" class="text-[10px] text-cyan-500 font-mono mt-0.5 block">Official freedom milestone</span>
+            </div>
+
+            <div>
+              <span class="text-[10px] font-mono uppercase text-slate-400 block mb-0.5">Prepayment Direct ROI</span>
+              <div id="simPrepayRoi" class="text-2xl sm:text-3xl font-black text-amber-300 font-mono tabular-nums">0.0%</div>
+              <span class="text-[10px] text-amber-500 font-mono mt-0.5 block">Interest saved per $1 prepay</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5. Interactive Amortization Chart -->
+      <div class="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+              <svg class="w-4 h-4 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+              <span>Balance Paydown Trajectory (Amortization Curve)</span>
+            </h3>
+            <p class="text-xs text-slate-400">Visual comparison between baseline minimum paydown and accelerated payoff with extra prepayments.</p>
+          </div>
+          <div class="flex items-center gap-4 text-xs font-mono">
+            <span class="flex items-center gap-1.5"><span class="w-3 h-1.5 rounded-full bg-rose-400"></span> Baseline Curve</span>
+            <span class="flex items-center gap-1.5"><span class="w-3 h-1.5 rounded-full bg-emerald-400"></span> Accelerated Curve</span>
+          </div>
+        </div>
+
+        <div class="relative h-72 sm:h-80">
+          <canvas id="amortizationChart"></canvas>
+        </div>
+      </div>
+
+      <!-- 6. Month-by-Month Amortization Schedule Table -->
+      <div class="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h3 class="text-sm font-bold text-white">Month-by-Month Amortization Schedule</h3>
+            <p class="text-xs text-slate-400">Detailed principal, interest, prepayment, and remaining balance timeline.</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button id="toggleAmortViewBtn" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-300 text-xs font-semibold font-mono cursor-pointer transition-colors border border-slate-700">
+              Show All Months
+            </button>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-950">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-900 text-slate-400 font-mono uppercase text-[10px] border-b border-slate-800">
+              <tr>
+                <th class="p-3">Month</th>
+                <th class="p-3">Date</th>
+                <th class="p-3 text-right">Start Balance</th>
+                <th class="p-3 text-right">Scheduled Min</th>
+                <th class="p-3 text-right">Extra Prepay</th>
+                <th class="p-3 text-right">Principal Paid</th>
+                <th class="p-3 text-right">Interest Paid</th>
+                <th class="p-3 text-right">Remaining Balance</th>
+                <th class="p-3 text-center">Milestone</th>
+              </tr>
+            </thead>
+            <tbody id="amortizationTbody" class="divide-y divide-slate-800/80 font-mono text-slate-300">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 7. Debt Portfolio Roster -->
+      <div class="space-y-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="text-base font-bold text-white">Your Managed Debt Portfolio</h3>
+            <p class="text-xs text-slate-400">All credit cards, mortgages, auto loans, and personal credit lines.</p>
+          </div>
+          <button id="openNewDebtBtn2" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 text-xs font-bold cursor-pointer transition-colors">
+            + Add New Debt
+          </button>
+        </div>
+
+        <div id="debtsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <!-- Dynamically populated -->
+        </div>
       </div>
     </section>
 
@@ -657,9 +1455,63 @@
           </div>
         </div>
       </div>
+
+      <!-- 6-Month Category Spending Trend Analysis & Growth Chart -->
+      <div class="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-5">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+              <h3 class="text-base font-bold text-white">6-Month Category Spending Trend & Growth</h3>
+            </div>
+            <p class="text-xs text-slate-400 mt-0.5">Monthly expense trajectory and percentage growth rates per category across the last 6 calendar months.</p>
+          </div>
+          <div id="trendGrowthSummaryBadge" class="text-xs font-mono px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 self-start sm:self-auto font-semibold">
+            Calculating MoM Growth...
+          </div>
+        </div>
+
+        <!-- 4-Card Trend Metrics Strip -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+          <div class="p-4 rounded-2xl bg-slate-950/70 border border-slate-800">
+            <span class="text-[10px] font-mono uppercase text-slate-400 block mb-1">6-Month Total Spending</span>
+            <div id="trendStat6mTotal" class="text-lg sm:text-xl font-bold font-mono text-white tabular-nums">$0.00</div>
+            <span class="text-[10px] text-slate-500 font-mono mt-0.5 block">Aggregated 180-day outflow</span>
+          </div>
+
+          <div class="p-4 rounded-2xl bg-slate-950/70 border border-slate-800">
+            <span class="text-[10px] font-mono uppercase text-slate-400 block mb-1">Current Month Spend</span>
+            <div id="trendStatCurrentMonth" class="text-lg sm:text-xl font-bold font-mono text-emerald-400 tabular-nums">$0.00</div>
+            <span id="trendCurrentMonthLabel" class="text-[10px] text-slate-500 font-mono mt-0.5 block">October 2026</span>
+          </div>
+
+          <div class="p-4 rounded-2xl bg-slate-950/70 border border-slate-800">
+            <span class="text-[10px] font-mono uppercase text-slate-400 block mb-1">Prior Month Spend</span>
+            <div id="trendStatPriorMonth" class="text-lg sm:text-xl font-bold font-mono text-slate-300 tabular-nums">$0.00</div>
+            <span id="trendPriorMonthLabel" class="text-[10px] text-slate-500 font-mono mt-0.5 block">September 2026</span>
+          </div>
+
+          <div class="p-4 rounded-2xl bg-slate-950/70 border border-slate-800">
+            <span class="text-[10px] font-mono uppercase text-slate-400 block mb-1">MoM Net Spending Growth</span>
+            <div id="trendStatMomGrowth" class="text-lg sm:text-xl font-bold font-mono text-slate-200 tabular-nums">0.0%</div>
+            <span id="trendGrowthVelocityLabel" class="text-[10px] text-emerald-400 font-mono mt-0.5 block">Baseline month</span>
+          </div>
+        </div>
+
+        <!-- Trend Line Chart -->
+        <div class="relative h-80 sm:h-96">
+          <canvas id="categoryTrendChart"></canvas>
+        </div>
+      </div>
     </section>
+    </div> <!-- /#authenticatedAppView -->
 
   </main>
+
+  <!-- ================= PRINTABLE DEBT REPORT CONTAINER (For PDF Export & Print) ================= -->
+  <div id="printableDebtReport" class="hidden">
+    <!-- Dynamically rendered on PDF Export trigger -->
+  </div>
 
   <!-- ================= FOOTER ================= -->
   <footer class="border-t border-slate-900 bg-slate-950 py-6 text-xs text-slate-500 font-mono mt-auto">
@@ -1132,7 +1984,117 @@
     </div>
   </div>
 
-  <!-- 10. GENERIC CONFIRMATION MODAL -->
+  <!-- 10. DEBT ENTRY & EDIT MODAL -->
+  <div id="debtModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm hidden">
+    <div class="w-full max-w-md rounded-3xl bg-slate-900 border border-slate-800 p-6 sm:p-8 space-y-5 shadow-2xl relative">
+      <button id="closeDebtModalBtn" class="absolute top-5 right-5 text-slate-400 hover:text-white p-1 rounded-lg">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+
+      <div class="space-y-1">
+        <h3 id="debtModalTitle" class="text-lg font-bold text-white tracking-tight">Add Debt / Liability</h3>
+        <p class="text-xs text-slate-400">Configure loan terms, interest rates, and minimum obligations.</p>
+      </div>
+
+      <form id="debtForm" class="space-y-3.5 text-xs">
+        <input type="hidden" id="debtEditIdInput" />
+
+        <div>
+          <label class="block text-slate-300 font-medium mb-1">Debt Name / Creditor *</label>
+          <input id="debtNameInput" type="text" required placeholder="e.g. Chase Sapphire, Auto Loan, Home Mortgage" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500" />
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Principal / Balance (<span class="debtCurrencyPrefixLabel">$</span>) *</label>
+            <input id="debtBalanceInput" type="number" step="any" min="0.01" required placeholder="5000.00" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-mono font-bold focus:outline-none focus:border-emerald-500" />
+          </div>
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">APR / Interest Rate (%) *</label>
+            <input id="debtAprInput" type="number" step="0.01" min="0" max="100" required placeholder="18.5" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-amber-300 font-mono font-bold focus:outline-none focus:border-emerald-500" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Min Monthly Payment (<span class="debtCurrencyPrefixLabel">$</span>) *</label>
+            <input id="debtMinPaymentInput" type="number" step="any" min="1" required placeholder="150.00" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-mono font-bold focus:outline-none focus:border-emerald-500" />
+          </div>
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Start Date</label>
+            <input id="debtStartDateInput" type="date" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-mono focus:outline-none focus:border-emerald-500" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-slate-300 font-medium mb-1">Link to Liability Account (Optional)</label>
+          <select id="debtLinkedAccountSelect" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-emerald-500 cursor-pointer">
+            <option value="">None (Independent liability entry)</option>
+          </select>
+          <span class="text-[10px] text-slate-500 font-mono mt-1 block">Links balances directly to your Net Worth balance sheet.</span>
+        </div>
+
+        <div class="flex items-center justify-end gap-3 pt-3">
+          <button type="button" id="cancelDebtBtn" class="px-4 py-2 rounded-xl text-slate-400 hover:text-white cursor-pointer">Cancel</button>
+          <button type="submit" id="saveDebtSubmitBtn" class="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold shadow-lg shadow-emerald-600/20 active:scale-95 cursor-pointer">Save Debt</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 11. DEBT PREPAYMENT & LUMP-SUM EXECUTION MODAL -->
+  <div id="debtPrepayModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm hidden">
+    <div class="w-full max-w-md rounded-3xl bg-slate-900 border border-slate-800 p-6 sm:p-8 space-y-5 shadow-2xl relative">
+      <button id="closeDebtPrepayModalBtn" class="absolute top-5 right-5 text-slate-400 hover:text-white p-1 rounded-lg">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+
+      <div class="space-y-1">
+        <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center mb-2">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        </div>
+        <h3 class="text-lg font-bold text-white tracking-tight">Log Debt Prepayment</h3>
+        <p class="text-xs text-slate-400">Pay down principal directly from your bank checking or savings balance.</p>
+      </div>
+
+      <form id="debtPrepayForm" class="space-y-3.5 text-xs">
+        <div>
+          <label class="block text-slate-300 font-medium mb-1">Deduct From Asset Account *</label>
+          <select id="prepaySourceAccountSelect" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-emerald-500 cursor-pointer"></select>
+        </div>
+
+        <div>
+          <label class="block text-slate-300 font-medium mb-1">Apply Payment To Debt *</label>
+          <select id="prepayTargetDebtSelect" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-emerald-500 cursor-pointer"></select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Prepayment Amount (<span class="debtCurrencyPrefixLabel">$</span>) *</label>
+            <input id="prepayAmountInput" type="number" step="any" min="0.01" required placeholder="500.00" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-mono font-bold focus:outline-none focus:border-emerald-500" />
+          </div>
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Payment Date</label>
+            <input id="prepayDateInput" type="date" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-mono focus:outline-none focus:border-emerald-500" />
+          </div>
+        </div>
+
+        <div class="p-3 rounded-xl bg-slate-950/70 border border-slate-800/80 flex items-center gap-2.5">
+          <input type="checkbox" id="prepayRecordTxCheckbox" checked class="w-4 h-4 rounded text-emerald-600 accent-emerald-500 bg-slate-900 border-slate-700 cursor-pointer" />
+          <label for="prepayRecordTxCheckbox" class="text-[11px] text-slate-300 cursor-pointer">
+            Record as transaction in ledger and deduct balance from source account
+          </label>
+        </div>
+
+        <div class="flex items-center justify-end gap-3 pt-3">
+          <button type="button" id="cancelDebtPrepayBtn" class="px-4 py-2 rounded-xl text-slate-400 hover:text-white cursor-pointer">Cancel</button>
+          <button type="submit" class="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold shadow-lg shadow-emerald-600/20 active:scale-95 cursor-pointer">Confirm Prepayment</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 12. GENERIC CONFIRMATION MODAL -->
   <div id="genericConfirmModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md hidden">
     <div class="w-full max-w-sm rounded-3xl bg-slate-900 border border-slate-800 p-6 space-y-4 shadow-2xl text-center relative">
       <div id="confirmModalIconBox" class="w-12 h-12 mx-auto rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
@@ -1180,13 +2142,13 @@
 
     // Global Pre-Configured Firebase credentials from applet
     const DEFAULT_APPLET_CONFIG = {
-      projectId: "gen-lang-client-0805549924",
-      appId: "1:630130736464:web:4de8ac8d741646868a4055",
-      apiKey: "AIzaSyDl9HOzTYCrTKqSnwn2ymyAiK6LLSqWyw0",
-      authDomain: "gen-lang-client-0805549924.firebaseapp.com",
+      projectId: "financeme-dc8b0",
+      appId: "1:402029244960:web:58cde9086d4508a1f74245",
+      apiKey: "AIzaSyAAFdIxEyRKTjdQB-spvtDyr__dHK_mXtU",
+      authDomain: "financeme-dc8b0.firebaseapp.com",
       firestoreDatabaseId: "ai-studio-rubiksstudio3d-0955b89f-4a59-4c54-8c48-ee90ad95557f",
-      storageBucket: "gen-lang-client-0805549924.firebasestorage.app",
-      messagingSenderId: "630130736464"
+      storageBucket: "financeme-dc8b0.firebasestorage.app",
+      messagingSenderId: "402029244960"
     };
 
     // Multi-Currency Exchange Rates normalized to USD = 1.0
@@ -1216,7 +2178,15 @@
       accounts: [],
       transactions: [],
       subscriptions: [],
-      goals: []
+      goals: [],
+      debts: [],
+      debtSimulator: {
+        strategy: 'avalanche',
+        extraMonthlyUsd: 0,
+        lumpSumUsd: 0,
+        lumpSumMonth: 1,
+        lumpSumTarget: 'strategy'
+      }
     };
 
     // Global in-app Confirmation Controller
@@ -1245,6 +2215,9 @@
     // Charts instances
     let categoryChartInstance = null;
     let cashflowChartInstance = null;
+    let categoryTrendChartInstance = null;
+    let amortizationChartInstance = null;
+    let showAllAmortMonths = false;
 
     // Helper: Toast Dispatcher
     function showToast(message, type = 'success') {
@@ -1326,12 +2299,16 @@
         if (stored) {
           const parsed = JSON.parse(stored);
           if (parsed && Array.isArray(parsed.accounts)) {
-            // Check if stored data has old hardcoded demo fixtures. If so, wipe to give clean launch MVP.
             const hasOldDemo = parsed.accounts.some(a => a.id === 'acc_1' || a.id === 'acc_2');
             if (!hasOldDemo) {
               return {
                 ...LAUNCH_EMPTY_DATA,
-                ...parsed
+                ...parsed,
+                debts: Array.isArray(parsed.debts) ? parsed.debts : [],
+                debtSimulator: {
+                  ...LAUNCH_EMPTY_DATA.debtSimulator,
+                  ...(parsed.debtSimulator || {})
+                }
               };
             } else {
               localStorage.removeItem('financeme_state_v1');
@@ -1350,7 +2327,13 @@
       try {
         const storedConfig = localStorage.getItem('financeme_firebase_config');
         if (storedConfig) {
-          config = JSON.parse(storedConfig);
+          const parsed = JSON.parse(storedConfig);
+          if (parsed && parsed.projectId === DEFAULT_APPLET_CONFIG.projectId) {
+            config = parsed;
+          } else {
+            config = DEFAULT_APPLET_CONFIG;
+            localStorage.setItem('financeme_firebase_config', JSON.stringify(DEFAULT_APPLET_CONFIG));
+          }
         } else if (window.FIREBASE_CONFIG) {
           config = window.FIREBASE_CONFIG;
         } else {
@@ -1388,7 +2371,13 @@
                 if (cloudData && Array.isArray(cloudData.accounts)) {
                   state = {
                     ...state,
-                    ...cloudData
+                    ...cloudData,
+                    debts: Array.isArray(cloudData.debts) ? cloudData.debts : (state.debts || []),
+                    debtSimulator: {
+                      ...LAUNCH_EMPTY_DATA.debtSimulator,
+                      ...(state.debtSimulator || {}),
+                      ...(cloudData.debtSimulator || {})
+                    }
                   };
                   localStorage.setItem('financeme_state_v1', JSON.stringify(state));
                   renderAll();
@@ -1427,6 +2416,46 @@
       }
     }
 
+    let isDemoMode = sessionStorage.getItem('financeme_demo_mode') === 'true';
+    let isViewingLanding = false;
+
+    function setAppMode(mode) {
+      const publicView = document.getElementById('publicLandingView');
+      const authView = document.getElementById('authenticatedAppView');
+      const mainNav = document.getElementById('mainAppNav');
+      const headerToggleBtn = document.getElementById('headerToggleViewBtn');
+      const headerToggleLabel = document.getElementById('headerToggleViewLabel');
+      const headerDemoBtn = document.getElementById('headerDemoBtn');
+
+      if (mode === 'dashboard') {
+        isViewingLanding = false;
+        publicView?.classList.add('hidden');
+        authView?.classList.remove('hidden');
+        mainNav?.classList.remove('hidden');
+
+        headerToggleBtn?.classList.remove('hidden');
+        if (headerToggleLabel) headerToggleLabel.textContent = 'Website Preview';
+        headerDemoBtn?.classList.add('hidden');
+
+        // Always ensure dashboard render
+        renderAll();
+      } else {
+        isViewingLanding = true;
+        publicView?.classList.remove('hidden');
+        authView?.classList.add('hidden');
+        mainNav?.classList.add('hidden');
+
+        if (currentUser || isDemoMode) {
+          headerToggleBtn?.classList.remove('hidden');
+          if (headerToggleLabel) headerToggleLabel.textContent = 'My Dashboard';
+          headerDemoBtn?.classList.add('hidden');
+        } else {
+          headerToggleBtn?.classList.add('hidden');
+          headerDemoBtn?.classList.remove('hidden');
+        }
+      }
+    }
+
     function updateAuthUI(user) {
       const authBtn = document.getElementById('authBtn');
       const authAvatar = document.getElementById('authBtnAvatar');
@@ -1436,14 +2465,36 @@
         authAvatar.textContent = (user.displayName || user.email || 'U').charAt(0).toUpperCase();
         authLabel.textContent = user.displayName ? user.displayName.split(' ')[0] : (user.email ? user.email.split('@')[0] : 'Profile');
         authBtn.onclick = () => {
-          if (confirm(`Signed in as ${user.email || user.displayName}. Do you want to sign out?`)) {
-            signOut(auth).then(() => showToast('Signed out successfully'));
-          }
+          promptConfirmation({
+            title: 'Sign Out Account',
+            message: `Currently signed in as ${user.email || user.displayName}. Are you sure you want to sign out?`,
+            confirmText: 'Sign Out',
+            isDanger: false,
+            onConfirm: () => {
+              sessionStorage.removeItem('financeme_demo_mode');
+              isDemoMode = false;
+              signOut(auth).then(() => {
+                showToast('Signed out successfully');
+                setAppMode('landing');
+              });
+            }
+          });
         };
+
+        // Once user logs in, show their own dedicated dashboard
+        if (!isViewingLanding) {
+          setAppMode('dashboard');
+        }
       } else {
         authAvatar.textContent = 'G';
         authLabel.textContent = 'Sign In';
         authBtn.onclick = () => openModal('authModal');
+
+        if (isDemoMode && !isViewingLanding) {
+          setAppMode('dashboard');
+        } else {
+          setAppMode('landing');
+        }
       }
     }
 
@@ -1469,6 +2520,7 @@
       renderLedgerTable();
       renderSubscriptions();
       renderGoals();
+      renderDebts();
       renderCalendar();
       renderCharts();
     }
@@ -1483,6 +2535,13 @@
       document.getElementById('depositCurrencyLabel').textContent = state.currency;
       const accBalCurr = document.getElementById('accBalanceCurrencyLabel');
       if (accBalCurr) accBalCurr.textContent = state.currency;
+
+      // Update debt module currency labels
+      document.querySelectorAll('.debtCurrencyPrefixLabel').forEach(el => el.textContent = curr.symbol);
+      const extraPrefix = document.getElementById('simExtraCurrencyPrefix');
+      if (extraPrefix) extraPrefix.textContent = curr.symbol;
+      const lumpPrefix = document.getElementById('simLumpCurrencyPrefix');
+      if (lumpPrefix) lumpPrefix.textContent = curr.symbol;
 
       // Privacy icon state
       document.getElementById('privacyIconOpen').classList.toggle('hidden', state.privacyMask);
@@ -1722,6 +2781,40 @@
       if (toSelect) toSelect.innerHTML = optionsHtml;
       if (subSelect) subSelect.innerHTML = optionsHtml;
       if (depSelect) depSelect.innerHTML = optionsHtml;
+
+      // Debt linked accounts dropdown
+      const linkedAccSelect = document.getElementById('debtLinkedAccountSelect');
+      if (linkedAccSelect) {
+        const liabilityAccs = state.accounts.filter(a => a.type === 'Credit Card' || a.type === 'Loan');
+        let html = '<option value="">None (Independent liability entry)</option>';
+        html += liabilityAccs.map(a => `<option value="${a.id}">${a.name} (${formatMoney(Math.abs(a.balanceUsd))})</option>`).join('');
+        linkedAccSelect.innerHTML = html;
+      }
+
+      // Prepay source asset accounts dropdown
+      const prepaySourceSelect = document.getElementById('prepaySourceAccountSelect');
+      if (prepaySourceSelect) {
+        const assetAccs = state.accounts.filter(a => a.type !== 'Credit Card' && a.type !== 'Loan');
+        prepaySourceSelect.innerHTML = (assetAccs.length ? assetAccs : state.accounts).map(a => `<option value="${a.id}">${a.name} (${formatMoney(a.balanceUsd)})</option>`).join('');
+      }
+
+      // Prepay target debt dropdown
+      const prepayTargetSelect = document.getElementById('prepayTargetDebtSelect');
+      if (prepayTargetSelect) {
+        prepayTargetSelect.innerHTML = (state.debts || []).map(d => `<option value="${d.id}">${d.name} (${formatMoney(d.balanceUsd)} · APR ${d.apr || 0}%)</option>`).join('');
+      }
+
+      // Lump sum target priority dropdown in simulator
+      const lumpTargetSelect = document.getElementById('simLumpSumTargetSelect');
+      if (lumpTargetSelect) {
+        let lumpHtml = '<option value="strategy">Active Strategy (Optimal)</option>';
+        lumpHtml += (state.debts || []).map(d => `<option value="${d.id}">${d.name} (${formatMoney(d.balanceUsd)} · APR ${d.apr || 0}%)</option>`).join('');
+        const prevVal = lumpTargetSelect.value;
+        lumpTargetSelect.innerHTML = lumpHtml;
+        if (prevVal && (prevVal === 'strategy' || (state.debts || []).some(d => d.id === prevVal))) {
+          lumpTargetSelect.value = prevVal;
+        }
+      }
     }
 
     function renderRecentTransactions() {
@@ -2092,8 +3185,1051 @@
       document.getElementById('calendarSelectedDateTotal').textContent = `${formatMoney(totalSpentUsd)} total spent`;
     }
 
+    // ================= DEBT REPAYMENT & AMORTIZATION SIMULATION ENGINE =================
+    function simulateDebtSchedule({ debts, extraMonthlyUsd = 0, lumpSumUsd = 0, lumpSumMonth = 1, lumpSumTarget = 'strategy', strategy = 'avalanche' }) {
+      if (!debts || debts.length === 0) {
+        return {
+          months: [],
+          totalMonths: 0,
+          debtFreeDate: 'Debt Free',
+          totalInterestPaid: 0,
+          totalPrincipalPaid: 0,
+          totalPrepaymentPaid: 0,
+          milestones: []
+        };
+      }
+
+      const items = debts.map(d => ({
+        id: d.id,
+        name: d.name,
+        balance: Math.max(0, d.balanceUsd || 0),
+        apr: Math.max(0, d.apr || 0),
+        minPay: Math.max(0, d.minPaymentUsd || 0),
+        paidOffMonth: null
+      })).filter(d => d.balance > 0.001);
+
+      if (items.length === 0) {
+        return {
+          months: [],
+          totalMonths: 0,
+          debtFreeDate: 'Debt Free',
+          totalInterestPaid: 0,
+          totalPrincipalPaid: 0,
+          totalPrepaymentPaid: 0,
+          milestones: []
+        };
+      }
+
+      const months = [];
+      let currentMonthIndex = 0;
+      const maxMonths = 360;
+      let totalInterest = 0;
+      let totalPrincipal = 0;
+      let totalExtraPaid = 0;
+      const milestones = [];
+
+      const startDate = new Date();
+
+      while (currentMonthIndex < maxMonths) {
+        currentMonthIndex++;
+        const activeDebts = items.filter(d => d.balance > 0.001);
+        if (activeDebts.length === 0) break;
+
+        const startTotalBalance = items.reduce((s, d) => s + d.balance, 0);
+        let monthInterest = 0;
+        let monthPrincipal = 0;
+        let monthExtra = 0;
+
+        // 1. Accrue monthly interest & scheduled payments
+        items.forEach(d => {
+          if (d.balance > 0.001) {
+            const monthlyRate = (d.apr / 100) / 12;
+            const interest = d.balance * monthlyRate;
+            monthInterest += interest;
+            totalInterest += interest;
+
+            const effectiveMin = Math.max(d.minPay, interest + Math.min(10, d.balance * 0.01));
+            const payment = Math.min(d.balance + interest, effectiveMin);
+            const princ = Math.max(0, payment - interest);
+            d.balance = Math.max(0, d.balance - princ);
+            monthPrincipal += princ;
+            totalPrincipal += princ;
+
+            if (d.balance <= 0.001 && !d.paidOffMonth) {
+              d.paidOffMonth = currentMonthIndex;
+              milestones.push({
+                month: currentMonthIndex,
+                debtName: d.name,
+                type: 'debt_eliminated'
+              });
+            }
+          }
+        });
+
+        // 2. Extra Payments + Snowball/Avalanche Rollover Accelerator
+        const freedUpMin = items.filter(d => d.paidOffMonth && d.paidOffMonth < currentMonthIndex).reduce((sum, d) => sum + d.minPay, 0);
+        let availableExtra = (extraMonthlyUsd || 0) + freedUpMin;
+
+        if (currentMonthIndex === Number(lumpSumMonth)) {
+          availableExtra += (lumpSumUsd || 0);
+        }
+
+        if (availableExtra > 0) {
+          if (currentMonthIndex === Number(lumpSumMonth) && lumpSumTarget && lumpSumTarget !== 'strategy' && (lumpSumUsd || 0) > 0) {
+            const targetDebt = items.find(d => d.id === lumpSumTarget && d.balance > 0.001);
+            if (targetDebt) {
+              const directPay = Math.min(targetDebt.balance, (lumpSumUsd || 0));
+              targetDebt.balance = Math.max(0, targetDebt.balance - directPay);
+              monthPrincipal += directPay;
+              totalPrincipal += directPay;
+              monthExtra += directPay;
+              totalExtraPaid += directPay;
+              availableExtra -= directPay;
+
+              if (targetDebt.balance <= 0.001 && !targetDebt.paidOffMonth) {
+                targetDebt.paidOffMonth = currentMonthIndex;
+                milestones.push({
+                  month: currentMonthIndex,
+                  debtName: targetDebt.name,
+                  type: 'debt_eliminated'
+                });
+              }
+            }
+          }
+
+          while (availableExtra > 0.01) {
+            const remainingDebts = items.filter(d => d.balance > 0.001);
+            if (remainingDebts.length === 0) break;
+
+            if (strategy === 'snowball') {
+              remainingDebts.sort((a, b) => a.balance - b.balance);
+            } else {
+              remainingDebts.sort((a, b) => (b.apr - a.apr) || (a.balance - b.balance));
+            }
+
+            const topDebt = remainingDebts[0];
+            const payAmt = Math.min(topDebt.balance, availableExtra);
+            topDebt.balance = Math.max(0, topDebt.balance - payAmt);
+            monthPrincipal += payAmt;
+            totalPrincipal += payAmt;
+            monthExtra += payAmt;
+            totalExtraPaid += payAmt;
+            availableExtra -= payAmt;
+
+            if (topDebt.balance <= 0.001 && !topDebt.paidOffMonth) {
+              topDebt.paidOffMonth = currentMonthIndex;
+              milestones.push({
+                month: currentMonthIndex,
+                debtName: topDebt.name,
+                type: 'debt_eliminated'
+              });
+            }
+          }
+        }
+
+        const endTotalBalance = items.reduce((s, d) => s + d.balance, 0);
+        const mDate = new Date(startDate);
+        mDate.setMonth(mDate.getMonth() + currentMonthIndex);
+        const dateStr = mDate.toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
+
+        const monthMilestones = milestones.filter(m => m.month === currentMonthIndex);
+
+        months.push({
+          monthIndex: currentMonthIndex,
+          dateStr,
+          startBalance: startTotalBalance,
+          scheduledMin: Math.max(0, monthPrincipal + monthInterest - monthExtra),
+          extraPrepayment: monthExtra,
+          principalPaid: monthPrincipal,
+          interestPaid: monthInterest,
+          endBalance: endTotalBalance,
+          milestones: monthMilestones
+        });
+
+        if (endTotalBalance <= 0.001) break;
+      }
+
+      const finalDate = new Date(startDate);
+      finalDate.setMonth(finalDate.getMonth() + currentMonthIndex);
+      const debtFreeDateStr = finalDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+
+      return {
+        months,
+        totalMonths: currentMonthIndex,
+        debtFreeDate: debtFreeDateStr,
+        totalInterestPaid: totalInterest,
+        totalPrincipalPaid: totalPrincipal,
+        totalPrepaymentPaid: totalExtraPaid,
+        milestones
+      };
+    }
+
+    let latestDebtSimulation = null;
+
+    function renderDebtMilestones(totalDebtUsd, baselineSim, activeSim) {
+      const banner = document.getElementById('debtMilestoneBanner');
+      if (!banner) return;
+
+      if (!state.debts || state.debts.length === 0) {
+        banner.innerHTML = `
+          <div class="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 flex items-center justify-between text-xs font-mono text-slate-400">
+            <span class="flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+              <span>Pristine Balance Sheet: 0 Active Liabilities</span>
+            </span>
+            <span class="text-emerald-400 font-bold">100% Equity</span>
+          </div>
+        `;
+        return;
+      }
+
+      // Ensure original balances are properly anchored
+      state.debts.forEach(d => {
+        if (!d.originalBalanceUsd || d.originalBalanceUsd < (d.balanceUsd || 0)) {
+          d.originalBalanceUsd = Math.max(d.balanceUsd || 0, d.originalBalanceUsd || 0);
+        }
+      });
+
+      const totalOriginalUsd = state.debts.reduce((sum, d) => sum + (d.originalBalanceUsd || d.balanceUsd || 0), 0);
+      const totalCurrentUsd = totalDebtUsd;
+      const totalPaidDownUsd = Math.max(0, totalOriginalUsd - totalCurrentUsd);
+      const paidDownPct = totalOriginalUsd > 0 ? (totalPaidDownUsd / totalOriginalUsd) * 100 : 0;
+      const remainingTo50 = Math.max(0, (totalOriginalUsd * 0.5) - totalPaidDownUsd);
+      const remainingTo75 = Math.max(0, (totalOriginalUsd * 0.75) - totalPaidDownUsd);
+
+      if (totalCurrentUsd <= 0.001 || paidDownPct >= 99.9) {
+        // 100% Milestone
+        banner.innerHTML = `
+          <div class="p-6 rounded-3xl bg-gradient-to-r from-emerald-950 via-teal-900/80 to-slate-900 border-2 border-emerald-400/80 shadow-2xl shadow-emerald-500/20 space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div class="flex items-center gap-3.5">
+                <div class="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center text-3xl shadow-inner shadow-emerald-400/30 animate-bounce">
+                  🏆
+                </div>
+                <div>
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs font-mono font-bold uppercase tracking-wider text-emerald-300 bg-emerald-500/20 px-2.5 py-0.5 rounded-full border border-emerald-400/40">
+                      Ultimate Achievement Unlocked
+                    </span>
+                    <span class="text-xs font-mono text-emerald-400 font-bold">100% DEBT FREE!</span>
+                  </div>
+                  <h3 class="text-xl sm:text-2xl font-black text-white mt-0.5 tracking-tight">
+                    Congratulations! 100% of Debt Portfolio Eliminated
+                  </h3>
+                  <p class="text-xs text-slate-300 mt-0.5">
+                    You have completely eradicated all liabilities (${formatMoney(totalPaidDownUsd)} principal repaid). Every cent you earn now builds pure equity.
+                  </p>
+                </div>
+              </div>
+              <button id="celebrateMilestoneBtn" class="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs shadow-lg shadow-emerald-500/30 active:scale-95 cursor-pointer transition-all shrink-0">
+                <span>🎉 Re-Celebrate Freedom</span>
+              </button>
+            </div>
+            <div class="w-full h-3 bg-slate-950 rounded-full overflow-hidden p-[1px] border border-emerald-500/40">
+              <div class="h-full bg-gradient-to-r from-teal-400 via-emerald-400 to-amber-300 rounded-full w-full"></div>
+            </div>
+          </div>
+        `;
+      } else if (paidDownPct >= 50) {
+        // 50% Milestone (Key feature requested by user)
+        banner.innerHTML = `
+          <div class="p-6 rounded-3xl bg-gradient-to-r from-emerald-950/80 via-slate-900 to-amber-950/50 border-2 border-emerald-500/70 shadow-2xl shadow-emerald-500/15 space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div class="flex items-center gap-3.5">
+                <div class="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-3xl shadow-inner shadow-emerald-500/30">
+                  🏅
+                </div>
+                <div>
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs font-mono font-bold uppercase tracking-wider text-emerald-400 bg-emerald-500/20 px-2.5 py-0.5 rounded-full border border-emerald-500/40">
+                      ★ Key Milestone Unlocked ★
+                    </span>
+                    <span class="text-xs font-mono text-amber-300 font-bold">50% Halfway Mark Conquered!</span>
+                  </div>
+                  <h3 class="text-xl sm:text-2xl font-black text-white mt-0.5 tracking-tight">
+                    50%+ Outstanding Debt Eliminated (${formatMoney(totalPaidDownUsd)} Paid Off)
+                  </h3>
+                  <p class="text-xs text-slate-300 mt-0.5">
+                    Remarkable discipline! You have officially paid off <span class="text-emerald-400 font-bold">${paidDownPct.toFixed(1)}%</span> of your total loans. You've crossed the halfway mark and momentum is entirely on your side!
+                  </p>
+                </div>
+              </div>
+              <button id="celebrateMilestoneBtn" class="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 hover:from-emerald-500 hover:to-teal-400 text-white font-bold text-xs shadow-lg shadow-emerald-600/30 active:scale-95 cursor-pointer transition-all shrink-0">
+                <span>🎉 Celebrate 50% Milestone</span>
+              </button>
+            </div>
+
+            <!-- Milestone Roadmap Progress Track -->
+            <div class="space-y-2 pt-2 border-t border-slate-800">
+              <div class="flex items-center justify-between text-xs font-mono">
+                <span class="text-emerald-400 font-bold">${paidDownPct.toFixed(1)}% Total Principal Paid (${formatMoney(totalPaidDownUsd)})</span>
+                <span class="text-slate-400">Remaining to Zero: <span class="text-rose-400 font-bold">${formatMoney(totalCurrentUsd)}</span></span>
+              </div>
+              <div class="w-full h-3.5 bg-slate-950 rounded-full overflow-hidden p-[1px] border border-slate-800">
+                <div class="h-full bg-gradient-to-r from-teal-500 via-emerald-400 to-amber-300 rounded-full transition-all duration-700" style="width: ${Math.min(100, paidDownPct)}%"></div>
+              </div>
+              <div class="grid grid-cols-4 gap-2 text-[10px] font-mono pt-1 text-center">
+                <div class="text-emerald-400 font-bold bg-emerald-500/10 rounded-lg py-1 border border-emerald-500/30">✓ 25% Cleared</div>
+                <div class="text-emerald-300 font-black bg-emerald-500/25 rounded-lg py-1 border-2 border-emerald-400 shadow-sm shadow-emerald-500/20">✓ 50% UNLOCKED 🏅</div>
+                <div class="${paidDownPct >= 75 ? 'text-emerald-400 font-bold bg-emerald-500/10 rounded-lg py-1' : 'text-slate-500 bg-slate-950 rounded-lg py-1'}">
+                  ${paidDownPct >= 75 ? '✓ 75% Approaching' : `○ 75% (${formatMoney(remainingTo75)} away)`}
+                </div>
+                <div class="text-slate-500 bg-slate-950 rounded-lg py-1">○ 100% Debt-Free</div>
+              </div>
+            </div>
+          </div>
+        `;
+      } else if (paidDownPct >= 25) {
+        // 25% Milestone
+        banner.innerHTML = `
+          <div class="p-5 sm:p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-3.5">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-xl">
+                  ⭐
+                </div>
+                <div>
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs font-mono font-bold text-amber-300 uppercase">Milestone In Progress</span>
+                    <span class="text-[10px] font-mono text-slate-400">25% Cleared</span>
+                  </div>
+                  <h4 class="text-base sm:text-lg font-bold text-white mt-0.5">
+                    ${paidDownPct.toFixed(1)}% Debt Eliminated · Next Major Goal: 50% Halfway Milestone!
+                  </h4>
+                  <p class="text-xs text-slate-400 mt-0.5">
+                    You have paid off ${formatMoney(totalPaidDownUsd)}. Pay down just <span class="text-amber-300 font-bold font-mono">${formatMoney(remainingTo50)}</span> more to unlock the prestigious 50% Milestone Celebration badge!
+                  </p>
+                </div>
+              </div>
+              <button id="celebrateMilestoneBtn" class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-200 font-semibold text-xs border border-slate-700 cursor-pointer shrink-0">
+                <span>🎉 Celebrate 25%</span>
+              </button>
+            </div>
+            <div class="space-y-1.5 pt-1">
+              <div class="w-full h-3 bg-slate-950 rounded-full overflow-hidden p-[1px] border border-slate-800">
+                <div class="h-full bg-gradient-to-r from-teal-500 to-amber-400 rounded-full transition-all duration-700" style="width: ${paidDownPct}%"></div>
+              </div>
+              <div class="flex items-center justify-between text-[11px] font-mono text-slate-400">
+                <span class="text-emerald-400 font-bold">25% Cleared (${formatMoney(totalPaidDownUsd)})</span>
+                <span class="text-amber-300">50% Milestone Target: ${formatMoney(totalOriginalUsd * 0.5)}</span>
+              </div>
+            </div>
+          </div>
+        `;
+      } else {
+        // Under 25%
+        banner.innerHTML = `
+          <div class="p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-3">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
+                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+                </div>
+                <div>
+                  <h4 class="text-sm font-bold text-white">Debt Freedom Acceleration Radar</h4>
+                  <p class="text-xs text-slate-400">
+                    Target Goal: Unlock the <span class="text-amber-300 font-bold">50% Debt Eliminated Milestone</span> (${formatMoney(remainingTo50)} to reach halfway mark). Use the accelerator below to speed up your timeline.
+                  </p>
+                </div>
+              </div>
+              <span class="text-xs font-mono px-3 py-1 rounded-full bg-slate-950 text-slate-400 border border-slate-800 shrink-0">
+                ${paidDownPct.toFixed(1)}% Paid Down
+              </span>
+            </div>
+            <div class="w-full h-2.5 bg-slate-950 rounded-full overflow-hidden p-[1px] border border-slate-800">
+              <div class="h-full bg-emerald-500 rounded-full transition-all duration-700" style="width: ${Math.max(2, paidDownPct)}%"></div>
+            </div>
+          </div>
+        `;
+      }
+
+      const celBtn = document.getElementById('celebrateMilestoneBtn');
+      if (celBtn) {
+        celBtn.onclick = () => {
+          if (typeof confetti === 'function') {
+            confetti({ particleCount: 180, spread: 90, origin: { y: 0.6 } });
+          }
+          showToast(`🎉 Congratulations on clearing ${paidDownPct.toFixed(1)}% of your debt!`);
+        };
+      }
+    }
+
+    function exportDebtPdfReport() {
+      if (!latestDebtSimulation || !state.debts || state.debts.length === 0) {
+        showToast('No active debts in portfolio to generate a report.', 'warning');
+        return;
+      }
+
+      const { baselineSim, activeSim, avalancheSim, snowballSim, totalDebtUsd, weightedApr, totalMinPaymentUsd } = latestDebtSimulation;
+      const reportDate = new Date().toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+      const userEmail = currentUser?.email || 'Sovereign Portfolio Owner';
+
+      const totalOriginalDebtUsd = state.debts.reduce((sum, d) => sum + (d.originalBalanceUsd || d.balanceUsd || 0), 0);
+      const totalPaidDownUsd = Math.max(0, totalOriginalDebtUsd - totalDebtUsd);
+      const paidDownPct = totalOriginalDebtUsd > 0 ? (totalPaidDownUsd / totalOriginalDebtUsd) * 100 : 0;
+      const interestSaved = Math.max(0, baselineSim.totalInterestPaid - activeSim.totalInterestPaid);
+
+      const reportContainer = document.getElementById('printableDebtReport');
+      if (!reportContainer) return;
+
+      reportContainer.innerHTML = `
+        <div style="font-family: Arial, Helvetica, sans-serif; max-width: 800px; margin: 0 auto; color: #0f172a; line-height: 1.4;">
+          
+          <!-- Report Header -->
+          <div style="border-bottom: 2px solid #059669; padding-bottom: 16px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-end;">
+            <div>
+              <div style="font-size: 24px; font-weight: 900; color: #047857; letter-spacing: -0.5px;">FinanceMe</div>
+              <div style="font-size: 14px; font-weight: bold; color: #334155; margin-top: 2px;">DEBT REPAYMENT STRATEGY & AMORTIZATION AUDIT</div>
+              <div style="font-size: 11px; color: #64748b; margin-top: 4px;">Account: ${userEmail} · Base Currency: ${state.currency}</div>
+            </div>
+            <div style="text-align: right; font-size: 11px; color: #64748b;">
+              <div><strong>Generated:</strong> ${reportDate}</div>
+              <div><strong>Active Strategy:</strong> ${state.debtSimulator.strategy === 'snowball' ? 'Debt Snowball (Lowest Balance First)' : 'Debt Avalanche (Highest APR First)'}</div>
+              <div style="color: #059669; font-weight: bold; margin-top: 2px;">Official Financial Record</div>
+            </div>
+          </div>
+
+          <!-- Executive Summary Metrics Grid -->
+          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px;">
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px;">
+              <div style="font-size: 10px; text-transform: uppercase; color: #64748b; font-weight: bold;">Total Outstanding Debt</div>
+              <div style="font-size: 18px; font-weight: bold; color: #e11d48; margin-top: 2px;">${formatMoney(totalDebtUsd)}</div>
+            </div>
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px;">
+              <div style="font-size: 10px; text-transform: uppercase; color: #64748b; font-weight: bold;">Weighted Avg APR</div>
+              <div style="font-size: 18px; font-weight: bold; color: #d97706; margin-top: 2px;">${weightedApr.toFixed(1)}%</div>
+            </div>
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px;">
+              <div style="font-size: 10px; text-transform: uppercase; color: #64748b; font-weight: bold;">Accelerated Debt-Free Date</div>
+              <div style="font-size: 18px; font-weight: bold; color: #059669; margin-top: 2px;">${activeSim.debtFreeDate}</div>
+            </div>
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px;">
+              <div style="font-size: 10px; text-transform: uppercase; color: #64748b; font-weight: bold;">Total Future Interest Saved</div>
+              <div style="font-size: 18px; font-weight: bold; color: #047857; margin-top: 2px;">${formatMoney(interestSaved)}</div>
+            </div>
+          </div>
+
+          <!-- Milestone Alert Status -->
+          <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 8px; padding: 12px; margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <strong style="color: #065f46; font-size: 13px;">🏆 Key Milestone Progress: ${paidDownPct.toFixed(1)}% Debt Principal Eliminated</strong>
+                <div style="font-size: 11px; color: #047857; margin-top: 2px;">
+                  ${paidDownPct >= 50 ? '★ 50% Milestone Conquered: You have eliminated more than half of your starting debts!' : 'On track toward the 50% milestone halfway mark.'}
+                  Total principal paid off to date: ${formatMoney(totalPaidDownUsd)}.
+                </div>
+              </div>
+              <div style="background: #047857; color: white; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: bold;">
+                ${paidDownPct >= 50 ? '50% Cleared 🏅' : `${paidDownPct.toFixed(1)}% Cleared`}
+              </div>
+            </div>
+          </div>
+
+          <!-- Strategy Comparison Table -->
+          <div style="margin-bottom: 20px;">
+            <h4 style="font-size: 13px; font-weight: bold; text-transform: uppercase; color: #334155; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">
+              Repayment Strategy Comparison (Avalanche vs. Snowball vs. Minimum Only)
+            </h4>
+            <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+              <thead>
+                <tr style="background: #f1f5f9; text-align: left; color: #475569;">
+                  <th style="padding: 8px; border: 1px solid #cbd5e1;">Strategy Approach</th>
+                  <th style="padding: 8px; border: 1px solid #cbd5e1;">Target Debt-Free Date</th>
+                  <th style="padding: 8px; border: 1px solid #cbd5e1; text-align: right;">Total Duration</th>
+                  <th style="padding: 8px; border: 1px solid #cbd5e1; text-align: right;">Total Interest Paid</th>
+                  <th style="padding: 8px; border: 1px solid #cbd5e1; text-align: right;">Total Interest Saved</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style="padding: 8px; border: 1px solid #cbd5e1; font-weight: bold;">1. Baseline (Minimum Payments Only)</td>
+                  <td style="padding: 8px; border: 1px solid #cbd5e1;">${baselineSim.debtFreeDate}</td>
+                  <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: right;">${baselineSim.totalMonths} months</td>
+                  <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: right; color: #e11d48; font-weight: bold;">${formatMoney(baselineSim.totalInterestPaid)}</td>
+                  <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: right;">— (Baseline)</td>
+                </tr>
+                <tr style="${state.debtSimulator.strategy === 'avalanche' ? 'background: #f0fdf4; font-weight: bold;' : ''}">
+                  <td style="padding: 8px; border: 1px solid #cbd5e1; color: #047857;">2. Debt Avalanche (Highest APR First) ${state.debtSimulator.strategy === 'avalanche' ? '★ Active' : ''}</td>
+                  <td style="padding: 8px; border: 1px solid #cbd5e1;">${avalancheSim.debtFreeDate}</td>
+                  <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: right;">${avalancheSim.totalMonths} months</td>
+                  <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: right;">${formatMoney(avalancheSim.totalInterestPaid)}</td>
+                  <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: right; color: #047857; font-weight: bold;">${formatMoney(Math.max(0, baselineSim.totalInterestPaid - avalancheSim.totalInterestPaid))}</td>
+                </tr>
+                <tr style="${state.debtSimulator.strategy === 'snowball' ? 'background: #f0fdf4; font-weight: bold;' : ''}">
+                  <td style="padding: 8px; border: 1px solid #cbd5e1; color: #0369a1;">3. Debt Snowball (Lowest Balance First) ${state.debtSimulator.strategy === 'snowball' ? '★ Active' : ''}</td>
+                  <td style="padding: 8px; border: 1px solid #cbd5e1;">${snowballSim.debtFreeDate}</td>
+                  <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: right;">${snowballSim.totalMonths} months</td>
+                  <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: right;">${formatMoney(snowballSim.totalInterestPaid)}</td>
+                  <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: right; color: #047857; font-weight: bold;">${formatMoney(Math.max(0, baselineSim.totalInterestPaid - snowballSim.totalInterestPaid))}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Debt Portfolio Roster Table -->
+          <div style="margin-bottom: 20px;">
+            <h4 style="font-size: 13px; font-weight: bold; text-transform: uppercase; color: #334155; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">
+              Current Debt Portfolio Breakdown
+            </h4>
+            <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+              <thead>
+                <tr style="background: #f1f5f9; text-align: left; color: #475569;">
+                  <th style="padding: 6px 8px; border: 1px solid #cbd5e1;">Creditor / Debt Name</th>
+                  <th style="padding: 6px 8px; border: 1px solid #cbd5e1; text-align: right;">Current Principal</th>
+                  <th style="padding: 6px 8px; border: 1px solid #cbd5e1; text-align: right;">Original Balance</th>
+                  <th style="padding: 6px 8px; border: 1px solid #cbd5e1; text-align: right;">APR (%)</th>
+                  <th style="padding: 6px 8px; border: 1px solid #cbd5e1; text-align: right;">Min Monthly Payment</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${state.debts.map(d => `
+                  <tr>
+                    <td style="padding: 6px 8px; border: 1px solid #cbd5e1; font-weight: bold;">${d.name}</td>
+                    <td style="padding: 6px 8px; border: 1px solid #cbd5e1; text-align: right; color: #e11d48;">${formatMoney(d.balanceUsd)}</td>
+                    <td style="padding: 6px 8px; border: 1px solid #cbd5e1; text-align: right; color: #64748b;">${formatMoney(d.originalBalanceUsd || d.balanceUsd)}</td>
+                    <td style="padding: 6px 8px; border: 1px solid #cbd5e1; text-align: right;">${d.apr || 0}%</td>
+                    <td style="padding: 6px 8px; border: 1px solid #cbd5e1; text-align: right;">${formatMoney(d.minPaymentUsd)}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Month-by-Month Amortization Schedule Table -->
+          <div style="page-break-before: always; margin-top: 24px;">
+            <h4 style="font-size: 13px; font-weight: bold; text-transform: uppercase; color: #334155; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">
+              Complete Month-by-Month Amortization Schedule (${activeSim.months.length} Months Total)
+            </h4>
+            <table style="width: 100%; border-collapse: collapse; font-size: 10px;">
+              <thead>
+                <tr style="background: #f1f5f9; text-align: left; color: #475569;">
+                  <th style="padding: 5px 6px; border: 1px solid #cbd5e1;">Month</th>
+                  <th style="padding: 5px 6px; border: 1px solid #cbd5e1;">Date</th>
+                  <th style="padding: 5px 6px; border: 1px solid #cbd5e1; text-align: right;">Start Balance</th>
+                  <th style="padding: 5px 6px; border: 1px solid #cbd5e1; text-align: right;">Scheduled Min</th>
+                  <th style="padding: 5px 6px; border: 1px solid #cbd5e1; text-align: right;">Extra Prepay</th>
+                  <th style="padding: 5px 6px; border: 1px solid #cbd5e1; text-align: right;">Principal Paid</th>
+                  <th style="padding: 5px 6px; border: 1px solid #cbd5e1; text-align: right;">Interest Paid</th>
+                  <th style="padding: 5px 6px; border: 1px solid #cbd5e1; text-align: right;">End Balance</th>
+                  <th style="padding: 5px 6px; border: 1px solid #cbd5e1; text-align: center;">Milestone</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${activeSim.months.map(m => {
+                  const isEnd = m.endBalance <= 0.001;
+                  return `
+                    <tr style="${isEnd ? 'background: #ecfdf5; font-weight: bold;' : ''}">
+                      <td style="padding: 4px 6px; border: 1px solid #cbd5e1;">M${m.monthIndex}</td>
+                      <td style="padding: 4px 6px; border: 1px solid #cbd5e1;">${m.dateStr}</td>
+                      <td style="padding: 4px 6px; border: 1px solid #cbd5e1; text-align: right;">${formatMoney(m.startBalance)}</td>
+                      <td style="padding: 4px 6px; border: 1px solid #cbd5e1; text-align: right;">${formatMoney(m.scheduledMin)}</td>
+                      <td style="padding: 4px 6px; border: 1px solid #cbd5e1; text-align: right; color: #047857;">${m.extraPrepayment > 0 ? formatMoney(m.extraPrepayment) : '—'}</td>
+                      <td style="padding: 4px 6px; border: 1px solid #cbd5e1; text-align: right;">${formatMoney(m.principalPaid)}</td>
+                      <td style="padding: 4px 6px; border: 1px solid #cbd5e1; text-align: right; color: #e11d48;">${formatMoney(m.interestPaid)}</td>
+                      <td style="padding: 4px 6px; border: 1px solid #cbd5e1; text-align: right; font-weight: bold;">${formatMoney(m.endBalance)}</td>
+                      <td style="padding: 4px 6px; border: 1px solid #cbd5e1; text-align: center;">
+                        ${isEnd ? '🏆 100% Debt Free' : (m.milestones && m.milestones.length ? `🎉 ${m.milestones[0].debtName} Paid` : '—')}
+                      </td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Document Footer -->
+          <div style="margin-top: 30px; padding-top: 10px; border-top: 1px solid #cbd5e1; font-size: 10px; color: #64748b; text-align: center;">
+            FinanceMe Sovereign Wealth OS · Mathematical Debt Amortization Audit · End of Report
+          </div>
+        </div>
+      `;
+
+      showToast('Preparing printable Debt Amortization PDF Report...');
+
+      if (typeof html2pdf !== 'undefined') {
+        const opt = {
+          margin: [10, 10, 10, 10],
+          filename: `FinanceMe-Debt-Payoff-Report-${new Date().toISOString().split('T')[0]}.pdf`,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true, logging: false },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        html2pdf().set(opt).from(reportContainer.firstElementChild).save().then(() => {
+          showToast('Printable Debt Payoff PDF downloaded successfully!');
+        }).catch((err) => {
+          console.warn('html2pdf generation error, using window.print fallback:', err);
+          window.print();
+        });
+      } else {
+        window.print();
+      }
+    }
+
+    function renderDebts() {
+      state.debts = state.debts || [];
+      state.debtSimulator = state.debtSimulator || {
+        strategy: 'avalanche',
+        extraMonthlyUsd: 0,
+        lumpSumUsd: 0,
+        lumpSumMonth: 1,
+        lumpSumTarget: 'strategy'
+      };
+
+      const curr = CURRENCIES[state.currency] || CURRENCIES.USD;
+      const totalDebtUsd = state.debts.reduce((sum, d) => sum + Math.max(0, d.balanceUsd || 0), 0);
+      const totalMinPaymentUsd = state.debts.reduce((sum, d) => sum + Math.max(0, d.minPaymentUsd || 0), 0);
+
+      let weightedApr = 0;
+      if (totalDebtUsd > 0) {
+        weightedApr = state.debts.reduce((acc, d) => acc + (Math.max(0, d.balanceUsd || 0) * (d.apr || 0)), 0) / totalDebtUsd;
+      }
+
+      // Run 3 Simulation Scenarios
+      const baselineSim = simulateDebtSchedule({
+        debts: state.debts,
+        extraMonthlyUsd: 0,
+        lumpSumUsd: 0,
+        strategy: 'avalanche'
+      });
+
+      const avalancheSim = simulateDebtSchedule({
+        debts: state.debts,
+        extraMonthlyUsd: state.debtSimulator.extraMonthlyUsd,
+        lumpSumUsd: state.debtSimulator.lumpSumUsd,
+        lumpSumMonth: state.debtSimulator.lumpSumMonth,
+        lumpSumTarget: state.debtSimulator.lumpSumTarget,
+        strategy: 'avalanche'
+      });
+
+      const snowballSim = simulateDebtSchedule({
+        debts: state.debts,
+        extraMonthlyUsd: state.debtSimulator.extraMonthlyUsd,
+        lumpSumUsd: state.debtSimulator.lumpSumUsd,
+        lumpSumMonth: state.debtSimulator.lumpSumMonth,
+        lumpSumTarget: state.debtSimulator.lumpSumTarget,
+        strategy: 'snowball'
+      });
+
+      const activeSim = state.debtSimulator.strategy === 'snowball' ? snowballSim : avalancheSim;
+
+      latestDebtSimulation = {
+        baselineSim,
+        activeSim,
+        avalancheSim,
+        snowballSim,
+        totalDebtUsd,
+        weightedApr,
+        totalMinPaymentUsd
+      };
+
+      // 0. Render Visual Milestone Notification / Alert Banner
+      renderDebtMilestones(totalDebtUsd, baselineSim, activeSim);
+
+      // 1. Summary Metrics Banner
+      document.getElementById('debtSummaryTotalBalance').textContent = formatMoney(totalDebtUsd);
+      document.getElementById('debtSummaryWeightedApr').textContent = `${weightedApr.toFixed(1)}%`;
+      document.getElementById('debtSummaryMonthlyMin').textContent = `${formatMoney(totalMinPaymentUsd)}/mo`;
+
+      if (totalDebtUsd > 0) {
+        document.getElementById('debtSummaryBaselineDate').textContent = baselineSim.debtFreeDate;
+        document.getElementById('debtSummaryBaselineMonths').textContent = `${baselineSim.totalMonths} months (${(baselineSim.totalMonths / 12).toFixed(1)} yrs)`;
+        document.getElementById('debtSummaryBaselineInterest').textContent = formatMoney(baselineSim.totalInterestPaid);
+      } else {
+        document.getElementById('debtSummaryBaselineDate').textContent = 'Debt-Free';
+        document.getElementById('debtSummaryBaselineMonths').textContent = 'Zero active debt balances';
+        document.getElementById('debtSummaryBaselineInterest').textContent = formatMoney(0);
+      }
+
+      // 2. Strategy Comparison Cards
+      document.getElementById('stratBaselineDate').textContent = totalDebtUsd > 0 ? baselineSim.debtFreeDate : 'Debt-Free';
+      document.getElementById('stratBaselineDuration').textContent = totalDebtUsd > 0 ? `${baselineSim.totalMonths} mos` : '0 mos';
+      document.getElementById('stratBaselineInterest').textContent = formatMoney(baselineSim.totalInterestPaid);
+
+      document.getElementById('stratAvalancheDate').textContent = totalDebtUsd > 0 ? avalancheSim.debtFreeDate : 'Debt-Free';
+      document.getElementById('stratAvalancheDuration').textContent = totalDebtUsd > 0 ? `${avalancheSim.totalMonths} mos` : '0 mos';
+      const avalancheSaved = Math.max(0, baselineSim.totalInterestPaid - avalancheSim.totalInterestPaid);
+      document.getElementById('stratAvalancheSaved').textContent = formatMoney(avalancheSaved);
+
+      document.getElementById('stratSnowballDate').textContent = totalDebtUsd > 0 ? snowballSim.debtFreeDate : 'Debt-Free';
+      document.getElementById('stratSnowballDuration').textContent = totalDebtUsd > 0 ? `${snowballSim.totalMonths} mos` : '0 mos';
+      const snowballSaved = Math.max(0, baselineSim.totalInterestPaid - snowballSim.totalInterestPaid);
+      document.getElementById('stratSnowballSaved').textContent = formatMoney(snowballSaved);
+
+      // Highlight active strategy
+      const isAvalanche = state.debtSimulator.strategy !== 'snowball';
+      const avBtn = document.getElementById('strategyAvalancheBtn');
+      const snBtn = document.getElementById('strategySnowballBtn');
+      const avCard = document.getElementById('cardStratAvalanche');
+      const snCard = document.getElementById('cardStratSnowball');
+
+      if (isAvalanche) {
+        avBtn.className = 'strategy-toggle-btn active px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-emerald-600 text-white shadow-sm cursor-pointer transition-all flex items-center gap-1.5';
+        snBtn.className = 'strategy-toggle-btn px-3.5 py-1.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-white cursor-pointer transition-all flex items-center gap-1.5';
+        avCard.className = 'p-5 rounded-2xl bg-slate-950/80 border-2 border-emerald-500/60 shadow-lg shadow-emerald-500/5 space-y-3 relative overflow-hidden';
+        snCard.className = 'p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3 relative overflow-hidden';
+      } else {
+        snBtn.className = 'strategy-toggle-btn active px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-cyan-600 text-white shadow-sm cursor-pointer transition-all flex items-center gap-1.5';
+        avBtn.className = 'strategy-toggle-btn px-3.5 py-1.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-white cursor-pointer transition-all flex items-center gap-1.5';
+        snCard.className = 'p-5 rounded-2xl bg-slate-950/80 border-2 border-cyan-500/60 shadow-lg shadow-cyan-500/5 space-y-3 relative overflow-hidden';
+        avCard.className = 'p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3 relative overflow-hidden';
+      }
+
+      // 3. Simulator Controls Synchronization
+      const extraMonthlyLocal = state.debtSimulator.extraMonthlyUsd * curr.rate;
+      const extraInput = document.getElementById('simExtraMonthlyInput');
+      const extraSlider = document.getElementById('simExtraMonthlySlider');
+      if (extraInput && document.activeElement !== extraInput) {
+        extraInput.value = Number(extraMonthlyLocal.toFixed(curr.decimals));
+      }
+      if (extraSlider && document.activeElement !== extraSlider) {
+        extraSlider.max = String(Math.max(2000 * curr.rate, extraMonthlyLocal * 1.5));
+        extraSlider.value = String(extraMonthlyLocal);
+      }
+
+      const lumpInput = document.getElementById('simLumpSumInput');
+      if (lumpInput && document.activeElement !== lumpInput) {
+        lumpInput.value = state.debtSimulator.lumpSumUsd > 0 ? Number((state.debtSimulator.lumpSumUsd * curr.rate).toFixed(curr.decimals)) : '';
+      }
+
+      const monthSelect = document.getElementById('simLumpSumMonthSelect');
+      if (monthSelect) monthSelect.value = String(state.debtSimulator.lumpSumMonth || 1);
+
+      // 4. "Saved Money & Time" Comparison Banner
+      const totalInterestSaved = Math.max(0, baselineSim.totalInterestPaid - activeSim.totalInterestPaid);
+      const monthsShaved = Math.max(0, baselineSim.totalMonths - activeSim.totalMonths);
+      const yearsShaved = Math.floor(monthsShaved / 12);
+      const remMonthsShaved = monthsShaved % 12;
+
+      document.getElementById('simTotalInterestSaved').textContent = formatMoney(totalInterestSaved);
+      if (monthsShaved > 0) {
+        document.getElementById('simTimeSaved').textContent = yearsShaved > 0 ? `${yearsShaved}y ${remMonthsShaved}m` : `${monthsShaved} Months`;
+        document.getElementById('simTimeSavedSubtext').textContent = `${monthsShaved} months eliminated`;
+      } else {
+        document.getElementById('simTimeSaved').textContent = '0 Months';
+        document.getElementById('simTimeSavedSubtext').textContent = 'Add prepayments above';
+      }
+
+      document.getElementById('simNewDebtFreeDate').textContent = totalDebtUsd > 0 ? activeSim.debtFreeDate : 'Debt Free';
+      document.getElementById('simNewDebtFreeSubtext').textContent = totalDebtUsd > 0 ? `Target: ${activeSim.totalMonths} months` : 'Pristine 100% equity';
+
+      const totalPrepayApplied = activeSim.totalPrepaymentPaid;
+      if (totalPrepayApplied > 0 && totalInterestSaved > 0) {
+        const roiPct = ((totalInterestSaved / totalPrepayApplied) * 100).toFixed(1);
+        document.getElementById('simPrepayRoi').textContent = `${roiPct}%`;
+      } else {
+        document.getElementById('simPrepayRoi').textContent = '0.0%';
+      }
+
+      // 5. Amortization Line/Area Chart
+      renderAmortizationChart(baselineSim, activeSim);
+
+      // 6. Amortization Schedule Table
+      renderAmortizationTable(activeSim);
+
+      // 7. Debt Portfolio Roster
+      renderDebtsGrid();
+    }
+
+    function renderAmortizationChart(baselineSim, activeSim) {
+      if (typeof Chart === 'undefined') return;
+      const amortCanvas = document.getElementById('amortizationChart')?.getContext('2d');
+      if (!amortCanvas) return;
+
+      const curr = CURRENCIES[state.currency] || CURRENCIES.USD;
+      const maxLen = Math.max(baselineSim.months.length, activeSim.months.length, 1);
+      
+      const labels = ['Start'];
+      const baselineData = [Number((state.debts.reduce((s, d) => s + (d.balanceUsd || 0), 0) * curr.rate).toFixed(curr.decimals))];
+      const activeData = [Number((state.debts.reduce((s, d) => s + (d.balanceUsd || 0), 0) * curr.rate).toFixed(curr.decimals))];
+
+      for (let i = 0; i < maxLen; i++) {
+        const mObj = activeSim.months[i] || baselineSim.months[i];
+        labels.push(mObj?.dateStr || `M${i + 1}`);
+
+        const bEnd = baselineSim.months[i] ? baselineSim.months[i].endBalance : 0;
+        baselineData.push(Number((bEnd * curr.rate).toFixed(curr.decimals)));
+
+        const aEnd = activeSim.months[i] ? activeSim.months[i].endBalance : 0;
+        activeData.push(Number((aEnd * curr.rate).toFixed(curr.decimals)));
+      }
+
+      if (amortizationChartInstance) amortizationChartInstance.destroy();
+      amortizationChartInstance = new Chart(amortCanvas, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [
+            {
+              label: `Baseline Minimum Curve (${state.currency})`,
+              data: baselineData,
+              borderColor: '#f43f5e',
+              backgroundColor: '#f43f5e12',
+              fill: true,
+              borderDash: [5, 5],
+              borderWidth: 2,
+              tension: 0.3,
+              pointRadius: 0,
+              pointHoverRadius: 5
+            },
+            {
+              label: `Accelerated Payoff Curve (${state.currency})`,
+              data: activeData,
+              borderColor: '#10b981',
+              backgroundColor: '#10b98125',
+              fill: true,
+              borderWidth: 2.5,
+              tension: 0.3,
+              pointRadius: 0,
+              pointHoverRadius: 5
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => `${ctx.dataset.label}: ${formatMoney(toUsd(ctx.parsed.y, state.currency))}`
+              }
+            }
+          },
+          scales: {
+            x: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8', font: { family: 'JetBrains Mono', size: 10 } } },
+            y: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8', font: { family: 'JetBrains Mono', size: 10 } } }
+          }
+        }
+      });
+    }
+
+    function renderAmortizationTable(activeSim) {
+      const tbody = document.getElementById('amortizationTbody');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+
+      if (activeSim.months.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" class="p-8 text-center text-slate-500 text-xs">No active debts in portfolio. Click "+ Add Debt" to simulate payoff.</td></tr>';
+        return;
+      }
+
+      const displayList = showAllAmortMonths ? activeSim.months : activeSim.months.slice(0, 12);
+
+      displayList.forEach(m => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-900/60 transition-colors';
+
+        const hasMilestone = m.milestones && m.milestones.length > 0;
+        const isFinal = m.endBalance <= 0.001;
+
+        tr.innerHTML = `
+          <td class="p-3 text-slate-400 font-semibold">M${m.monthIndex}</td>
+          <td class="p-3 text-slate-300 font-bold">${m.dateStr}</td>
+          <td class="p-3 text-right text-slate-400">${formatMoney(m.startBalance)}</td>
+          <td class="p-3 text-right text-slate-300">${formatMoney(m.scheduledMin)}</td>
+          <td class="p-3 text-right ${m.extraPrepayment > 0 ? 'text-amber-300 font-bold' : 'text-slate-600'}">${m.extraPrepayment > 0 ? formatMoney(m.extraPrepayment) : '—'}</td>
+          <td class="p-3 text-right text-emerald-400 font-semibold">${formatMoney(m.principalPaid)}</td>
+          <td class="p-3 text-right text-rose-400">${formatMoney(m.interestPaid)}</td>
+          <td class="p-3 text-right font-bold ${isFinal ? 'text-emerald-400' : 'text-white'}">${formatMoney(m.endBalance)}</td>
+          <td class="p-3 text-center">
+            ${isFinal ? `
+              <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 animate-pulse">
+                🏆 100% DEBT FREE!
+              </span>
+            ` : hasMilestone ? `
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                🎉 ${m.milestones[0].debtName} Paid Off!
+              </span>
+            ` : `
+              <span class="text-slate-600 text-[10px]">—</span>
+            `}
+          </td>
+        `;
+
+        tbody.appendChild(tr);
+      });
+
+      const toggleBtn = document.getElementById('toggleAmortViewBtn');
+      if (toggleBtn) {
+        toggleBtn.textContent = showAllAmortMonths ? 'Show First 12 Months' : `Show All ${activeSim.months.length} Months`;
+      }
+    }
+
+    function renderDebtsGrid() {
+      const grid = document.getElementById('debtsGrid');
+      if (!grid) return;
+      grid.innerHTML = '';
+
+      if (state.debts.length === 0) {
+        grid.innerHTML = `
+          <div class="col-span-full py-12 px-6 rounded-3xl bg-slate-900/60 border border-dashed border-slate-800 text-center space-y-4">
+            <div class="w-12 h-12 mx-auto rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
+              <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+            </div>
+            <div class="space-y-1.5">
+              <h4 class="text-sm font-bold text-white">No Debts or Liabilities Added</h4>
+              <p class="text-xs text-slate-400 max-w-sm mx-auto">Add your credit cards, car loans, mortgage, or import them directly from your managed accounts.</p>
+            </div>
+            <div class="flex items-center justify-center gap-2">
+              <button id="emptyAddDebtBtn" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md shadow-emerald-600/20 cursor-pointer transition-all">
+                + Add First Debt
+              </button>
+              <button id="emptySyncAccountsBtn" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-200 font-semibold text-xs border border-slate-700 cursor-pointer transition-colors">
+                Sync Accounts
+              </button>
+            </div>
+          </div>
+        `;
+        document.getElementById('emptyAddDebtBtn')?.addEventListener('click', () => openModal('debtModal'));
+        document.getElementById('emptySyncAccountsBtn')?.addEventListener('click', syncAccountsToDebts);
+        return;
+      }
+
+      state.debts.forEach(debt => {
+        const balanceUsd = Math.max(0, debt.balanceUsd || 0);
+        const originalUsd = debt.originalBalanceUsd || (balanceUsd * 1.25);
+        const paidPct = originalUsd > 0 ? Math.min(100, Math.max(0, Math.round(((originalUsd - balanceUsd) / originalUsd) * 100))) : 0;
+        const linkedAcc = state.accounts.find(a => a.id === debt.linkedAccountId);
+
+        const card = document.createElement('div');
+        card.className = 'p-5 rounded-2xl bg-slate-900 border border-slate-800 hover:border-slate-700 transition-all space-y-4';
+        
+        card.innerHTML = `
+          <div class="flex items-start justify-between gap-2">
+            <div class="space-y-0.5">
+              <div class="flex items-center gap-1.5">
+                <span class="text-[10px] font-mono uppercase px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20 font-bold">
+                  APR ${debt.apr || 0}%
+                </span>
+                ${linkedAcc ? `<span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-800 text-slate-400">Linked: ${linkedAcc.name}</span>` : ''}
+              </div>
+              <h4 class="text-sm font-bold text-white pt-0.5">${debt.name}</h4>
+            </div>
+            <div class="flex items-center gap-1">
+              <button class="edit-debt-btn p-1.5 rounded-lg bg-slate-950 text-slate-400 hover:text-white border border-slate-800 cursor-pointer transition-colors" title="Edit debt">
+                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+              </button>
+              <button class="delete-debt-btn p-1.5 rounded-lg bg-slate-950 text-slate-500 hover:text-rose-400 border border-slate-800 hover:border-rose-500/30 cursor-pointer transition-colors" title="Delete debt">
+                <svg class="w-3.5 h-3.5 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="flex items-baseline justify-between pt-1 font-mono">
+            <div>
+              <span class="text-[10px] text-slate-400 block uppercase">Current Balance</span>
+              <span class="text-xl font-bold text-rose-300 tabular-nums">${formatMoney(balanceUsd)}</span>
+            </div>
+            <div class="text-right">
+              <span class="text-[10px] text-slate-400 block uppercase">Min Payment</span>
+              <span class="text-sm font-bold text-slate-200 tabular-nums">${formatMoney(debt.minPaymentUsd || 0)}/mo</span>
+            </div>
+          </div>
+
+          <!-- Progress Bar -->
+          <div class="space-y-1">
+            <div class="flex items-center justify-between text-[10px] font-mono text-slate-400">
+              <span>Paydown Progress</span>
+              <span class="text-emerald-400 font-bold">${paidPct}%</span>
+            </div>
+            <div class="w-full h-1.5 bg-slate-950 rounded-full overflow-hidden">
+              <div class="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full transition-all" style="width: ${paidPct}%"></div>
+            </div>
+          </div>
+
+          <!-- Quick Action: Prepay -->
+          <button class="quick-prepay-btn w-full py-2 rounded-xl bg-slate-800 hover:bg-slate-750 text-emerald-400 font-bold text-xs border border-slate-700 cursor-pointer transition-colors flex items-center justify-center gap-1.5">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            <span>Log Direct Prepayment</span>
+          </button>
+        `;
+
+        // Wire edit debt
+        card.querySelector('.edit-debt-btn').onclick = (e) => {
+          e.stopPropagation();
+          document.getElementById('debtModalTitle').textContent = 'Edit Debt / Liability';
+          document.getElementById('debtEditIdInput').value = debt.id;
+          document.getElementById('debtNameInput').value = debt.name;
+          const curr = CURRENCIES[state.currency] || CURRENCIES.USD;
+          document.getElementById('debtBalanceInput').value = Number((debt.balanceUsd * curr.rate).toFixed(curr.decimals));
+          document.getElementById('debtAprInput').value = debt.apr || 0;
+          document.getElementById('debtMinPaymentInput').value = Number(((debt.minPaymentUsd || 0) * curr.rate).toFixed(curr.decimals));
+          document.getElementById('debtStartDateInput').value = debt.startDate || '';
+          document.getElementById('debtLinkedAccountSelect').value = debt.linkedAccountId || '';
+          openModal('debtModal');
+        };
+
+        // Wire delete debt
+        card.querySelector('.delete-debt-btn').onclick = (e) => {
+          e.stopPropagation();
+          promptConfirmation({
+            title: `Delete Debt: ${debt.name}`,
+            message: `Remove "${debt.name}" from your debt portfolio? Linked account balances will remain intact.`,
+            confirmText: 'Delete Debt',
+            isDanger: true,
+            onConfirm: () => {
+              state.debts = state.debts.filter(d => d.id !== debt.id);
+              saveState();
+              showToast(`Debt "${debt.name}" removed`);
+            }
+          });
+        };
+
+        // Wire quick prepay
+        card.querySelector('.quick-prepay-btn').onclick = (e) => {
+          e.stopPropagation();
+          openModal('debtPrepayModal');
+          const targetSelect = document.getElementById('prepayTargetDebtSelect');
+          if (targetSelect) targetSelect.value = debt.id;
+        };
+
+        grid.appendChild(card);
+      });
+    }
+
+    function syncAccountsToDebts() {
+      const liabilityAccounts = state.accounts.filter(a => a.type === 'Credit Card' || a.type === 'Loan');
+      if (liabilityAccounts.length === 0) {
+        showToast('No credit card or loan accounts found in accounts roster.', 'warning');
+        return;
+      }
+
+      state.debts = state.debts || [];
+      let importedCount = 0;
+
+      liabilityAccounts.forEach(acc => {
+        const alreadyLinked = state.debts.some(d => d.linkedAccountId === acc.id);
+        if (!alreadyLinked) {
+          const debtAmt = Math.abs(acc.balanceUsd);
+          const newDebt = {
+            id: `debt_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+            name: acc.name,
+            balanceUsd: debtAmt > 0 ? debtAmt : 1000,
+            originalBalanceUsd: debtAmt > 0 ? debtAmt : 1000,
+            apr: acc.apr || 18.9,
+            minPaymentUsd: acc.minPaymentUsd || Math.max(50, (debtAmt > 0 ? debtAmt : 1000) * 0.03),
+            startDate: new Date().toISOString().split('T')[0],
+            linkedAccountId: acc.id
+          };
+          state.debts.push(newDebt);
+          importedCount++;
+        }
+      });
+
+      if (importedCount > 0) {
+        saveState();
+        showToast(`Synced ${importedCount} account${importedCount > 1 ? 's' : ''} into Debt Portfolio!`);
+      } else {
+        showToast('All liability accounts are already tracked in your debt portfolio.');
+      }
+    }
+
     function renderCharts() {
       if (typeof Chart === 'undefined') return;
+
+      const curr = CURRENCIES[state.currency] || CURRENCIES.USD;
 
       // 1. Doughnut Chart: Categories
       const catCtx = document.getElementById('categoryChart')?.getContext('2d');
@@ -2107,7 +4243,6 @@
 
         const labels = Object.keys(catTotals);
         const data = Object.values(catTotals).map(amtUsd => {
-          const curr = CURRENCIES[state.currency] || CURRENCIES.USD;
           return Number((amtUsd * curr.rate).toFixed(curr.decimals));
         });
 
@@ -2145,7 +4280,6 @@
           if (t.type === 'expense') totalExpense += t.amountUsd;
         });
 
-        const curr = CURRENCIES[state.currency] || CURRENCIES.USD;
         const incVal = Number((totalIncome * curr.rate).toFixed(curr.decimals));
         const expVal = Number((totalExpense * curr.rate).toFixed(curr.decimals));
 
@@ -2172,6 +4306,173 @@
           }
         });
       }
+
+      // 3. Line Chart: 6-Month Category Spending Trend & Monthly Growth Analysis
+      const trendCtx = document.getElementById('categoryTrendChart')?.getContext('2d');
+      if (trendCtx) {
+        const monthBuckets = [];
+        const monthLabels = [];
+        const now = new Date();
+
+        for (let i = 5; i >= 0; i--) {
+          const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+          const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+          const label = d.toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
+          monthBuckets.push(key);
+          monthLabels.push(label);
+        }
+
+        const categoryMonthlyTotals = {};
+        const totalMonthlySpend = {};
+        monthBuckets.forEach(k => totalMonthlySpend[k] = 0);
+
+        state.transactions.forEach(t => {
+          if (t.type === 'expense' && t.date) {
+            const mKey = t.date.slice(0, 7);
+            if (monthBuckets.includes(mKey)) {
+              const cat = t.category || 'Other';
+              if (!categoryMonthlyTotals[cat]) {
+                categoryMonthlyTotals[cat] = {};
+                monthBuckets.forEach(k => categoryMonthlyTotals[cat][k] = 0);
+              }
+              categoryMonthlyTotals[cat][mKey] += t.amountUsd;
+              totalMonthlySpend[mKey] += t.amountUsd;
+            }
+          }
+        });
+
+        const currKey = monthBuckets[monthBuckets.length - 1];
+        const priorKey = monthBuckets[monthBuckets.length - 2];
+        const currSpendUsd = totalMonthlySpend[currKey] || 0;
+        const priorSpendUsd = totalMonthlySpend[priorKey] || 0;
+        const total6mUsd = Object.values(totalMonthlySpend).reduce((a, b) => a + b, 0);
+
+        let momGrowthPct = 0;
+        if (priorSpendUsd > 0) {
+          momGrowthPct = ((currSpendUsd - priorSpendUsd) / priorSpendUsd) * 100;
+        } else if (currSpendUsd > 0) {
+          momGrowthPct = 100;
+        }
+
+        document.getElementById('trendStat6mTotal').textContent = formatMoney(total6mUsd);
+        document.getElementById('trendStatCurrentMonth').textContent = formatMoney(currSpendUsd);
+        document.getElementById('trendStatPriorMonth').textContent = formatMoney(priorSpendUsd);
+        document.getElementById('trendCurrentMonthLabel').textContent = monthLabels[monthLabels.length - 1];
+        document.getElementById('trendPriorMonthLabel').textContent = monthLabels[monthLabels.length - 2];
+
+        const momEl = document.getElementById('trendStatMomGrowth');
+        const momBadge = document.getElementById('trendGrowthSummaryBadge');
+        const velocityEl = document.getElementById('trendGrowthVelocityLabel');
+
+        const formattedGrowth = `${momGrowthPct >= 0 ? '+' : ''}${momGrowthPct.toFixed(1)}%`;
+        momEl.textContent = formattedGrowth;
+
+        if (priorSpendUsd === 0 && currSpendUsd === 0) {
+          momEl.className = 'text-lg sm:text-xl font-bold font-mono text-slate-400 tabular-nums';
+          velocityEl.textContent = 'No recorded expense activity';
+          momBadge.textContent = 'Awaiting transaction history';
+          momBadge.className = 'text-xs font-mono px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-400 font-semibold';
+        } else if (momGrowthPct <= 0) {
+          momEl.className = 'text-lg sm:text-xl font-bold font-mono text-emerald-400 tabular-nums';
+          velocityEl.textContent = 'Controlled spending contraction';
+          momBadge.textContent = `📉 Spending reduced by ${Math.abs(momGrowthPct).toFixed(1)}% MoM`;
+          momBadge.className = 'text-xs font-mono px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 font-semibold';
+        } else {
+          momEl.className = 'text-lg sm:text-xl font-bold font-mono text-rose-400 tabular-nums';
+          velocityEl.textContent = 'Increased spend velocity';
+          momBadge.textContent = `📈 Outflow increased by ${momGrowthPct.toFixed(1)}% MoM`;
+          momBadge.className = 'text-xs font-mono px-3 py-1.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 font-semibold';
+        }
+
+        const catPalette = [
+          '#10b981', '#6366f1', '#f59e0b', '#ec4899', '#38bdf8', '#a855f7', '#14b8a6', '#f43f5e'
+        ];
+
+        const sortedCategories = Object.keys(categoryMonthlyTotals).sort((a, b) => {
+          const sumA = monthBuckets.reduce((acc, k) => acc + categoryMonthlyTotals[a][k], 0);
+          const sumB = monthBuckets.reduce((acc, k) => acc + categoryMonthlyTotals[b][k], 0);
+          return sumB - sumA;
+        });
+
+        const topCats = sortedCategories.slice(0, 5);
+        const datasets = [];
+
+        topCats.forEach((cat, idx) => {
+          const color = catPalette[idx % catPalette.length];
+          const dataPts = monthBuckets.map(k => {
+            const val = (categoryMonthlyTotals[cat][k] || 0) * curr.rate;
+            return Number(val.toFixed(curr.decimals));
+          });
+
+          datasets.push({
+            label: cat,
+            data: dataPts,
+            borderColor: color,
+            backgroundColor: color + '18',
+            fill: true,
+            tension: 0.35,
+            borderWidth: 2.5,
+            pointRadius: 4,
+            pointHoverRadius: 6
+          });
+        });
+
+        if (datasets.length === 0) {
+          datasets.push({
+            label: 'No Expense Records',
+            data: [0, 0, 0, 0, 0, 0],
+            borderColor: '#64748b',
+            borderDash: [4, 4],
+            tension: 0.3,
+            fill: false
+          });
+        } else {
+          const totalPts = monthBuckets.map(k => {
+            const val = (totalMonthlySpend[k] || 0) * curr.rate;
+            return Number(val.toFixed(curr.decimals));
+          });
+
+          datasets.unshift({
+            label: `Total Outflow (${state.currency})`,
+            data: totalPts,
+            borderColor: '#f8fafc',
+            borderDash: [5, 5],
+            borderWidth: 2,
+            pointRadius: 3,
+            fill: false,
+            tension: 0.3
+          });
+        }
+
+        if (categoryTrendChartInstance) categoryTrendChartInstance.destroy();
+        categoryTrendChartInstance = new Chart(trendCtx, {
+          type: 'line',
+          data: {
+            labels: monthLabels,
+            datasets
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+              legend: {
+                position: 'top',
+                labels: { color: '#94a3b8', font: { family: 'Plus Jakarta Sans', size: 11 }, usePointStyle: true }
+              },
+              tooltip: {
+                callbacks: {
+                  label: (ctx) => `${ctx.dataset.label}: ${formatMoney(toUsd(ctx.parsed.y, state.currency))}`
+                }
+              }
+            },
+            scales: {
+              x: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8', font: { family: 'JetBrains Mono', size: 10 } } },
+              y: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8', font: { family: 'JetBrains Mono', size: 10 } } }
+            }
+          }
+        });
+      }
     }
 
     // ================= EVENT LISTENERS & SETUP =================
@@ -2188,13 +4489,22 @@
           btn.classList.remove('text-slate-400');
 
           // Hide all sections
-          ['dashboard', 'transactions', 'calendar', 'subscriptions', 'goals', 'analytics'].forEach(tabName => {
-            document.getElementById(`tab-${tabName}`).classList.add('hidden');
+          ['dashboard', 'transactions', 'debts', 'calendar', 'subscriptions', 'goals', 'analytics'].forEach(tabName => {
+            document.getElementById(`tab-${tabName}`)?.classList.add('hidden');
           });
-          document.getElementById(`tab-${target}`).classList.remove('hidden');
+          document.getElementById(`tab-${target}`)?.classList.remove('hidden');
 
           if (target === 'analytics') renderCharts();
           if (target === 'calendar') renderCalendar();
+          if (target === 'debts') renderDebts();
+        });
+      });
+
+      // Jump to debts shortcut buttons
+      document.querySelectorAll('.jump-to-debts-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const debtsNavBtn = document.querySelector('.nav-tab-btn[data-tab="debts"]');
+          if (debtsNavBtn) debtsNavBtn.click();
         });
       });
 
@@ -2236,6 +4546,225 @@
 
       document.getElementById('closeDepositModalBtn').onclick = () => closeModal('depositModal');
       document.getElementById('cancelDepositBtn').onclick = () => closeModal('depositModal');
+
+      // Debt Modals Wiring
+      const handleOpenNewDebt = () => {
+        document.getElementById('debtModalTitle').textContent = 'Add Debt / Liability';
+        document.getElementById('debtEditIdInput').value = '';
+        document.getElementById('debtForm').reset();
+        document.getElementById('debtStartDateInput').value = new Date().toISOString().split('T')[0];
+        openModal('debtModal');
+      };
+
+      document.getElementById('openNewDebtBtn')?.addEventListener('click', handleOpenNewDebt);
+      document.getElementById('openNewDebtBtn2')?.addEventListener('click', handleOpenNewDebt);
+      document.getElementById('closeDebtModalBtn')?.addEventListener('click', () => closeModal('debtModal'));
+      document.getElementById('cancelDebtBtn')?.addEventListener('click', () => closeModal('debtModal'));
+
+      const handleOpenPrepay = () => {
+        document.getElementById('prepayDateInput').value = new Date().toISOString().split('T')[0];
+        openModal('debtPrepayModal');
+      };
+
+      document.getElementById('openPrepayModalBtn')?.addEventListener('click', handleOpenPrepay);
+      document.getElementById('openPrepayModalBtn2')?.addEventListener('click', handleOpenPrepay);
+      document.getElementById('closeDebtPrepayModalBtn')?.addEventListener('click', () => closeModal('debtPrepayModal'));
+      document.getElementById('cancelDebtPrepayBtn')?.addEventListener('click', () => closeModal('debtPrepayModal'));
+
+      document.getElementById('importAccountsToDebtBtn')?.addEventListener('click', syncAccountsToDebts);
+
+      // Strategy Selector Buttons
+      document.getElementById('strategyAvalancheBtn')?.addEventListener('click', () => {
+        state.debtSimulator.strategy = 'avalanche';
+        saveState();
+        showToast('Active strategy: Debt Avalanche (Minimizes total interest)');
+      });
+
+      document.getElementById('strategySnowballBtn')?.addEventListener('click', () => {
+        state.debtSimulator.strategy = 'snowball';
+        saveState();
+        showToast('Active strategy: Debt Snowball (Fastest behavioral momentum)');
+      });
+
+      // Simulator Controls
+      const simSlider = document.getElementById('simExtraMonthlySlider');
+      const simInput = document.getElementById('simExtraMonthlyInput');
+
+      if (simSlider && simInput) {
+        simSlider.addEventListener('input', (e) => {
+          const val = parseFloat(e.target.value) || 0;
+          simInput.value = val;
+          state.debtSimulator.extraMonthlyUsd = toUsd(val, state.currency);
+          saveState();
+        });
+
+        simInput.addEventListener('input', (e) => {
+          const val = parseFloat(e.target.value) || 0;
+          simSlider.value = val;
+          state.debtSimulator.extraMonthlyUsd = toUsd(val, state.currency);
+          saveState();
+        });
+      }
+
+      document.querySelectorAll('.sim-extra-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+          const addVal = parseFloat(chip.dataset.val) || 0;
+          const curr = CURRENCIES[state.currency] || CURRENCIES.USD;
+          const currentLocal = (state.debtSimulator.extraMonthlyUsd || 0) * curr.rate;
+          const newLocal = addVal === 0 ? 0 : (currentLocal + addVal);
+          state.debtSimulator.extraMonthlyUsd = toUsd(newLocal, state.currency);
+          saveState();
+        });
+      });
+
+      document.getElementById('simLumpSumInput')?.addEventListener('input', (e) => {
+        const val = parseFloat(e.target.value) || 0;
+        state.debtSimulator.lumpSumUsd = toUsd(val, state.currency);
+        saveState();
+      });
+
+      document.getElementById('simLumpSumMonthSelect')?.addEventListener('change', (e) => {
+        state.debtSimulator.lumpSumMonth = parseInt(e.target.value, 10) || 1;
+        saveState();
+      });
+
+      document.getElementById('simLumpSumTargetSelect')?.addEventListener('change', (e) => {
+        state.debtSimulator.lumpSumTarget = e.target.value;
+        saveState();
+      });
+
+      document.getElementById('resetSimBtn')?.addEventListener('click', () => {
+        state.debtSimulator = {
+          strategy: 'avalanche',
+          extraMonthlyUsd: 0,
+          lumpSumUsd: 0,
+          lumpSumMonth: 1,
+          lumpSumTarget: 'strategy'
+        };
+        saveState();
+        showToast('Simulation reset to baseline minimum payments');
+      });
+
+      document.getElementById('toggleAmortViewBtn')?.addEventListener('click', () => {
+        showAllAmortMonths = !showAllAmortMonths;
+        renderDebts();
+      });
+
+      // Submit Debt Form
+      document.getElementById('debtForm')?.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const editId = document.getElementById('debtEditIdInput').value;
+        const name = document.getElementById('debtNameInput').value.trim();
+        const rawBalance = parseFloat(document.getElementById('debtBalanceInput').value) || 0;
+        const apr = parseFloat(document.getElementById('debtAprInput').value) || 0;
+        const rawMinPay = parseFloat(document.getElementById('debtMinPaymentInput').value) || 0;
+        const startDate = document.getElementById('debtStartDateInput').value;
+        const linkedAccountId = document.getElementById('debtLinkedAccountSelect').value;
+
+        if (!name || rawBalance <= 0) return;
+
+        const balanceUsd = toUsd(rawBalance, state.currency);
+        const minPaymentUsd = toUsd(rawMinPay, state.currency);
+
+        state.debts = state.debts || [];
+
+        if (editId) {
+          const debt = state.debts.find(d => d.id === editId);
+          if (debt) {
+            debt.name = name;
+            debt.balanceUsd = balanceUsd;
+            debt.apr = apr;
+            debt.minPaymentUsd = minPaymentUsd;
+            debt.startDate = startDate || debt.startDate;
+            debt.linkedAccountId = linkedAccountId || undefined;
+            showToast(`Debt "${name}" updated`);
+          }
+        } else {
+          const newDebt = {
+            id: `debt_${Date.now()}`,
+            name,
+            balanceUsd,
+            originalBalanceUsd: balanceUsd,
+            apr,
+            minPaymentUsd,
+            startDate: startDate || new Date().toISOString().split('T')[0],
+            linkedAccountId: linkedAccountId || undefined
+          };
+          state.debts.push(newDebt);
+          showToast(`Debt "${name}" added to portfolio`);
+        }
+
+        // If linked to an account, sync liability details
+        if (linkedAccountId) {
+          const acc = state.accounts.find(a => a.id === linkedAccountId);
+          if (acc) {
+            acc.apr = apr;
+            acc.minPaymentUsd = minPaymentUsd;
+          }
+        }
+
+        saveState();
+        closeModal('debtModal');
+        document.getElementById('debtForm').reset();
+      });
+
+      // Submit Debt Prepayment Form
+      document.getElementById('debtPrepayForm')?.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const sourceAccId = document.getElementById('prepaySourceAccountSelect').value;
+        const targetDebtId = document.getElementById('prepayTargetDebtSelect').value;
+        const rawAmount = parseFloat(document.getElementById('prepayAmountInput').value) || 0;
+        const prepayDate = document.getElementById('prepayDateInput').value || new Date().toISOString().split('T')[0];
+        const recordTx = document.getElementById('prepayRecordTxCheckbox').checked;
+
+        const amountUsd = toUsd(rawAmount, state.currency);
+        const debt = (state.debts || []).find(d => d.id === targetDebtId);
+        const sourceAcc = state.accounts.find(a => a.id === sourceAccId);
+
+        if (!debt || amountUsd <= 0) return;
+
+        // Apply payment to debt
+        const paidAmount = Math.min(debt.balanceUsd, amountUsd);
+        debt.balanceUsd = Math.max(0, debt.balanceUsd - paidAmount);
+
+        // Deduct from source account & log transaction if requested
+        if (recordTx && sourceAcc) {
+          sourceAcc.balanceUsd -= amountUsd;
+          state.transactions.unshift({
+            id: `tx_${Date.now()}`,
+            title: `Debt Prepayment: ${debt.name}`,
+            amountUsd,
+            type: 'expense',
+            category: 'Investments',
+            accountId: sourceAccId,
+            date: prepayDate,
+            notes: `Direct loan principal paydown towards ${debt.name}`
+          });
+        }
+
+        // Also adjust linked account liability if any
+        if (debt.linkedAccountId) {
+          const linkedAcc = state.accounts.find(a => a.id === debt.linkedAccountId);
+          if (linkedAcc) {
+            // In liability account, negative balance represents debt
+            if (linkedAcc.balanceUsd < 0) {
+              linkedAcc.balanceUsd = Math.min(0, linkedAcc.balanceUsd + paidAmount);
+            }
+          }
+        }
+
+        // Trigger confetti celebration if debt was fully eliminated!
+        if (debt.balanceUsd <= 0.001 && typeof confetti === 'function') {
+          confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
+          showToast(`🏆 INCREDIBLE! You completely paid off "${debt.name}"!`);
+        } else {
+          showToast(`Applied ${formatMoney(amountUsd)} prepayment to "${debt.name}"!`);
+        }
+
+        saveState();
+        closeModal('debtPrepayModal');
+        document.getElementById('debtPrepayForm').reset();
+      });
 
       document.getElementById('openCloudConfigBtn').onclick = () => openModal('cloudConfigModal');
       document.getElementById('closeCloudModalBtn').onclick = () => closeModal('cloudConfigModal');
@@ -2567,30 +5096,181 @@
         currentConfirmAction = null;
       });
 
-      // Launch Showcase Collapsible Controller
-      let isShowcaseExpanded = true;
-      const toggleShowcaseBtn = document.getElementById('toggleShowcaseBtn');
-      const showcaseContent = document.getElementById('showcaseContent');
-      const toggleShowcaseLabel = document.getElementById('toggleShowcaseLabel');
-      const toggleShowcaseIcon = document.getElementById('toggleShowcaseIcon');
+      // Debt PDF Report Export Listener
+      document.getElementById('exportDebtPdfBtn')?.addEventListener('click', exportDebtPdfReport);
 
-      if (toggleShowcaseBtn) {
-        toggleShowcaseBtn.onclick = () => {
-          isShowcaseExpanded = !isShowcaseExpanded;
-          if (isShowcaseExpanded) {
-            showcaseContent?.classList.remove('hidden');
-            if (toggleShowcaseLabel) toggleShowcaseLabel.textContent = 'Minimize Showcase';
-            if (toggleShowcaseIcon) toggleShowcaseIcon.style.transform = 'rotate(0deg)';
+      // Launch Demo Dashboard Handlers
+      const activateDemoMode = () => {
+        sessionStorage.setItem('financeme_demo_mode', 'true');
+        isDemoMode = true;
+        setAppMode('dashboard');
+        showToast('⚡ Live Demo Mode Active! Welcome to your personal dashboard.');
+      };
+
+      document.getElementById('headerDemoBtn')?.addEventListener('click', activateDemoMode);
+      document.getElementById('landingLaunchDemoBtn')?.addEventListener('click', activateDemoMode);
+      document.getElementById('ctaLaunchDemoBtn')?.addEventListener('click', activateDemoMode);
+
+      // Sign In CTAs from Landing
+      document.getElementById('landingSignInBtn')?.addEventListener('click', () => openModal('authModal'));
+      document.getElementById('ctaSignInBtn')?.addEventListener('click', () => openModal('authModal'));
+
+      // View Switcher (Landing Preview vs App Dashboard)
+      document.getElementById('headerToggleViewBtn')?.addEventListener('click', () => {
+        if (isViewingLanding) {
+          setAppMode('dashboard');
+        } else {
+          setAppMode('landing');
+        }
+      });
+
+      document.getElementById('navSwitchToLandingBtn')?.addEventListener('click', () => {
+        setAppMode('landing');
+      });
+
+      // Preview Slider Tab Buttons (inside slides to jump to dashboard)
+      document.querySelectorAll('.preview-launch-tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const targetTab = btn.dataset.tab;
+          activateDemoMode();
+          const targetNavBtn = document.querySelector(`.nav-tab-btn[data-tab="${targetTab}"]`);
+          if (targetNavBtn) targetNavBtn.click();
+        });
+      });
+
+      // Preview Showcase Slider Controller (Photos / Feature Carousel)
+      let activeSlideIndex = 0;
+      const totalSlides = 4;
+      const slides = document.querySelectorAll('.preview-slide');
+      const dots = document.querySelectorAll('.slider-dot');
+      const tabBtns = document.querySelectorAll('.slider-tab-btn');
+      let slideTimer = null;
+
+      function goToSlide(index) {
+        activeSlideIndex = (index + totalSlides) % totalSlides;
+        slides.forEach((s, idx) => {
+          if (idx === activeSlideIndex) {
+            s.classList.remove('hidden');
           } else {
-            showcaseContent?.classList.add('hidden');
-            if (toggleShowcaseLabel) toggleShowcaseLabel.textContent = 'Expand Launch Showcase';
-            if (toggleShowcaseIcon) toggleShowcaseIcon.style.transform = 'rotate(180deg)';
+            s.classList.add('hidden');
           }
-        };
+        });
+
+        dots.forEach((d, idx) => {
+          if (idx === activeSlideIndex) {
+            d.className = 'slider-dot w-2.5 h-2.5 rounded-full bg-emerald-400 transition-all cursor-pointer';
+          } else {
+            d.className = 'slider-dot w-2.5 h-2.5 rounded-full bg-slate-700 hover:bg-slate-500 transition-all cursor-pointer';
+          }
+        });
+
+        tabBtns.forEach((t, idx) => {
+          if (idx === activeSlideIndex) {
+            t.className = 'slider-tab-btn active px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap cursor-pointer transition-all bg-emerald-600/20 text-emerald-300 border border-emerald-500/30';
+          } else {
+            t.className = 'slider-tab-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap cursor-pointer transition-all text-slate-400 hover:text-slate-200 bg-slate-900 border border-slate-800';
+          }
+        });
       }
 
-      document.getElementById('showcaseAddAccountBtn')?.addEventListener('click', () => openModal('accountModal'));
-      document.getElementById('showcaseRecordTxBtn')?.addEventListener('click', () => openModal('txModal'));
+      function startSlideTimer() {
+        stopSlideTimer();
+        slideTimer = setInterval(() => {
+          goToSlide(activeSlideIndex + 1);
+        }, 5000);
+      }
+
+      function stopSlideTimer() {
+        if (slideTimer) {
+          clearInterval(slideTimer);
+          slideTimer = null;
+        }
+      }
+
+      document.getElementById('sliderPrevBtn')?.addEventListener('click', () => {
+        goToSlide(activeSlideIndex - 1);
+        startSlideTimer();
+      });
+
+      document.getElementById('sliderNextBtn')?.addEventListener('click', () => {
+        goToSlide(activeSlideIndex + 1);
+        startSlideTimer();
+      });
+
+      dots.forEach((dot, idx) => {
+        dot.addEventListener('click', () => {
+          goToSlide(idx);
+          startSlideTimer();
+        });
+      });
+
+      tabBtns.forEach((tab, idx) => {
+        tab.addEventListener('click', () => {
+          goToSlide(idx);
+          startSlideTimer();
+        });
+      });
+
+      const sliderContainer = document.getElementById('previewSliderContainer');
+      sliderContainer?.addEventListener('mouseenter', stopSlideTimer);
+      sliderContainer?.addEventListener('mouseleave', startSlideTimer);
+      startSlideTimer();
+
+      // Interactive Landing Sandbox Prepayment Calculator
+      const sandboxSlider = document.getElementById('sandboxSlider');
+      const sandboxExtraVal = document.getElementById('sandboxExtraVal');
+      const sandboxInterestSaved = document.getElementById('sandboxInterestSaved');
+      const sandboxTimeSaved = document.getElementById('sandboxTimeSaved');
+      const sandboxDebtFreeDate = document.getElementById('sandboxDebtFreeDate');
+
+      function updateSandboxCalc(extraVal) {
+        if (sandboxExtraVal) sandboxExtraVal.textContent = extraVal;
+        
+        // Dynamic formula modeled on representative $35k loan at 14.5% APR
+        const interestSavedEst = Math.round(extraVal * 38);
+        const monthsShavedEst = Math.min(36, Math.round(extraVal * 0.18));
+        const yearsShaved = Math.floor(monthsShavedEst / 12);
+        const remMonths = monthsShavedEst % 12;
+
+        const targetDate = new Date();
+        targetDate.setMonth(targetDate.getMonth() + Math.max(8, 48 - monthsShavedEst));
+        const dateStr = targetDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+
+        if (sandboxInterestSaved) sandboxInterestSaved.textContent = formatMoney(interestSavedEst);
+        if (sandboxTimeSaved) {
+          sandboxTimeSaved.textContent = monthsShavedEst > 0 ? (yearsShaved > 0 ? `${yearsShaved}y ${remMonths}m` : `${monthsShavedEst}m`) : '0m';
+        }
+        if (sandboxDebtFreeDate) sandboxDebtFreeDate.textContent = dateStr;
+      }
+
+      if (sandboxSlider) {
+        sandboxSlider.addEventListener('input', (e) => {
+          updateSandboxCalc(parseInt(e.target.value, 10) || 0);
+        });
+      }
+
+      document.querySelectorAll('.sandbox-preset-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const val = parseInt(btn.dataset.val, 10) || 0;
+          if (sandboxSlider) sandboxSlider.value = val;
+          updateSandboxCalc(val);
+
+          document.querySelectorAll('.sandbox-preset-btn').forEach(b => {
+            b.className = 'sandbox-preset-btn px-2.5 py-1 rounded-lg bg-slate-950 hover:bg-slate-800 text-slate-300 font-mono text-[11px] border border-slate-800 cursor-pointer';
+          });
+          btn.className = 'sandbox-preset-btn px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 font-mono text-[11px] border border-emerald-500/30 cursor-pointer';
+        });
+      });
+
+      document.getElementById('sandboxApplyBtn')?.addEventListener('click', () => {
+        const extraVal = parseInt(sandboxSlider?.value, 10) || 0;
+        state.debtSimulator.extraMonthlyUsd = toUsd(extraVal, state.currency);
+        saveState();
+        activateDemoMode();
+        const debtsNavBtn = document.querySelector('.nav-tab-btn[data-tab="debts"]');
+        if (debtsNavBtn) debtsNavBtn.click();
+        showToast(`Applied +${formatMoney(state.debtSimulator.extraMonthlyUsd)}/mo accelerator to your debt payoff!`);
+      });
 
       // 15. Ledger search filter listeners
       document.getElementById('txSearchInput')?.addEventListener('input', renderLedgerTable);
