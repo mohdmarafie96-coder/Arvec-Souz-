@@ -49,7 +49,11 @@
   "firestore": {
     "/users/{userId}/data/financeState": {
       "schema": "FinanceState",
-      "description": "User personal financial portfolio and settings store"
+      "description": "Authenticated user personal financial portfolio and settings store"
+    },
+    "/guest_sessions/{deviceId}/data/financeState": {
+      "schema": "FinanceState",
+      "description": "Guest and visitor device session financial data store ensuring all user inputs are persisted to Firestore"
     }
   }
 }

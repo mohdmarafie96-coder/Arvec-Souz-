@@ -2574,30 +2574,87 @@
       return amountInTargetCurrency / curr.rate;
     }
 
-    // Local Storage Key Resolver (Isolated per user)
+    // OperationType & Firestore Error Handler per Firebase Integration specification
+    const OperationType = {
+      CREATE: 'create',
+      UPDATE: 'update',
+      DELETE: 'delete',
+      LIST: 'list',
+      GET: 'get',
+      WRITE: 'write'
+    };
+
+    function handleFirestoreError(error, operationType, path) {
+      const errInfo = {
+        error: error instanceof Error ? error.message : String(error),
+        authInfo: {
+          userId: auth?.currentUser?.uid || null,
+          email: auth?.currentUser?.email || null,
+          emailVerified: auth?.currentUser?.emailVerified || null,
+          isAnonymous: auth?.currentUser?.isAnonymous || null,
+          tenantId: auth?.currentUser?.tenantId || null,
+          providerInfo: auth?.currentUser?.providerData?.map(provider => ({
+            providerId: provider.providerId,
+            email: provider.email,
+          })) || []
+        },
+        operationType,
+        path
+      };
+      console.error('Firestore Error: ', JSON.stringify(errInfo));
+    }
+
+    // Persistent Device ID for Guest Database Storage
+    function getDeviceId() {
+      let id = localStorage.getItem('financeme_device_id');
+      if (!id || !/^dev_[a-zA-Z0-9_-]+$/.test(id)) {
+        id = 'dev_' + Math.random().toString(36).substring(2, 10) + '_' + Date.now();
+        localStorage.setItem('financeme_device_id', id);
+      }
+      return id;
+    }
+
+    // Resolves active Firestore document reference (authenticated user OR guest session)
+    function getFirestoreDocRef() {
+      if (!db) return null;
+      if (currentUser?.uid) {
+        return doc(db, 'users', currentUser.uid, 'data', 'financeState');
+      } else {
+        return doc(db, 'guest_sessions', getDeviceId(), 'data', 'financeState');
+      }
+    }
+
+    // Local Storage Key Resolver (Isolated per user or guest)
     function getStorageKey() {
       return currentUser?.uid ? `financeme_state_${currentUser.uid}` : 'financeme_state_guest';
     }
 
-    // Save and Sync Engine
-    function saveState(skipCloud = false) {
+    // Save and Sync Engine (Stores all user inputs in both Local Cache and Firestore Database)
+    async function saveState(skipCloud = false) {
       try {
         const key = getStorageKey();
         localStorage.setItem(key, JSON.stringify(state));
-        localStorage.setItem('financeme_state_v1', JSON.stringify(state)); // backward compat fallback
+        localStorage.setItem('financeme_state_v1', JSON.stringify(state));
       } catch (err) {
-        console.warn('LocalStorage save error:', err);
+        console.warn('LocalStorage save warning:', err);
       }
 
-      // Sync to Firestore if authenticated
-      if (!skipCloud && db && currentUser) {
-        const userDocRef = doc(db, 'users', currentUser.uid, 'data', 'financeState');
-        setDoc(userDocRef, {
-          ...state,
-          lastUpdated: new Date().toISOString()
-        }, { merge: true }).catch(err => {
-          console.warn('Firestore cloud sync notice:', err);
-        });
+      // Store in Firestore Database
+      if (!skipCloud && db) {
+        const targetDocRef = getFirestoreDocRef();
+        if (targetDocRef) {
+          updateCloudStatus('saving');
+          try {
+            await setDoc(targetDocRef, {
+              ...state,
+              lastUpdated: new Date().toISOString()
+            }, { merge: true });
+            updateCloudStatus('synced');
+          } catch (err) {
+            handleFirestoreError(err, OperationType.WRITE, targetDocRef.path);
+            updateCloudStatus('error', err?.message);
+          }
+        }
       }
 
       renderAll();
@@ -2669,27 +2726,84 @@
     async function testFirestoreConnection() {
       if (!db) return;
       try {
-        await getDocFromServer(doc(db, 'test', 'connection'));
+        await setDoc(doc(db, 'test', 'connection'), {
+          status: 'online',
+          timestamp: new Date().toISOString(),
+          database: 'ai-studio-rubiksstudio3d-0955b89f-4a59-4c54-8c48-ee90ad95557f',
+          project: 'financeme-dc8b0'
+        }, { merge: true });
+        console.log('✓ Firestore database linked and active');
+        updateCloudStatus('synced');
       } catch (err) {
-        if (err instanceof Error && err.message.includes('the client is offline')) {
-          console.warn('Firestore offline notice.');
-        }
+        handleFirestoreError(err, OperationType.WRITE, 'test/connection');
+        console.warn('Firestore offline or connection notice:', err);
       }
     }
 
+    // Real-Time Database Subscription
+    function setupFirestoreSubscription() {
+      if (firestoreUnsubscribe) {
+        firestoreUnsubscribe();
+        firestoreUnsubscribe = null;
+      }
+
+      if (!db) return;
+      const targetDocRef = getFirestoreDocRef();
+      if (!targetDocRef) return;
+
+      updateCloudStatus('connecting');
+
+      firestoreUnsubscribe = onSnapshot(targetDocRef, (snap) => {
+        if (snap.exists()) {
+          const cloudData = snap.data();
+          if (cloudData && Array.isArray(cloudData.accounts)) {
+            state = {
+              ...state,
+              ...cloudData,
+              debts: Array.isArray(cloudData.debts) ? cloudData.debts : (state.debts || []),
+              debtSimulator: {
+                ...LAUNCH_EMPTY_DATA.debtSimulator,
+                ...(state.debtSimulator || {}),
+                ...(cloudData.debtSimulator || {})
+              }
+            };
+            const storageKey = getStorageKey();
+            localStorage.setItem(storageKey, JSON.stringify(state));
+            localStorage.setItem('financeme_state_v1', JSON.stringify(state));
+            renderAll();
+          }
+          updateCloudStatus('synced');
+        } else {
+          // If document doesn't exist yet in Firestore, seed it if state has any inputs
+          if (state.accounts.length > 0 || state.transactions.length > 0 || state.debts.length > 0) {
+            setDoc(targetDocRef, {
+              ...state,
+              lastUpdated: new Date().toISOString()
+            }, { merge: true }).catch(e => {
+              handleFirestoreError(e, OperationType.WRITE, targetDocRef.path);
+            });
+          }
+          updateCloudStatus('synced');
+        }
+      }, (error) => {
+        handleFirestoreError(error, OperationType.GET, targetDocRef.path);
+        updateCloudStatus('error', error?.message);
+      });
+    }
+
     // ================= FIREBASE SETUP & SYNC =================
-    function initFirebase() {
+    async function initFirebase() {
       let config = DEFAULT_APPLET_CONFIG;
       try {
-        const storedConfig = localStorage.getItem('financeme_firebase_config');
-        if (storedConfig) {
-          const parsed = JSON.parse(storedConfig);
-          if (parsed && parsed.projectId === DEFAULT_APPLET_CONFIG.projectId) {
-            config = parsed;
+        const resp = await fetch('/firebase-applet-config.json');
+        if (resp.ok) {
+          const liveConfig = await resp.json();
+          if (liveConfig && liveConfig.projectId) {
+            config = liveConfig;
           }
         }
-      } catch {
-        config = DEFAULT_APPLET_CONFIG;
+      } catch (err) {
+        console.warn('Could not fetch /firebase-applet-config.json, using default:', err);
       }
 
       const configTextarea = document.getElementById('firebaseConfigTextarea');
@@ -2705,60 +2819,43 @@
         auth = getAuth(firebaseApp);
         db = getFirestore(firebaseApp, config.firestoreDatabaseId || undefined);
 
-        testFirestoreConnection();
+        await testFirestoreConnection();
+
+        // Initial subscription for guest or existing session
+        setupFirestoreSubscription();
 
         // Listen for Authentication state
-        onAuthStateChanged(auth, (user) => {
+        onAuthStateChanged(auth, async (user) => {
           currentUser = user;
           updateAuthUI(user);
 
           if (user) {
-            // Requirement: Once logged in, page should immediately open into dashboard!
             setAppMode('dashboard');
 
-            // 1. Immediately hydrate from user's isolated local cache
-            state = loadInitialState(user.uid);
-            renderAll();
+            // Check if user had entered data in guest mode prior to login
+            const guestState = loadInitialState(null);
+            const userState = loadInitialState(user.uid);
+            const hasGuestData = guestState && (guestState.accounts.length > 0 || guestState.transactions.length > 0 || guestState.debts.length > 0 || guestState.goals.length > 0);
+            const hasUserData = userState && (userState.accounts.length > 0 || userState.transactions.length > 0 || userState.debts.length > 0 || userState.goals.length > 0);
 
-            // 2. Subscribe to real-time Firestore Document for this user
-            const userDocRef = doc(db, 'users', user.uid, 'data', 'financeState');
-            if (firestoreUnsubscribe) firestoreUnsubscribe();
-
-            firestoreUnsubscribe = onSnapshot(userDocRef, (snap) => {
-              if (snap.exists()) {
-                const cloudData = snap.data();
-                if (cloudData && Array.isArray(cloudData.accounts)) {
-                  state = {
-                    ...state,
-                    ...cloudData,
-                    debts: Array.isArray(cloudData.debts) ? cloudData.debts : (state.debts || []),
-                    debtSimulator: {
-                      ...LAUNCH_EMPTY_DATA.debtSimulator,
-                      ...(state.debtSimulator || {}),
-                      ...(cloudData.debtSimulator || {})
-                    }
-                  };
-                  localStorage.setItem(`financeme_state_${user.uid}`, JSON.stringify(state));
-                  renderAll();
-                }
-              } else {
-                // First-time user document creation in Firestore
-                setDoc(userDocRef, {
-                  ...state,
-                  lastUpdated: new Date().toISOString()
-                }).catch(e => console.warn('Cloud init write:', e));
-              }
-            }, (error) => {
-              console.warn('Firestore sync subscription notice:', error);
-            });
-
-            updateCloudStatus(true);
-          } else {
-            if (firestoreUnsubscribe) {
-              firestoreUnsubscribe();
-              firestoreUnsubscribe = null;
+            if (hasGuestData && !hasUserData) {
+              state = { ...guestState };
+              localStorage.setItem(`financeme_state_${user.uid}`, JSON.stringify(state));
+              showToast('✓ Stored your inputs into your account in the database!');
+            } else {
+              state = userState;
             }
-            updateCloudStatus(false);
+
+            renderAll();
+            setupFirestoreSubscription();
+
+            // Store immediately to ensure cloud sync
+            saveState();
+          } else {
+            // Unauthenticated / Guest session
+            state = loadInitialState(null);
+            renderAll();
+            setupFirestoreSubscription();
             if (!isDemoMode) {
               setAppMode('landing');
             }
@@ -2766,24 +2863,40 @@
         });
       } catch (err) {
         console.warn('Firebase initialization notice:', err);
-        updateCloudStatus(false);
+        updateCloudStatus('error', err?.message);
       }
     }
 
-    function updateCloudStatus(isCloud) {
+    function updateCloudStatus(status, detail = '') {
       const badge = document.getElementById('cloudStatusBadge');
       const text = document.getElementById('cloudStatusText');
       if (!badge || !text) return;
-      if (isCloud) {
-        badge.className = 'inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/25';
-        const dot = badge.querySelector('span');
-        if (dot) dot.className = 'w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse';
-        text.textContent = 'Cloud Synced';
+
+      if (status === 'synced' || status === true) {
+        badge.className = 'inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/25 transition-all';
+        badge.innerHTML = `
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span id="cloudStatusText">Database Synced</span>
+        `;
+        badge.title = 'All inputs are linked and securely stored in Firestore database';
+      } else if (status === 'saving') {
+        badge.className = 'inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/25 transition-all';
+        badge.innerHTML = `
+          <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping"></span>
+          <span id="cloudStatusText">Storing in Database...</span>
+        `;
+      } else if (status === 'connecting') {
+        badge.className = 'inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/25 transition-all';
+        badge.innerHTML = `
+          <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+          <span id="cloudStatusText">Connecting Database...</span>
+        `;
       } else {
-        badge.className = 'inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/25';
-        const dot = badge.querySelector('span');
-        if (dot) dot.className = 'w-1.5 h-1.5 rounded-full bg-amber-400';
-        text.textContent = 'Local Mode';
+        badge.className = 'inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700 transition-all';
+        badge.innerHTML = `
+          <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+          <span id="cloudStatusText">Local Mode</span>
+        `;
       }
     }
 
