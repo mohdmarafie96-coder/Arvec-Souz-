@@ -3625,6 +3625,12 @@
 
     // ================= RENDER ENGINES =================
 
+    // Safe DOM text content helper that prevents null property exceptions
+    function setElementText(id, text) {
+      const el = document.getElementById(id);
+      if (el) el.textContent = text;
+    }
+
     function renderAll() {
       renderCurrencyHeader();
       renderNetWorth();
@@ -3641,25 +3647,22 @@
 
     function renderCurrencyHeader() {
       const select = document.getElementById('currencySelect');
-      select.value = state.currency;
+      if (select) select.value = state.currency;
       const curr = CURRENCIES[state.currency] || CURRENCIES.USD;
-      document.getElementById('currencySymbolLabel').textContent = curr.symbol;
-      document.getElementById('txCurrencyLabel').textContent = state.currency;
-      document.getElementById('transferCurrencyLabel').textContent = state.currency;
-      document.getElementById('depositCurrencyLabel').textContent = state.currency;
-      const accBalCurr = document.getElementById('accBalanceCurrencyLabel');
-      if (accBalCurr) accBalCurr.textContent = state.currency;
+      setElementText('currencySymbolLabel', curr.symbol);
+      setElementText('txCurrencyLabel', state.currency);
+      setElementText('transferCurrencyLabel', state.currency);
+      setElementText('depositCurrencyLabel', state.currency);
+      setElementText('accBalanceCurrencyLabel', state.currency);
 
       // Update debt module currency labels
       document.querySelectorAll('.debtCurrencyPrefixLabel').forEach(el => el.textContent = curr.symbol);
-      const extraPrefix = document.getElementById('simExtraCurrencyPrefix');
-      if (extraPrefix) extraPrefix.textContent = curr.symbol;
-      const lumpPrefix = document.getElementById('simLumpCurrencyPrefix');
-      if (lumpPrefix) lumpPrefix.textContent = curr.symbol;
+      setElementText('simExtraCurrencyPrefix', curr.symbol);
+      setElementText('simLumpCurrencyPrefix', curr.symbol);
 
       // Privacy icon state
-      document.getElementById('privacyIconOpen').classList.toggle('hidden', state.privacyMask);
-      document.getElementById('privacyIconClosed').classList.toggle('hidden', !state.privacyMask);
+      document.getElementById('privacyIconOpen')?.classList.toggle('hidden', state.privacyMask);
+      document.getElementById('privacyIconClosed')?.classList.toggle('hidden', !state.privacyMask);
     }
 
     function renderNetWorth() {
@@ -3682,23 +3685,25 @@
 
       const netWorthUsd = totalAssetsUsd - totalLiabilitiesUsd;
 
-      document.getElementById('heroNetWorthDisplay').textContent = formatMoney(netWorthUsd);
-      document.getElementById('heroTotalAssetsDisplay').textContent = formatMoney(totalAssetsUsd);
-      document.getElementById('heroTotalLiabilitiesDisplay').textContent = formatMoney(totalLiabilitiesUsd);
-      document.getElementById('accountCountLabel').textContent = `${state.accounts.length} ${state.accounts.length === 1 ? 'account' : 'accounts'}`;
+      setElementText('heroNetWorthDisplay', formatMoney(netWorthUsd));
+      setElementText('heroTotalAssetsDisplay', formatMoney(totalAssetsUsd));
+      setElementText('heroTotalLiabilitiesDisplay', formatMoney(totalLiabilitiesUsd));
+      setElementText('accountCountLabel', `${state.accounts.length} ${state.accounts.length === 1 ? 'account' : 'accounts'}`);
 
       // Debt to Asset ratio
       const ratio = totalAssetsUsd > 0 ? Math.round((totalLiabilitiesUsd / totalAssetsUsd) * 100) : 0;
       const debtBadge = document.getElementById('debtRatioBadge');
-      if (ratio <= 20) {
-        debtBadge.textContent = `Pristine (${ratio}% Debt)`;
-        debtBadge.className = 'text-xs font-mono px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/30';
-      } else if (ratio <= 40) {
-        debtBadge.textContent = `Balanced (${ratio}% Debt)`;
-        debtBadge.className = 'text-xs font-mono px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 border border-slate-700';
-      } else {
-        debtBadge.textContent = `Elevated (${ratio}% Debt)`;
-        debtBadge.className = 'text-xs font-mono px-2.5 py-1 rounded-full bg-rose-500/10 text-rose-300 border border-rose-500/30';
+      if (debtBadge) {
+        if (ratio <= 20) {
+          debtBadge.textContent = `Pristine (${ratio}% Debt)`;
+          debtBadge.className = 'text-xs font-mono px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/30';
+        } else if (ratio <= 40) {
+          debtBadge.textContent = `Balanced (${ratio}% Debt)`;
+          debtBadge.className = 'text-xs font-mono px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 border border-slate-700';
+        } else {
+          debtBadge.textContent = `Elevated (${ratio}% Debt)`;
+          debtBadge.className = 'text-xs font-mono px-2.5 py-1 rounded-full bg-rose-500/10 text-rose-300 border border-rose-500/30';
+        }
       }
 
       // Consolidated Debt & Credit Shield Block Update
@@ -3741,10 +3746,10 @@
       const cashFlowUsd = incomeUsd - expenseUsd;
       const savingsRate = incomeUsd > 0 ? Math.max(0, Math.round((cashFlowUsd / incomeUsd) * 100)) : 0;
 
-      document.getElementById('statIncomeDisplay').textContent = formatMoney(incomeUsd);
-      document.getElementById('statExpenseDisplay').textContent = formatMoney(expenseUsd);
-      document.getElementById('statCashFlowDisplay').textContent = formatMoney(cashFlowUsd);
-      document.getElementById('savingsRateLabel').textContent = `${savingsRate}% Net Savings Rate`;
+      setElementText('statIncomeDisplay', formatMoney(incomeUsd));
+      setElementText('statExpenseDisplay', formatMoney(expenseUsd));
+      setElementText('statCashFlowDisplay', formatMoney(cashFlowUsd));
+      setElementText('savingsRateLabel', `${savingsRate}% Net Savings Rate`);
 
       // Subscription burn
       let monthlySubUsd = 0;
@@ -3753,8 +3758,8 @@
           monthlySubUsd += s.cadence === 'annual' ? (s.amountUsd / 12) : s.amountUsd;
         }
       });
-      document.getElementById('statSubBurnDisplay').textContent = `${formatMoney(monthlySubUsd)}/mo`;
-      document.getElementById('statSubAnnualLabel').textContent = `${formatMoney(monthlySubUsd * 12)}/yr annualized`;
+      setElementText('statSubBurnDisplay', `${formatMoney(monthlySubUsd)}/mo`);
+      setElementText('statSubAnnualLabel', `${formatMoney(monthlySubUsd * 12)}/yr annualized`);
     }
 
     function renderAccounts() {
@@ -4990,18 +4995,18 @@
       renderDebtMilestones(totalDebtUsd, baselineSim, activeSim);
 
       // 1. Summary Metrics Banner
-      document.getElementById('debtSummaryTotalBalance').textContent = formatMoney(totalDebtUsd);
-      document.getElementById('debtSummaryWeightedApr').textContent = `${weightedApr.toFixed(1)}%`;
-      document.getElementById('debtSummaryMonthlyMin').textContent = `${formatMoney(totalMinPaymentUsd)}/mo`;
+      setElementText('debtSummaryTotalBalance', formatMoney(totalDebtUsd));
+      setElementText('debtSummaryWeightedApr', `${weightedApr.toFixed(1)}%`);
+      setElementText('debtSummaryMonthlyMin', `${formatMoney(totalMinPaymentUsd)}/mo`);
 
       if (totalDebtUsd > 0) {
-        document.getElementById('debtSummaryBaselineDate').textContent = baselineSim.debtFreeDate;
-        document.getElementById('debtSummaryBaselineMonths').textContent = `${baselineSim.totalMonths} months (${(baselineSim.totalMonths / 12).toFixed(1)} yrs)`;
-        document.getElementById('debtSummaryBaselineInterest').textContent = formatMoney(baselineSim.totalInterestPaid);
+        setElementText('debtSummaryBaselineDate', baselineSim.debtFreeDate);
+        setElementText('debtSummaryBaselineMonths', `${baselineSim.totalMonths} months (${(baselineSim.totalMonths / 12).toFixed(1)} yrs)`);
+        setElementText('debtSummaryBaselineInterest', formatMoney(baselineSim.totalInterestPaid));
       } else {
-        document.getElementById('debtSummaryBaselineDate').textContent = 'Debt-Free';
-        document.getElementById('debtSummaryBaselineMonths').textContent = 'Zero active debt balances';
-        document.getElementById('debtSummaryBaselineInterest').textContent = formatMoney(0);
+        setElementText('debtSummaryBaselineDate', 'Debt-Free');
+        setElementText('debtSummaryBaselineMonths', 'Zero active debt balances');
+        setElementText('debtSummaryBaselineInterest', formatMoney(0));
       }
 
       // Helper to check if a debt item is a credit card
@@ -5037,37 +5042,24 @@
       const cardsUtilizationPct = cardsLimitUsd > 0 ? (cardsTotalUsd / cardsLimitUsd) * 100 : 0;
 
       // Update Loan Subtotal DOM Elements
-      const loansTotalEl = document.getElementById('loansTotalBalance');
-      if (loansTotalEl) loansTotalEl.textContent = formatMoney(loansTotalUsd);
-      const loansMonthlyEl = document.getElementById('loansMonthlyTotal');
-      if (loansMonthlyEl) loansMonthlyEl.textContent = `${formatMoney(loansMonthlyUsd)}/mo`;
-      const loansActiveEl = document.getElementById('loansActiveCount');
-      if (loansActiveEl) loansActiveEl.textContent = `${loansList.length} active account${loansList.length !== 1 ? 's' : ''}`;
-      const loansAprEl = document.getElementById('loansWeightedApr');
-      if (loansAprEl) loansAprEl.textContent = `${loansWeightedApr.toFixed(1)}%`;
-      const loansRepaidEl = document.getElementById('loansRepaidPctDisplay');
-      if (loansRepaidEl) loansRepaidEl.textContent = `${loansRepaidPct.toFixed(1)}% repaid`;
-      const loansBadgeEl = document.getElementById('loansCountBadge');
-      if (loansBadgeEl) loansBadgeEl.textContent = `${loansList.length} Loan${loansList.length !== 1 ? 's' : ''}`;
-      const loansRosterCountEl = document.getElementById('loansRosterCount');
-      if (loansRosterCountEl) loansRosterCountEl.textContent = `${loansList.length} Loan${loansList.length !== 1 ? 's' : ''}`;
+      setElementText('loansTotalBalance', formatMoney(loansTotalUsd));
+      setElementText('loansMonthlyTotal', `${formatMoney(loansMonthlyUsd)}/mo`);
+      setElementText('loansActiveCount', `${loansList.length} active account${loansList.length !== 1 ? 's' : ''}`);
+      setElementText('loansWeightedApr', `${loansWeightedApr.toFixed(1)}%`);
+      setElementText('loansRepaidPctDisplay', `${loansRepaidPct.toFixed(1)}% repaid`);
+      setElementText('loansCountBadge', `${loansList.length} Loan${loansList.length !== 1 ? 's' : ''}`);
+      setElementText('loansRosterCount', `${loansList.length} Loan${loansList.length !== 1 ? 's' : ''}`);
 
       // Update Card Subtotal DOM Elements
-      const cardsTotalEl = document.getElementById('cardsTotalBalance');
-      if (cardsTotalEl) cardsTotalEl.textContent = formatMoney(cardsTotalUsd);
-      const cardsMonthlyEl = document.getElementById('cardsMonthlyMin');
-      if (cardsMonthlyEl) cardsMonthlyEl.textContent = `${formatMoney(cardsMonthlyUsd)}/mo min`;
-      const cardsLimitEl = document.getElementById('cardsTotalLimit');
-      if (cardsLimitEl) cardsLimitEl.textContent = formatMoney(cardsLimitUsd);
-      const cardsAvailEl = document.getElementById('cardsAvailableCredit');
-      if (cardsAvailEl) cardsAvailEl.textContent = `${formatMoney(cardsAvailableUsd)} available`;
-      const cardsUtilEl = document.getElementById('cardsUtilizationDisplay');
-      if (cardsUtilEl) cardsUtilEl.textContent = `${cardsUtilizationPct.toFixed(1)}%`;
-      const cardsBadgeEl = document.getElementById('cardsCountBadge');
-      if (cardsBadgeEl) cardsBadgeEl.textContent = `${cardsList.length} Card${cardsList.length !== 1 ? 's' : ''}`;
-      const cardsRosterCountEl = document.getElementById('creditCardsRosterCount');
-      if (cardsRosterCountEl) cardsRosterCountEl.textContent = `${cardsList.length} Card${cardsList.length !== 1 ? 's' : ''}`;
+      setElementText('cardsTotalBalance', formatMoney(cardsTotalUsd));
+      setElementText('cardsMonthlyMin', `${formatMoney(cardsMonthlyUsd)}/mo min`);
+      setElementText('cardsTotalLimit', formatMoney(cardsLimitUsd));
+      setElementText('cardsAvailableCredit', `${formatMoney(cardsAvailableUsd)} available`);
+      setElementText('cardsUtilizationDisplay', `${cardsUtilizationPct.toFixed(1)}%`);
+      setElementText('cardsCountBadge', `${cardsList.length} Card${cardsList.length !== 1 ? 's' : ''}`);
+      setElementText('creditCardsRosterCount', `${cardsList.length} Card${cardsList.length !== 1 ? 's' : ''}`);
 
+      const cardsUtilEl = document.getElementById('cardsUtilizationDisplay');
       const cardsStatusLabel = document.getElementById('cardsUtilizationStatusLabel');
       if (cardsStatusLabel) {
         if (cardsUtilizationPct < 30) {
@@ -5086,19 +5078,19 @@
       }
 
       // 2. Strategy Comparison Cards
-      document.getElementById('stratBaselineDate').textContent = totalDebtUsd > 0 ? baselineSim.debtFreeDate : 'Debt-Free';
-      document.getElementById('stratBaselineDuration').textContent = totalDebtUsd > 0 ? `${baselineSim.totalMonths} mos` : '0 mos';
-      document.getElementById('stratBaselineInterest').textContent = formatMoney(baselineSim.totalInterestPaid);
+      setElementText('stratBaselineDate', totalDebtUsd > 0 ? baselineSim.debtFreeDate : 'Debt-Free');
+      setElementText('stratBaselineDuration', totalDebtUsd > 0 ? `${baselineSim.totalMonths} mos` : '0 mos');
+      setElementText('stratBaselineInterest', formatMoney(baselineSim.totalInterestPaid));
 
-      document.getElementById('stratAvalancheDate').textContent = totalDebtUsd > 0 ? avalancheSim.debtFreeDate : 'Debt-Free';
-      document.getElementById('stratAvalancheDuration').textContent = totalDebtUsd > 0 ? `${avalancheSim.totalMonths} mos` : '0 mos';
+      setElementText('stratAvalancheDate', totalDebtUsd > 0 ? avalancheSim.debtFreeDate : 'Debt-Free');
+      setElementText('stratAvalancheDuration', totalDebtUsd > 0 ? `${avalancheSim.totalMonths} mos` : '0 mos');
       const avalancheSaved = Math.max(0, baselineSim.totalInterestPaid - avalancheSim.totalInterestPaid);
-      document.getElementById('stratAvalancheSaved').textContent = formatMoney(avalancheSaved);
+      setElementText('stratAvalancheSaved', formatMoney(avalancheSaved));
 
-      document.getElementById('stratSnowballDate').textContent = totalDebtUsd > 0 ? snowballSim.debtFreeDate : 'Debt-Free';
-      document.getElementById('stratSnowballDuration').textContent = totalDebtUsd > 0 ? `${snowballSim.totalMonths} mos` : '0 mos';
+      setElementText('stratSnowballDate', totalDebtUsd > 0 ? snowballSim.debtFreeDate : 'Debt-Free');
+      setElementText('stratSnowballDuration', totalDebtUsd > 0 ? `${snowballSim.totalMonths} mos` : '0 mos');
       const snowballSaved = Math.max(0, baselineSim.totalInterestPaid - snowballSim.totalInterestPaid);
-      document.getElementById('stratSnowballSaved').textContent = formatMoney(snowballSaved);
+      setElementText('stratSnowballSaved', formatMoney(snowballSaved));
 
       // Highlight active strategy
       const isAvalanche = state.debtSimulator.strategy !== 'snowball';
@@ -5108,15 +5100,15 @@
       const snCard = document.getElementById('cardStratSnowball');
 
       if (isAvalanche) {
-        avBtn.className = 'strategy-toggle-btn active px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-emerald-600 text-white shadow-sm cursor-pointer transition-all flex items-center gap-1.5';
-        snBtn.className = 'strategy-toggle-btn px-3.5 py-1.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-white cursor-pointer transition-all flex items-center gap-1.5';
-        avCard.className = 'p-5 rounded-2xl bg-slate-950/80 border-2 border-emerald-500/60 shadow-lg shadow-emerald-500/5 space-y-3 relative overflow-hidden';
-        snCard.className = 'p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3 relative overflow-hidden';
+        if (avBtn) avBtn.className = 'strategy-toggle-btn active px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-emerald-600 text-white shadow-sm cursor-pointer transition-all flex items-center gap-1.5';
+        if (snBtn) snBtn.className = 'strategy-toggle-btn px-3.5 py-1.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-white cursor-pointer transition-all flex items-center gap-1.5';
+        if (avCard) avCard.className = 'p-5 rounded-2xl bg-slate-950/80 border-2 border-emerald-500/60 shadow-lg shadow-emerald-500/5 space-y-3 relative overflow-hidden';
+        if (snCard) snCard.className = 'p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3 relative overflow-hidden';
       } else {
-        snBtn.className = 'strategy-toggle-btn active px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-cyan-600 text-white shadow-sm cursor-pointer transition-all flex items-center gap-1.5';
-        avBtn.className = 'strategy-toggle-btn px-3.5 py-1.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-white cursor-pointer transition-all flex items-center gap-1.5';
-        snCard.className = 'p-5 rounded-2xl bg-slate-950/80 border-2 border-cyan-500/60 shadow-lg shadow-cyan-500/5 space-y-3 relative overflow-hidden';
-        avCard.className = 'p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3 relative overflow-hidden';
+        if (snBtn) snBtn.className = 'strategy-toggle-btn active px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-cyan-600 text-white shadow-sm cursor-pointer transition-all flex items-center gap-1.5';
+        if (avBtn) avBtn.className = 'strategy-toggle-btn px-3.5 py-1.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-white cursor-pointer transition-all flex items-center gap-1.5';
+        if (snCard) snCard.className = 'p-5 rounded-2xl bg-slate-950/80 border-2 border-cyan-500/60 shadow-lg shadow-cyan-500/5 space-y-3 relative overflow-hidden';
+        if (avCard) avCard.className = 'p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3 relative overflow-hidden';
       }
 
       // 3. Simulator Controls Synchronization
@@ -5145,24 +5137,24 @@
       const yearsShaved = Math.floor(monthsShaved / 12);
       const remMonthsShaved = monthsShaved % 12;
 
-      document.getElementById('simTotalInterestSaved').textContent = formatMoney(totalInterestSaved);
+      setElementText('simTotalInterestSaved', formatMoney(totalInterestSaved));
       if (monthsShaved > 0) {
-        document.getElementById('simTimeSaved').textContent = yearsShaved > 0 ? `${yearsShaved}y ${remMonthsShaved}m` : `${monthsShaved} Months`;
-        document.getElementById('simTimeSavedSubtext').textContent = `${monthsShaved} months eliminated`;
+        setElementText('simTimeSaved', yearsShaved > 0 ? `${yearsShaved}y ${remMonthsShaved}m` : `${monthsShaved} Months`);
+        setElementText('simTimeSavedSubtext', `${monthsShaved} months eliminated`);
       } else {
-        document.getElementById('simTimeSaved').textContent = '0 Months';
-        document.getElementById('simTimeSavedSubtext').textContent = 'Add prepayments above';
+        setElementText('simTimeSaved', '0 Months');
+        setElementText('simTimeSavedSubtext', 'Add prepayments above');
       }
 
-      document.getElementById('simNewDebtFreeDate').textContent = totalDebtUsd > 0 ? activeSim.debtFreeDate : 'Debt Free';
-      document.getElementById('simNewDebtFreeSubtext').textContent = totalDebtUsd > 0 ? `Target: ${activeSim.totalMonths} months` : 'Pristine 100% equity';
+      setElementText('simNewDebtFreeDate', totalDebtUsd > 0 ? activeSim.debtFreeDate : 'Debt Free');
+      setElementText('simNewDebtFreeSubtext', totalDebtUsd > 0 ? `Target: ${activeSim.totalMonths} months` : 'Pristine 100% equity');
 
       const totalPrepayApplied = activeSim.totalPrepaymentPaid;
       if (totalPrepayApplied > 0 && totalInterestSaved > 0) {
         const roiPct = ((totalInterestSaved / totalPrepayApplied) * 100).toFixed(1);
-        document.getElementById('simPrepayRoi').textContent = `${roiPct}%`;
+        setElementText('simPrepayRoi', `${roiPct}%`);
       } else {
-        document.getElementById('simPrepayRoi').textContent = '0.0%';
+        setElementText('simPrepayRoi', '0.0%');
       }
 
       // 5. Interactive D3 Multi-Strategy Amortization Line Chart
