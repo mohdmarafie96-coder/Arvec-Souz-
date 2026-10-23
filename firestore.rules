@@ -15,21 +15,29 @@ service cloud.firestore {
       return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
     }
 
-    // Authenticated User Financial Workspace
+    // Authenticated User Financial Workspace: Personal accounts, ledgers, debts, and settings
     match /users/{userId} {
-      allow get, list, create, update, delete: if isSignedIn() && request.auth.uid == userId;
+      allow read, write: if isSignedIn() && request.auth.uid == userId;
+
+      match /data/{docId} {
+        allow read, write: if isSignedIn() && request.auth.uid == userId;
+      }
 
       match /{allSubcollections=**} {
-        allow read, write, delete: if isSignedIn() && request.auth.uid == userId;
+        allow read, write: if isSignedIn() && request.auth.uid == userId;
       }
     }
 
     // Guest & Unauthenticated Device Sessions: Inputs by users are stored in Firestore
     match /guest_sessions/{deviceId} {
-      allow get, list, create, update, delete: if isValidId(deviceId);
+      allow read, write: if isValidId(deviceId);
+
+      match /data/{docId} {
+        allow read, write: if isValidId(deviceId);
+      }
 
       match /{allSubcollections=**} {
-        allow read, write, delete: if isValidId(deviceId);
+        allow read, write: if isValidId(deviceId);
       }
     }
 

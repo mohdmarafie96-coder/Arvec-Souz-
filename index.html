@@ -1787,61 +1787,100 @@
         <p class="text-xs text-slate-400">Sync your finances securely across all your devices in real-time.</p>
       </div>
 
-      <!-- Auth Tabs: Sign In vs Create Account -->
+      <!-- Auth Tabs: Sign In vs Create Account vs Reset Password -->
       <div class="flex p-1 bg-slate-950 rounded-xl border border-slate-800">
-        <button id="tabAuthSignIn" class="flex-1 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 text-white shadow-sm cursor-pointer">Sign In</button>
-        <button id="tabAuthSignUp" class="flex-1 py-1.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-slate-200 cursor-pointer">Create Account</button>
+        <button id="tabAuthSignIn" type="button" class="flex-1 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 text-white shadow-sm cursor-pointer transition-all">Sign In</button>
+        <button id="tabAuthSignUp" type="button" class="flex-1 py-1.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-slate-200 cursor-pointer transition-all">Create Account</button>
+        <button id="tabAuthForgot" type="button" class="flex-1 py-1.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-slate-200 cursor-pointer transition-all">Reset Password</button>
       </div>
 
-      <!-- Google 1-Tap Auth Button -->
-      <button id="googleSignInBtn" class="w-full flex items-center justify-center gap-2.5 py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-750 text-white text-xs font-semibold border border-slate-700/80 transition-colors shadow-sm cursor-pointer">
-        <svg class="w-4 h-4" viewBox="0 0 24 24">
-          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-        </svg>
-        <span>Continue with Google</span>
-      </button>
-      <p class="text-[11px] text-slate-400 text-center">By continuing, you agree to our <button type="button" id="googleTermsLink" class="text-emerald-400 hover:text-emerald-300 underline cursor-pointer">Terms & Conditions</button> and <button type="button" id="googlePrivacyLink" class="text-emerald-400 hover:text-emerald-300 underline cursor-pointer">Privacy Policy</button>.</p>
-
-      <div class="relative flex items-center justify-center">
-        <div class="border-t border-slate-800 w-full"></div>
-        <span class="bg-slate-900 px-3 text-[10px] font-mono text-slate-500 uppercase absolute">or with email</span>
-      </div>
-
-      <!-- Email / Password Form -->
-      <form id="authForm" class="space-y-3 text-xs">
-        <div>
-          <label class="block text-slate-300 font-medium mb-1">Email Address</label>
-          <input id="authEmailInput" type="email" required placeholder="name@example.com" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500" />
-        </div>
-
-        <div>
-          <label class="block text-slate-300 font-medium mb-1">Password</label>
-          <input id="authPasswordInput" type="password" required minlength="6" placeholder="••••••••" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500" />
-        </div>
-
-        <!-- Terms and Conditions Consent Box (displayed during Sign Up) -->
-        <div id="authTermsConsentBox" class="hidden pt-1 pb-1">
-          <label class="flex items-start gap-2.5 cursor-pointer text-xs text-slate-300">
-            <input type="checkbox" id="authTermsCheckbox" class="mt-0.5 w-4 h-4 rounded text-emerald-600 accent-emerald-500 bg-slate-950 border-slate-700 cursor-pointer" />
-            <span class="leading-relaxed">I agree to the <button type="button" id="authTermsLink" class="text-emerald-400 hover:text-emerald-300 underline font-semibold cursor-pointer">Terms & Conditions</button> and <button type="button" id="authPrivacyLink" class="text-emerald-400 hover:text-emerald-300 underline font-semibold cursor-pointer">Privacy Policy</button>.</span>
-          </label>
-        </div>
-
-        <div class="flex items-center justify-between text-[11px] pt-1">
-          <button type="button" id="forgotPasswordBtn" class="text-emerald-400 hover:underline">Forgot Password?</button>
-          <span class="text-slate-500 font-mono">Firebase v10 Auth</span>
-        </div>
-
-        <!-- Dynamic Auth Alert Banner -->
-        <div id="authAlertBanner" class="hidden"></div>
-
-        <button type="submit" id="authSubmitBtn" class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg shadow-emerald-600/20 active:scale-95 transition-all cursor-pointer">
-          Sign In
+      <!-- MAIN AUTH SECTION (Sign In & Create Account) -->
+      <div id="authMainSection" class="space-y-4">
+        <!-- Google 1-Tap Auth Button -->
+        <button id="googleSignInBtn" class="w-full flex items-center justify-center gap-2.5 py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-750 text-white text-xs font-semibold border border-slate-700/80 transition-colors shadow-sm cursor-pointer">
+          <svg class="w-4 h-4" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+          </svg>
+          <span>Continue with Google</span>
         </button>
-      </form>
+        <p class="text-[11px] text-slate-400 text-center">By continuing, you agree to our <button type="button" id="googleTermsLink" class="text-emerald-400 hover:text-emerald-300 underline cursor-pointer">Terms & Conditions</button> and <button type="button" id="googlePrivacyLink" class="text-emerald-400 hover:text-emerald-300 underline cursor-pointer">Privacy Policy</button>.</p>
+
+        <div class="relative flex items-center justify-center">
+          <div class="border-t border-slate-800 w-full"></div>
+          <span class="bg-slate-900 px-3 text-[10px] font-mono text-slate-500 uppercase absolute">or with email</span>
+        </div>
+
+        <!-- Email / Password Form -->
+        <form id="authForm" class="space-y-3 text-xs">
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Email Address</label>
+            <input id="authEmailInput" type="email" required placeholder="name@example.com" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500" />
+          </div>
+
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Password</label>
+            <input id="authPasswordInput" type="password" required minlength="6" placeholder="••••••••" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500" />
+          </div>
+
+          <!-- Terms and Conditions Consent Box (displayed during Sign Up) -->
+          <div id="authTermsConsentBox" class="hidden pt-1 pb-1">
+            <label class="flex items-start gap-2.5 cursor-pointer text-xs text-slate-300">
+              <input type="checkbox" id="authTermsCheckbox" class="mt-0.5 w-4 h-4 rounded text-emerald-600 accent-emerald-500 bg-slate-950 border-slate-700 cursor-pointer" />
+              <span class="leading-relaxed">I agree to the <button type="button" id="authTermsLink" class="text-emerald-400 hover:text-emerald-300 underline font-semibold cursor-pointer">Terms & Conditions</button> and <button type="button" id="authPrivacyLink" class="text-emerald-400 hover:text-emerald-300 underline font-semibold cursor-pointer">Privacy Policy</button>.</span>
+            </label>
+          </div>
+
+          <div class="flex items-center justify-between text-[11px] pt-1">
+            <button type="button" id="forgotPasswordBtn" class="text-emerald-400 hover:text-emerald-300 hover:underline cursor-pointer font-medium">Forgot Password?</button>
+            <span class="text-slate-500 font-mono">Firebase v10 Auth</span>
+          </div>
+
+          <!-- Dynamic Auth Alert Banner -->
+          <div id="authAlertBanner" class="hidden"></div>
+
+          <button type="submit" id="authSubmitBtn" class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg shadow-emerald-600/20 active:scale-95 transition-all cursor-pointer">
+            Sign In
+          </button>
+        </form>
+      </div>
+
+      <!-- DEDICATED FORGOT PASSWORD SECTION -->
+      <div id="authForgotSection" class="hidden space-y-4">
+        <div class="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 text-left space-y-2">
+          <div class="flex items-center gap-2 text-emerald-400 font-bold text-xs">
+            <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <span>Password Recovery Email</span>
+          </div>
+          <p class="text-xs text-slate-300 leading-relaxed">
+            Enter your registered email address below. We will send you an official password reset link directly to your inbox so you can securely set a new password.
+          </p>
+        </div>
+
+        <form id="forgotPasswordForm" class="space-y-3.5 text-xs">
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Account Email Address *</label>
+            <input id="forgotEmailInput" type="email" required placeholder="name@example.com" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 font-medium text-xs" />
+          </div>
+
+          <!-- Password Reset Status Banner -->
+          <div id="forgotAlertBanner" class="hidden"></div>
+
+          <button type="submit" id="sendPasswordResetBtn" class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg shadow-emerald-600/20 active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-2">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+            <span>Send Password Reset Email</span>
+          </button>
+
+          <div class="pt-1 text-center">
+            <button type="button" id="backToSignInFromForgotBtn" class="text-xs text-slate-400 hover:text-white cursor-pointer font-medium flex items-center justify-center gap-1.5 mx-auto transition-colors">
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+              <span>Back to Sign In</span>
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   </div>
 
@@ -2932,7 +2971,9 @@
       try {
         const key = getStorageKey();
         localStorage.setItem(key, JSON.stringify(state));
-        localStorage.setItem('financeme_state_v1', JSON.stringify(state));
+        if (!currentUser) {
+          localStorage.setItem('financeme_state_v1', JSON.stringify(state));
+        }
       } catch (err) {
         console.warn('LocalStorage save warning:', err);
       }
@@ -2964,19 +3005,20 @@
         const stored = localStorage.getItem(key) || (!uid ? localStorage.getItem('financeme_state_v1') : null);
         if (stored) {
           const parsed = JSON.parse(stored);
-          if (parsed && Array.isArray(parsed.accounts)) {
-            const hasOldDemo = parsed.accounts.some(a => a.id === 'acc_1' || a.id === 'acc_2');
-            if (!hasOldDemo) {
-              return {
-                ...LAUNCH_EMPTY_DATA,
-                ...parsed,
-                debts: Array.isArray(parsed.debts) ? parsed.debts : [],
-                debtSimulator: {
-                  ...LAUNCH_EMPTY_DATA.debtSimulator,
-                  ...(parsed.debtSimulator || {})
-                }
-              };
-            }
+          if (parsed && typeof parsed === 'object') {
+            return {
+              ...LAUNCH_EMPTY_DATA,
+              ...parsed,
+              accounts: Array.isArray(parsed.accounts) ? parsed.accounts : [],
+              transactions: Array.isArray(parsed.transactions) ? parsed.transactions : [],
+              subscriptions: Array.isArray(parsed.subscriptions) ? parsed.subscriptions : [],
+              goals: Array.isArray(parsed.goals) ? parsed.goals : [],
+              debts: Array.isArray(parsed.debts) ? parsed.debts : [],
+              debtSimulator: {
+                ...LAUNCH_EMPTY_DATA.debtSimulator,
+                ...(parsed.debtSimulator || {})
+              }
+            };
           }
         }
       } catch (e) {
@@ -3034,7 +3076,7 @@
         updateCloudStatus('synced');
       } catch (err) {
         handleFirestoreError(err, OperationType.WRITE, 'test/connection');
-        console.warn('Firestore offline or connection notice:', err);
+        console.warn('Firestore connection check notice:', err);
       }
     }
 
@@ -3054,10 +3096,14 @@
       firestoreUnsubscribe = onSnapshot(targetDocRef, (snap) => {
         if (snap.exists()) {
           const cloudData = snap.data();
-          if (cloudData && Array.isArray(cloudData.accounts)) {
+          if (cloudData && typeof cloudData === 'object') {
             state = {
               ...state,
               ...cloudData,
+              accounts: Array.isArray(cloudData.accounts) ? cloudData.accounts : (state.accounts || []),
+              transactions: Array.isArray(cloudData.transactions) ? cloudData.transactions : (state.transactions || []),
+              subscriptions: Array.isArray(cloudData.subscriptions) ? cloudData.subscriptions : (state.subscriptions || []),
+              goals: Array.isArray(cloudData.goals) ? cloudData.goals : (state.goals || []),
               debts: Array.isArray(cloudData.debts) ? cloudData.debts : (state.debts || []),
               debtSimulator: {
                 ...LAUNCH_EMPTY_DATA.debtSimulator,
@@ -3067,13 +3113,18 @@
             };
             const storageKey = getStorageKey();
             localStorage.setItem(storageKey, JSON.stringify(state));
-            localStorage.setItem('financeme_state_v1', JSON.stringify(state));
             renderAll();
           }
           updateCloudStatus('synced');
         } else {
-          // If document doesn't exist yet in Firestore, seed it if state has any inputs
-          if (state.accounts.length > 0 || state.transactions.length > 0 || state.debts.length > 0) {
+          // If document doesn't exist yet in Firestore, seed ONLY if user has entered real data
+          const hasData = state && (
+            (state.accounts && state.accounts.length > 0) ||
+            (state.transactions && state.transactions.length > 0) ||
+            (state.debts && state.debts.length > 0) ||
+            (state.goals && state.goals.length > 0)
+          );
+          if (hasData) {
             setDoc(targetDocRef, {
               ...state,
               lastUpdated: new Date().toISOString()
@@ -3119,9 +3170,6 @@
 
         await testFirestoreConnection();
 
-        // Initial subscription for guest or existing session
-        setupFirestoreSubscription();
-
         // Listen for Authentication state
         onAuthStateChanged(auth, async (user) => {
           currentUser = user;
@@ -3129,26 +3177,85 @@
 
           if (user) {
             setAppMode('dashboard');
+            updateCloudStatus('connecting');
 
-            // Check if user had entered data in guest mode prior to login
-            const guestState = loadInitialState(null);
-            const userState = loadInitialState(user.uid);
-            const hasGuestData = guestState && (guestState.accounts.length > 0 || guestState.transactions.length > 0 || guestState.debts.length > 0 || guestState.goals.length > 0);
-            const hasUserData = userState && (userState.accounts.length > 0 || userState.transactions.length > 0 || userState.debts.length > 0 || userState.goals.length > 0);
+            // 1. Fetch First directly from Firestore before any saving
+            const userDocRef = doc(db, 'users', user.uid, 'data', 'financeState');
+            let cloudLoaded = false;
+            try {
+              const snap = await getDoc(userDocRef);
+              if (snap.exists()) {
+                const cloudData = snap.data();
+                if (cloudData && typeof cloudData === 'object') {
+                  state = {
+                    ...LAUNCH_EMPTY_DATA,
+                    ...cloudData,
+                    accounts: Array.isArray(cloudData.accounts) ? cloudData.accounts : [],
+                    transactions: Array.isArray(cloudData.transactions) ? cloudData.transactions : [],
+                    subscriptions: Array.isArray(cloudData.subscriptions) ? cloudData.subscriptions : [],
+                    goals: Array.isArray(cloudData.goals) ? cloudData.goals : [],
+                    debts: Array.isArray(cloudData.debts) ? cloudData.debts : [],
+                    debtSimulator: {
+                      ...LAUNCH_EMPTY_DATA.debtSimulator,
+                      ...(cloudData.debtSimulator || {})
+                    }
+                  };
+                  localStorage.setItem(`financeme_state_${user.uid}`, JSON.stringify(state));
+                  cloudLoaded = true;
+                  updateCloudStatus('synced');
+                  showToast('✓ Cloud portfolio loaded from database!');
+                }
+              }
+            } catch (fetchErr) {
+              console.warn('Firestore initial getDoc error:', fetchErr);
+              handleFirestoreError(fetchErr, OperationType.GET, userDocRef.path);
+            }
 
-            if (hasGuestData && !hasUserData) {
-              state = { ...guestState };
-              localStorage.setItem(`financeme_state_${user.uid}`, JSON.stringify(state));
-              showToast('✓ Stored your inputs into your account in the database!');
-            } else {
-              state = userState;
+            // 2. If cloud doc didn't exist or was newly registered user:
+            if (!cloudLoaded) {
+              const userLocalState = loadInitialState(user.uid);
+              const guestState = loadInitialState(null);
+              const hasUserLocal = userLocalState && (
+                userLocalState.accounts.length > 0 ||
+                userLocalState.transactions.length > 0 ||
+                userLocalState.debts.length > 0 ||
+                userLocalState.goals.length > 0
+              );
+              const hasGuestLocal = guestState && (
+                guestState.accounts.length > 0 ||
+                guestState.transactions.length > 0 ||
+                guestState.debts.length > 0 ||
+                guestState.goals.length > 0
+              );
+
+              if (hasUserLocal) {
+                state = userLocalState;
+              } else if (hasGuestLocal) {
+                state = { ...guestState };
+                localStorage.setItem(`financeme_state_${user.uid}`, JSON.stringify(state));
+                localStorage.removeItem('financeme_state_guest');
+                showToast('✓ Saved your guest inputs to your user account!');
+              } else {
+                state = JSON.parse(JSON.stringify(LAUNCH_EMPTY_DATA));
+              }
+
+              // Only seed to Firestore if user actually had local/guest entries
+              const hasDataToSave = state.accounts.length > 0 || state.transactions.length > 0 || state.debts.length > 0 || state.goals.length > 0;
+              if (hasDataToSave) {
+                try {
+                  await setDoc(userDocRef, {
+                    ...state,
+                    lastUpdated: new Date().toISOString()
+                  }, { merge: true });
+                  updateCloudStatus('synced');
+                } catch (saveErr) {
+                  console.warn('Initial seed to Firestore error:', saveErr);
+                }
+              }
             }
 
             renderAll();
             setupFirestoreSubscription();
-
-            // Store immediately to ensure cloud sync
-            saveState();
           } else {
             // Unauthenticated / Guest session
             state = loadInitialState(null);
@@ -3282,7 +3389,7 @@
     function executeSignOut() {
       promptConfirmation({
         title: 'Sign Out Account',
-        message: `Currently signed in as ${currentUser?.email || currentUser?.displayName || 'user'}. Are you sure you want to sign out?`,
+        message: `Currently signed in as ${currentUser?.email || currentUser?.displayName || 'user'}. Are you sure you want to sign out? Your financial data remains safely stored in the Firebase Firestore cloud database.`,
         confirmText: 'Sign Out',
         isDanger: false,
         onConfirm: () => {
@@ -3295,13 +3402,15 @@
           signOut(auth).then(() => {
             currentUser = null;
             state = JSON.parse(JSON.stringify(LAUNCH_EMPTY_DATA));
+            localStorage.removeItem('financeme_state_guest');
             updateAuthUI(null);
             setAppMode('landing');
-            showToast('Signed out successfully');
+            showToast('Signed out successfully. Cloud data remains safe.');
           }).catch(err => {
             console.warn('Sign out error:', err);
             currentUser = null;
             state = JSON.parse(JSON.stringify(LAUNCH_EMPTY_DATA));
+            localStorage.removeItem('financeme_state_guest');
             updateAuthUI(null);
             setAppMode('landing');
             showToast('Signed out');
@@ -3436,10 +3545,25 @@
         }
         if (eAction) {
           eAction.innerHTML = `
-            <span class="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 text-[10px] font-mono font-bold flex items-center gap-1">
-              <span>✓</span> Linked
-            </span>
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 text-[10px] font-mono font-bold flex items-center gap-1">
+                <span>✓</span> Linked
+              </span>
+              <button id="secSendPasswordResetBtn" type="button" class="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-300 hover:text-white text-[10px] font-semibold border border-slate-700 cursor-pointer transition-colors flex items-center gap-1 shadow-sm">
+                <svg class="w-3 h-3 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+                <span>Reset Password</span>
+              </button>
+            </div>
           `;
+          document.getElementById('secSendPasswordResetBtn')?.addEventListener('click', async () => {
+            if (!currentUser?.email) return;
+            try {
+              await sendPasswordResetEmail(auth, currentUser.email);
+              showToast(`✓ Password reset email sent to ${currentUser.email}! Check inbox & spam folder.`);
+            } catch (err) {
+              showToast(`Could not send reset email: ${err.message}`, 'error');
+            }
+          });
         }
         if (eForm) eForm.classList.add('hidden');
       } else {
@@ -7103,95 +7227,157 @@
         renderCalendar();
       };
 
-      // 17. Authentication modal tabs & actions
-      let isSignUpTab = false;
+      // 17. Authentication modal tabs & actions (Sign In / Create Account / Reset Password)
+      let activeAuthTab = 'signin';
       function clearAuthAlert() {
         const banner = document.getElementById('authAlertBanner');
         if (banner) {
           banner.className = 'hidden';
           banner.innerHTML = '';
         }
+        const forgotBanner = document.getElementById('forgotAlertBanner');
+        if (forgotBanner) {
+          forgotBanner.className = 'hidden';
+          forgotBanner.innerHTML = '';
+        }
       }
 
-      document.getElementById('tabAuthSignIn').onclick = () => {
-        isSignUpTab = false;
+      function switchAuthTab(tab) {
+        activeAuthTab = tab;
         clearAuthAlert();
-        document.getElementById('tabAuthSignIn').className = 'flex-1 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 text-white shadow-sm cursor-pointer';
-        document.getElementById('tabAuthSignUp').className = 'flex-1 py-1.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-slate-200 cursor-pointer';
-        document.getElementById('authSubmitBtn').textContent = 'Sign In';
-        document.getElementById('authTermsConsentBox')?.classList.add('hidden');
-      };
 
-      document.getElementById('tabAuthSignUp').onclick = () => {
-        isSignUpTab = true;
+        const btnSignIn = document.getElementById('tabAuthSignIn');
+        const btnSignUp = document.getElementById('tabAuthSignUp');
+        const btnForgot = document.getElementById('tabAuthForgot');
+        const mainSection = document.getElementById('authMainSection');
+        const forgotSection = document.getElementById('authForgotSection');
+        const submitBtn = document.getElementById('authSubmitBtn');
+        const consentBox = document.getElementById('authTermsConsentBox');
+
+        const activeClass = 'flex-1 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 text-white shadow-sm cursor-pointer transition-all';
+        const inactiveClass = 'flex-1 py-1.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-slate-200 cursor-pointer transition-all';
+
+        if (btnSignIn) btnSignIn.className = inactiveClass;
+        if (btnSignUp) btnSignUp.className = inactiveClass;
+        if (btnForgot) btnForgot.className = inactiveClass;
+
+        if (tab === 'signin') {
+          if (btnSignIn) btnSignIn.className = activeClass;
+          mainSection?.classList.remove('hidden');
+          forgotSection?.classList.add('hidden');
+          if (submitBtn) submitBtn.textContent = 'Sign In';
+          consentBox?.classList.add('hidden');
+        } else if (tab === 'signup') {
+          if (btnSignUp) btnSignUp.className = activeClass;
+          mainSection?.classList.remove('hidden');
+          forgotSection?.classList.add('hidden');
+          if (submitBtn) submitBtn.textContent = 'Create Account';
+          consentBox?.classList.remove('hidden');
+        } else if (tab === 'forgot') {
+          if (btnForgot) btnForgot.className = activeClass;
+          mainSection?.classList.add('hidden');
+          forgotSection?.classList.remove('hidden');
+
+          // Pre-populate forgot email from main email input if available
+          const mainEmailVal = document.getElementById('authEmailInput')?.value?.trim();
+          const forgotInput = document.getElementById('forgotEmailInput');
+          if (mainEmailVal && forgotInput && !forgotInput.value) {
+            forgotInput.value = mainEmailVal;
+          }
+          if (forgotInput) forgotInput.focus();
+        }
+      }
+
+      document.getElementById('tabAuthSignIn')?.addEventListener('click', () => switchAuthTab('signin'));
+      document.getElementById('tabAuthSignUp')?.addEventListener('click', () => switchAuthTab('signup'));
+      document.getElementById('tabAuthForgot')?.addEventListener('click', () => switchAuthTab('forgot'));
+      document.getElementById('forgotPasswordBtn')?.addEventListener('click', () => switchAuthTab('forgot'));
+      document.getElementById('backToSignInFromForgotBtn')?.addEventListener('click', () => switchAuthTab('signin'));
+
+      // Dedicated Forgot Password Submission Engine
+      document.getElementById('forgotPasswordForm')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
         clearAuthAlert();
-        document.getElementById('tabAuthSignUp').className = 'flex-1 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 text-white shadow-sm cursor-pointer';
-        document.getElementById('tabAuthSignIn').className = 'flex-1 py-1.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-slate-200 cursor-pointer';
-        document.getElementById('authSubmitBtn').textContent = 'Create Account';
-        document.getElementById('authTermsConsentBox')?.classList.remove('hidden');
-      };
+        const email = document.getElementById('forgotEmailInput')?.value?.trim();
+        const banner = document.getElementById('forgotAlertBanner');
+        const sendBtn = document.getElementById('sendPasswordResetBtn');
 
-      // 17.1 Terms & Conditions and Privacy Policy Modals Wireup
-      const openPrivacyModal = () => openModal('privacyPolicyModal');
-      const openTermsModal = () => openModal('termsModal');
-      const closePrivacyModal = () => closeModal('privacyPolicyModal');
-      const closeTermsModal = () => closeModal('termsModal');
-
-      document.getElementById('authTermsLink')?.addEventListener('click', (e) => { e.preventDefault(); openTermsModal(); });
-      document.getElementById('authPrivacyLink')?.addEventListener('click', (e) => { e.preventDefault(); openPrivacyModal(); });
-      document.getElementById('googleTermsLink')?.addEventListener('click', (e) => { e.preventDefault(); openTermsModal(); });
-      document.getElementById('googlePrivacyLink')?.addEventListener('click', (e) => { e.preventDefault(); openPrivacyModal(); });
-      document.getElementById('footerPrivacyBtn')?.addEventListener('click', (e) => { e.preventDefault(); openPrivacyModal(); });
-      document.getElementById('footerTermsBtn')?.addEventListener('click', (e) => { e.preventDefault(); openTermsModal(); });
-
-      document.getElementById('closePrivacyModalBtn')?.addEventListener('click', closePrivacyModal);
-      document.getElementById('confirmPrivacyReadBtn')?.addEventListener('click', closePrivacyModal);
-      document.getElementById('privacyToTermsBtn')?.addEventListener('click', () => {
-        closePrivacyModal();
-        openTermsModal();
-      });
-
-      document.getElementById('closeTermsModalBtn')?.addEventListener('click', closeTermsModal);
-      document.getElementById('confirmTermsReadBtn')?.addEventListener('click', closeTermsModal);
-      document.getElementById('termsToPrivacyBtn')?.addEventListener('click', () => {
-        closeTermsModal();
-        openPrivacyModal();
-      });
-
-      document.getElementById('googleSignInBtn').onclick = async () => {
-        if (!auth) {
-          showToast('Firebase Auth not connected. Running in Local Mode.', 'warning');
-          return;
-        }
-        try {
-          const provider = new GoogleAuthProvider();
-          await signInWithPopup(auth, provider);
-          clearAuthAlert();
-          closeModal('authModal');
-          showToast('Signed in with Google!');
-        } catch (err) {
-          console.warn('Google sign in error:', err);
-          showToast(`Google sign in notice: ${err.message || 'Popup closed or unavailable'}`, 'warning');
-        }
-      };
-
-      document.getElementById('forgotPasswordBtn').onclick = async () => {
-        const email = document.getElementById('authEmailInput').value.trim();
         if (!email) {
-          showToast('Please enter your email address first.', 'warning');
+          showToast('Please enter your account email address.', 'warning');
           return;
         }
+
         if (!auth) {
-          showToast('Firebase Auth not connected yet.', 'warning');
+          if (banner) {
+            banner.className = 'block p-3.5 rounded-xl bg-amber-950/40 border border-amber-500/30 text-xs text-amber-300';
+            banner.textContent = 'Firebase Auth is currently offline. Please configure cloud settings.';
+          }
           return;
         }
+
+        if (sendBtn) {
+          sendBtn.disabled = true;
+          sendBtn.innerHTML = `
+            <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+            <span>Sending Reset Link...</span>
+          `;
+        }
+
         try {
           await sendPasswordResetEmail(auth, email);
-          showToast(`Password reset email sent to ${email}`);
+          if (banner) {
+            banner.className = 'block p-4 rounded-2xl bg-emerald-950/50 border border-emerald-500/40 text-left space-y-2';
+            banner.innerHTML = `
+              <div class="flex items-center gap-2 text-emerald-400 font-bold text-xs">
+                <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Password Reset Email Sent!</span>
+              </div>
+              <p class="text-[11px] text-slate-200 leading-relaxed">
+                An official password reset link has been dispatched to <strong class="text-white underline">${email}</strong>.
+              </p>
+              <div class="text-[10px] text-slate-300 leading-relaxed bg-slate-900/90 p-2.5 rounded-xl border border-slate-800 space-y-1 font-mono">
+                <div>✓ Check your inbox and click the password reset button.</div>
+                <div>✓ If not visible in 2 minutes, check your <strong>Spam or Junk</strong> folder.</div>
+              </div>
+            `;
+          }
+          showToast(`✓ Reset link sent to ${email}! Check your inbox.`, 'success');
         } catch (err) {
-          showToast('Password reset error: ' + err.message, 'error');
+          console.warn('Password reset error:', err);
+          const errCode = err?.code || '';
+          let msg = 'Could not send reset email. Please try again.';
+
+          if (errCode === 'auth/user-not-found') {
+            msg = 'No FinanceMe account was found registered with this email address. Please check your spelling or create a new account.';
+          } else if (errCode === 'auth/invalid-email') {
+            msg = 'The email address entered is not valid. Please verify the format.';
+          } else if (errCode === 'auth/too-many-requests') {
+            msg = 'Too many requests sent in a short window. Please wait a few minutes before trying again.';
+          } else if (err.message) {
+            msg = err.message.replace('Firebase: ', '');
+          }
+
+          if (banner) {
+            banner.className = 'block p-3.5 rounded-xl bg-rose-950/50 border border-rose-500/30 text-xs text-rose-300 text-left space-y-1';
+            banner.innerHTML = `
+              <div class="flex items-center gap-2 font-bold text-rose-300">
+                <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <span>Reset Email Not Sent</span>
+              </div>
+              <p class="text-[11px] text-slate-300">${msg}</p>
+            `;
+          }
+          showToast(`Password reset: ${msg}`, 'error');
+        } finally {
+          if (sendBtn) {
+            sendBtn.disabled = false;
+            sendBtn.innerHTML = `
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+              <span>Send Password Reset Email</span>
+            `;
+          }
         }
-      };
+      });
 
       document.getElementById('authForm').onsubmit = async (e) => {
         e.preventDefault();
@@ -7199,7 +7385,7 @@
         const email = document.getElementById('authEmailInput').value.trim();
         const pass = document.getElementById('authPasswordInput').value.trim();
 
-        if (isSignUpTab) {
+        if (activeAuthTab === 'signup') {
           const consentCheckbox = document.getElementById('authTermsCheckbox');
           if (consentCheckbox && !consentCheckbox.checked) {
             showToast('Please agree to the Terms & Conditions and Privacy Policy to create your account.', 'warning');
@@ -7214,7 +7400,7 @@
         const banner = document.getElementById('authAlertBanner');
 
         try {
-          if (isSignUpTab) {
+          if (activeAuthTab === 'signup') {
             await createUserWithEmailAndPassword(auth, email, pass);
             showToast('Account created & logged in!');
           } else {
