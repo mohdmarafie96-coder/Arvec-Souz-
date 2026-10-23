@@ -17,14 +17,17 @@ service cloud.firestore {
 
     // User Private Financial Workspace & Real-time Cloud Sync
     match /users/{userId} {
-      allow get: if isSignedIn() && request.auth.uid == userId && isValidId(userId);
-      allow create, update: if isSignedIn() && request.auth.uid == userId && isValidId(userId);
-      allow delete: if isSignedIn() && request.auth.uid == userId && isValidId(userId);
+      allow get, list, create, update, delete: if isSignedIn() && request.auth.uid == userId;
 
       // Subcollections including /users/{userId}/data/financeState
       match /{allSubcollections=**} {
-        allow read, write: if isSignedIn() && request.auth.uid == userId && isValidId(userId);
+        allow read, write, delete: if isSignedIn() && request.auth.uid == userId;
       }
+    }
+
+    // Test connection probe
+    match /test/{docId} {
+      allow read: if true;
     }
   }
 }

@@ -9,6 +9,20 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 
+  <!-- Theme Initialization (Runs before paint to avoid flash) -->
+  <script>
+    (function() {
+      try {
+        const savedTheme = localStorage.getItem('financeme_theme') || 'dark';
+        if (savedTheme === 'light') {
+          document.documentElement.classList.remove('dark');
+        } else {
+          document.documentElement.classList.add('dark');
+        }
+      } catch (e) {}
+    })();
+  </script>
+
   <!-- OpenGraph -->
   <meta property="og:title" content="FinanceMe | Wealth & Budgeting OS" />
   <meta property="og:description" content="Manage your accounts, track expenses, monitor subscriptions, and forecast savings goals." />
@@ -94,6 +108,88 @@
     @keyframes pulse-subtle { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
     .animate-pulse-subtle { animation: pulse-subtle 3s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
 
+    /* High-Fidelity Light Mode Overrides */
+    html:not(.dark) {
+      color-scheme: light;
+    }
+    html:not(.dark) body {
+      background-color: #f8fafc !important;
+      color: #0f172a !important;
+    }
+    html:not(.dark) header {
+      background-color: rgba(255, 255, 255, 0.95) !important;
+      border-color: #e2e8f0 !important;
+    }
+    html:not(.dark) nav#mainAppNav {
+      background-color: rgba(255, 255, 255, 0.98) !important;
+      border-color: #e2e8f0 !important;
+    }
+    html:not(.dark) .bg-slate-950 {
+      background-color: #f1f5f9 !important;
+    }
+    html:not(.dark) .bg-slate-900 {
+      background-color: #ffffff !important;
+      border-color: #e2e8f0 !important;
+      box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.04), 0 1px 2px -1px rgb(0 0 0 / 0.04);
+    }
+    html:not(.dark) .bg-slate-850 {
+      background-color: #f8fafc !important;
+    }
+    html:not(.dark) .border-slate-800,
+    html:not(.dark) .border-slate-750,
+    html:not(.dark) .border-slate-700 {
+      border-color: #e2e8f0 !important;
+    }
+    html:not(.dark) .text-white {
+      color: #0f172a !important;
+    }
+    html:not(.dark) .text-slate-100 {
+      color: #0f172a !important;
+    }
+    html:not(.dark) .text-slate-200 {
+      color: #1e293b !important;
+    }
+    html:not(.dark) .text-slate-300 {
+      color: #334155 !important;
+    }
+    html:not(.dark) .text-slate-400 {
+      color: #64748b !important;
+    }
+    html:not(.dark) input,
+    html:not(.dark) select,
+    html:not(.dark) textarea {
+      background-color: #ffffff !important;
+      color: #0f172a !important;
+      border-color: #cbd5e1 !important;
+    }
+    html:not(.dark) input::placeholder,
+    html:not(.dark) textarea::placeholder {
+      color: #94a3b8 !important;
+    }
+    html:not(.dark) .bg-slate-800 {
+      background-color: #e2e8f0 !important;
+      color: #0f172a !important;
+    }
+    html:not(.dark) .hover\:bg-slate-800:hover,
+    html:not(.dark) .hover\:bg-slate-750:hover {
+      background-color: #cbd5e1 !important;
+    }
+    html:not(.dark) .divide-slate-800 > :not([hidden]) ~ :not([hidden]) {
+      border-color: #e2e8f0 !important;
+    }
+    html:not(.dark) table thead {
+      background-color: #f8fafc !important;
+      color: #475569 !important;
+    }
+    html:not(.dark) #previewSliderContainer {
+      background-color: #ffffff !important;
+    }
+    html:not(.dark) #calendarGrid > div {
+      box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.03);
+    }
+    html:not(.dark) ::-webkit-scrollbar-track { background: #f8fafc; }
+    html:not(.dark) ::-webkit-scrollbar-thumb { background: #cbd5e1; }
+
     /* Clean Printable Stylesheet for Debt Payoff Audit & Amortization PDF Report */
     @media print {
       body * {
@@ -115,10 +211,10 @@
     }
   </style>
 </head>
-<body class="min-h-full bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-emerald-500/30 selection:text-emerald-200 antialiased">
+<body class="min-h-full bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-emerald-500/30 selection:text-emerald-200 antialiased transition-colors duration-200">
 
   <!-- ================= TOP NAVIGATION BAR ================= -->
-  <header class="sticky top-0 z-40 border-b border-slate-800/80 bg-slate-950/85 backdrop-blur-md">
+  <header class="sticky top-0 z-40 border-b border-slate-800/80 bg-slate-950/85 backdrop-blur-md transition-colors">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
       
       <!-- Brand Logo -->
@@ -143,7 +239,7 @@
       </div>
 
       <!-- Navigation & Controls -->
-      <div class="flex items-center gap-2 sm:gap-3">
+      <div class="flex items-center gap-2 sm:gap-2.5">
         
         <!-- Multi-Currency Engine Selector -->
         <div class="relative flex items-center">
@@ -182,17 +278,16 @@
           </svg>
         </button>
 
-        <!-- Cloud Project Setup Button -->
-        <button id="openCloudConfigBtn" title="Firebase Cloud Project & Sync Configuration" class="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer">
-          <svg class="w-4 h-4 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>
+        <!-- Light / Dark Mode Toggle Button -->
+        <button id="themeToggleBtn" title="Switch Theme (Light / Dark)" class="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-amber-400 transition-colors cursor-pointer">
+          <!-- Sun Icon (visible in dark mode) -->
+          <svg id="themeSunIcon" class="w-4 h-4 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
           </svg>
-        </button>
-
-        <!-- PWA Install / Backup Trigger -->
-        <button id="installPwaBtn" title="Install Web App on Device" class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs text-slate-300 font-semibold cursor-pointer transition-colors">
-          <svg class="w-3.5 h-3.5 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-          <span>Install</span>
+          <!-- Moon Icon (visible in light mode) -->
+          <svg id="themeMoonIcon" class="w-4 h-4 text-indigo-400 hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>
+          </svg>
         </button>
 
         <!-- Data Backup Modal Trigger -->
@@ -200,26 +295,33 @@
           <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22h14a2 2 0 0 0 2-2V7.5L14.5 2H6a2 2 0 0 0-2 2v4"/><polyline points="14 2 14 8 20 8"/><path d="M3 15h6"/><path d="M6 12l3 3-3 3"/></svg>
         </button>
 
-        <!-- Header Live Demo Launcher Button -->
+        <!-- Header Live Demo Launcher Button (for unauthenticated guests) -->
         <button id="headerDemoBtn" title="Launch Interactive Demo Dashboard" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs text-emerald-400 font-semibold cursor-pointer transition-colors">
           <svg class="w-3.5 h-3.5 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
           <span id="headerDemoLabel">Live Demo</span>
         </button>
 
-        <!-- Toggle Landing / Dashboard Button (visible when authenticated or in demo) -->
+        <!-- Toggle Landing / Dashboard Button (visible when in workspace) -->
         <button id="headerToggleViewBtn" class="hidden items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-emerald-500/30 text-xs text-emerald-300 font-semibold cursor-pointer transition-colors">
           <svg class="w-3.5 h-3.5 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
-          <span id="headerToggleViewLabel">Preview Showcase</span>
+          <span id="headerToggleViewLabel">Website Preview</span>
         </button>
 
-        <!-- User Authentication Account Button -->
+        <!-- User Authentication Account & Settings Button -->
         <button id="authBtn" class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md shadow-emerald-600/20 active:scale-95 transition-all cursor-pointer">
           <span id="authBtnAvatar" class="w-5 h-5 rounded-full bg-emerald-700 flex items-center justify-center text-[10px] font-bold">G</span>
           <span id="authBtnLabel">Sign In</span>
         </button>
+
+        <!-- Dedicated Header Sign Out Button (visible when logged in) -->
+        <button id="headerSignOutBtn" title="Sign out of your account" class="hidden items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 text-xs font-semibold cursor-pointer transition-colors shadow-sm">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+          <span class="hidden md:inline">Sign Out</span>
+        </button>
       </div>
     </div>
   </header>
+
 
   <!-- ================= SUB-NAVIGATION TABS (Dedicated to Authenticated Dashboard) ================= -->
   <nav id="mainAppNav" class="sticky top-16 z-30 border-b border-slate-800/80 bg-slate-950/95 backdrop-blur-md px-4 sm:px-6 lg:px-8 hidden">
@@ -1620,27 +1722,61 @@
     </div>
   </div>
 
-  <!-- 1.1 ACCOUNT SECURITY & PROVIDER LINKING MODAL -->
-  <div id="accountSecurityModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm hidden">
-    <div class="w-full max-w-md rounded-3xl bg-slate-900 border border-slate-800 p-6 sm:p-8 space-y-5 shadow-2xl relative">
+  <!-- 1.1 PROFILE SETTINGS & ACCOUNT SECURITY MODAL -->
+  <div id="accountSecurityModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm hidden overflow-y-auto">
+    <div class="w-full max-w-lg rounded-3xl bg-slate-900 border border-slate-800 p-6 sm:p-7 space-y-5 shadow-2xl relative my-auto">
       <button id="closeAccountSecurityModalBtn" class="absolute top-5 right-5 text-slate-400 hover:text-white p-1 rounded-lg cursor-pointer">
         <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
       </button>
 
-      <div class="flex items-center gap-3.5 pb-2 border-b border-slate-800">
-        <div id="secModalAvatar" class="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center font-bold text-lg font-mono">
+      <!-- Profile Header -->
+      <div class="flex items-center gap-3.5 pb-3 border-b border-slate-800">
+        <div id="secModalAvatar" class="w-14 h-14 rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center font-bold text-xl font-mono shrink-0 shadow-inner">
           U
         </div>
-        <div class="space-y-0.5">
-          <h3 id="secModalDisplayName" class="text-base font-bold text-white tracking-tight">User Account</h3>
-          <p id="secModalEmail" class="text-xs text-slate-400 font-mono">user@example.com</p>
+        <div class="space-y-0.5 min-w-0">
+          <div class="flex items-center gap-2">
+            <h3 id="secModalDisplayName" class="text-base sm:text-lg font-bold text-white tracking-tight truncate">User Account</h3>
+            <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/25">Active</span>
+          </div>
+          <p id="secModalEmail" class="text-xs text-slate-400 font-mono truncate">user@example.com</p>
         </div>
       </div>
 
+      <!-- 1. Edit Display Name -->
+      <div class="p-3.5 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-2 text-xs">
+        <label class="block font-medium text-slate-300">Display Name</label>
+        <div class="flex gap-2">
+          <input id="profileDisplayNameInput" type="text" placeholder="Your full name" class="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 text-xs" />
+          <button id="saveProfileNameBtn" type="button" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs cursor-pointer transition-colors shadow-sm shrink-0">
+            Save
+          </button>
+        </div>
+      </div>
+
+      <!-- 2. Appearance & Theme Selection -->
+      <div class="p-3.5 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-2 text-xs">
+        <div class="flex items-center justify-between">
+          <span class="font-medium text-slate-300">Interface Appearance</span>
+          <span class="text-[10px] text-slate-500 font-mono">Custom Workspace Styling</span>
+        </div>
+        <div class="grid grid-cols-2 gap-2 pt-0.5">
+          <button id="modalThemeDarkBtn" type="button" class="flex items-center justify-center gap-2 py-2 rounded-xl bg-slate-900 border border-emerald-500/50 text-emerald-300 font-semibold cursor-pointer transition-all">
+            <svg class="w-4 h-4 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+            <span>Dark Theme</span>
+          </button>
+          <button id="modalThemeLightBtn" type="button" class="flex items-center justify-center gap-2 py-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white font-semibold cursor-pointer transition-all">
+            <svg class="w-4 h-4 text-indigo-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+            <span>Light Theme</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 3. Linked Providers -->
       <div class="space-y-3">
         <div class="flex items-center justify-between">
-          <h4 class="text-xs font-bold uppercase tracking-wider text-slate-300 font-mono">Linked Sign-In Methods</h4>
-          <span class="text-[10px] text-emerald-400 font-mono">Multi-Credential Security</span>
+          <h4 class="text-xs font-bold uppercase tracking-wider text-slate-300 font-mono">Linked Sign-In Credentials</h4>
+          <span class="text-[10px] text-emerald-400 font-mono">Google & Password</span>
         </div>
 
         <!-- Google Provider Card -->
@@ -1690,13 +1826,60 @@
         </div>
       </div>
 
+      <!-- 4. Danger Zone: Delete Account -->
+      <div class="p-4 rounded-2xl bg-rose-950/20 border border-rose-500/30 space-y-2.5">
+        <div class="flex items-center gap-2 text-rose-300 font-bold text-xs">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>
+          <span>Danger Zone: Account Deletion</span>
+        </div>
+        <p class="text-[11px] text-slate-400 leading-relaxed">
+          Permanently delete your user profile, authentication credentials, and purge all saved financial portfolios, ledgers, and amortization simulations.
+        </p>
+        <button id="openDeleteAccountModalBtn" type="button" class="w-full py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow-md shadow-rose-600/20 active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-2">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          <span>Delete My Account & Data</span>
+        </button>
+      </div>
+
       <!-- Action Buttons -->
       <div class="pt-2 flex items-center justify-between border-t border-slate-800 text-xs">
         <button id="secSwitchToLandingBtn" type="button" class="text-slate-400 hover:text-white font-semibold cursor-pointer">
           Website Preview
         </button>
-        <button id="secSignOutBtn" type="button" class="px-4 py-2 rounded-xl bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 border border-rose-500/30 font-semibold cursor-pointer transition-colors">
-          Sign Out
+        <button id="secSignOutBtn" type="button" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-200 border border-slate-700 font-semibold cursor-pointer transition-colors flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5 text-rose-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+          <span>Sign Out</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 1.2 ACCOUNT DELETION CONFIRMATION MODAL -->
+  <div id="deleteAccountModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md hidden">
+    <div class="w-full max-w-md rounded-3xl bg-slate-900 border-2 border-rose-500/50 p-6 sm:p-7 space-y-4 shadow-2xl text-center relative">
+      <div class="w-14 h-14 mx-auto rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400">
+        <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+      </div>
+
+      <div class="space-y-1.5">
+        <h3 class="text-lg font-black text-white">Permanently Delete Account?</h3>
+        <p class="text-xs text-slate-300 leading-relaxed">
+          This action <strong class="text-rose-400">CANNOT be undone</strong>. All your managed accounts, transactions, subscriptions, savings goals, and debt payoff schedules will be erased permanently from Firestore and this device.
+        </p>
+      </div>
+
+      <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 text-[11px] font-mono text-slate-400 text-left">
+        <div>• User: <span id="deleteConfirmUserEmail" class="text-white font-bold"></span></div>
+        <div>• Cloud Project: <span class="text-emerald-400">financeme-dc8b0</span></div>
+        <div>• Status: Permanent Eradication</div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3 pt-2">
+        <button id="cancelDeleteAccountBtn" type="button" class="py-2.5 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-300 font-semibold text-xs cursor-pointer transition-colors">
+          Keep Account
+        </button>
+        <button id="confirmExecuteDeleteAccountBtn" type="button" class="py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs cursor-pointer shadow-lg shadow-rose-600/30 transition-all flex items-center justify-center gap-1.5">
+          <span>Yes, Delete</span>
         </button>
       </div>
     </div>
@@ -2245,13 +2428,17 @@
       sendPasswordResetEmail,
       linkWithPopup,
       linkWithCredential,
-      EmailAuthProvider
+      EmailAuthProvider,
+      updateProfile,
+      deleteUser
     } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
     import { 
       getFirestore, 
       doc, 
       setDoc, 
       getDoc, 
+      getDocFromServer,
+      deleteDoc,
       onSnapshot 
     } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
@@ -2337,6 +2524,7 @@
     // Helper: Toast Dispatcher
     function showToast(message, type = 'success') {
       const container = document.getElementById('toastContainer');
+      if (!container) return;
       const toast = document.createElement('div');
       const isSuccess = type === 'success';
       const isWarn = type === 'warning';
@@ -2349,7 +2537,7 @@
       toast.innerHTML = `
         <span class="w-2 h-2 rounded-full ${isSuccess ? 'bg-emerald-400' : isWarn ? 'bg-amber-400' : 'bg-rose-400'}"></span>
         <span class="font-medium text-slate-100 flex-1">${message}</span>
-        <button class="text-slate-400 hover:text-white ml-2 text-sm font-bold">×</button>
+        <button class="text-slate-400 hover:text-white ml-2 text-sm font-bold cursor-pointer">×</button>
       `;
 
       toast.querySelector('button').onclick = () => toast.remove();
@@ -2386,10 +2574,17 @@
       return amountInTargetCurrency / curr.rate;
     }
 
+    // Local Storage Key Resolver (Isolated per user)
+    function getStorageKey() {
+      return currentUser?.uid ? `financeme_state_${currentUser.uid}` : 'financeme_state_guest';
+    }
+
     // Save and Sync Engine
     function saveState(skipCloud = false) {
       try {
-        localStorage.setItem('financeme_state_v1', JSON.stringify(state));
+        const key = getStorageKey();
+        localStorage.setItem(key, JSON.stringify(state));
+        localStorage.setItem('financeme_state_v1', JSON.stringify(state)); // backward compat fallback
       } catch (err) {
         console.warn('LocalStorage save error:', err);
       }
@@ -2408,9 +2603,10 @@
       renderAll();
     }
 
-    function loadInitialState() {
+    function loadInitialState(uid = null) {
       try {
-        const stored = localStorage.getItem('financeme_state_v1');
+        const key = uid ? `financeme_state_${uid}` : 'financeme_state_guest';
+        const stored = localStorage.getItem(key) || (!uid ? localStorage.getItem('financeme_state_v1') : null);
         if (stored) {
           const parsed = JSON.parse(stored);
           if (parsed && Array.isArray(parsed.accounts)) {
@@ -2425,8 +2621,6 @@
                   ...(parsed.debtSimulator || {})
                 }
               };
-            } else {
-              localStorage.removeItem('financeme_state_v1');
             }
           }
         }
@@ -2436,29 +2630,70 @@
       return JSON.parse(JSON.stringify(LAUNCH_EMPTY_DATA));
     }
 
+    // Theme Management Engine (Light & Dark Mode)
+    function applyTheme(theme) {
+      const sunIcon = document.getElementById('themeSunIcon');
+      const moonIcon = document.getElementById('themeMoonIcon');
+      const darkBtn = document.getElementById('modalThemeDarkBtn');
+      const lightBtn = document.getElementById('modalThemeLightBtn');
+
+      if (theme === 'light') {
+        document.documentElement.classList.remove('dark');
+        if (sunIcon) sunIcon.classList.add('hidden');
+        if (moonIcon) moonIcon.classList.remove('hidden');
+        if (lightBtn) lightBtn.className = 'flex items-center justify-center gap-2 py-2 rounded-xl bg-slate-900 border-2 border-emerald-500 text-emerald-400 font-bold cursor-pointer transition-all shadow-sm';
+        if (darkBtn) darkBtn.className = 'flex items-center justify-center gap-2 py-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white font-semibold cursor-pointer transition-all';
+      } else {
+        document.documentElement.classList.add('dark');
+        if (sunIcon) sunIcon.classList.remove('hidden');
+        if (moonIcon) moonIcon.classList.add('hidden');
+        if (darkBtn) darkBtn.className = 'flex items-center justify-center gap-2 py-2 rounded-xl bg-slate-900 border-2 border-emerald-500 text-emerald-400 font-bold cursor-pointer transition-all shadow-sm';
+        if (lightBtn) lightBtn.className = 'flex items-center justify-center gap-2 py-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white font-semibold cursor-pointer transition-all';
+      }
+
+      localStorage.setItem('financeme_theme', theme);
+
+      // Re-render chart if visible
+      if (document.getElementById('tab-analytics') && !document.getElementById('tab-analytics').classList.contains('hidden')) {
+        renderCharts();
+      }
+    }
+
+    function toggleTheme() {
+      const isDark = document.documentElement.classList.contains('dark');
+      applyTheme(isDark ? 'light' : 'dark');
+      showToast(isDark ? 'Light mode activated' : 'Dark mode activated');
+    }
+
+    // Test Firestore Connection
+    async function testFirestoreConnection() {
+      if (!db) return;
+      try {
+        await getDocFromServer(doc(db, 'test', 'connection'));
+      } catch (err) {
+        if (err instanceof Error && err.message.includes('the client is offline')) {
+          console.warn('Firestore offline notice.');
+        }
+      }
+    }
+
     // ================= FIREBASE SETUP & SYNC =================
     function initFirebase() {
-      let config = null;
+      let config = DEFAULT_APPLET_CONFIG;
       try {
         const storedConfig = localStorage.getItem('financeme_firebase_config');
         if (storedConfig) {
           const parsed = JSON.parse(storedConfig);
           if (parsed && parsed.projectId === DEFAULT_APPLET_CONFIG.projectId) {
             config = parsed;
-          } else {
-            config = DEFAULT_APPLET_CONFIG;
-            localStorage.setItem('financeme_firebase_config', JSON.stringify(DEFAULT_APPLET_CONFIG));
           }
-        } else if (window.FIREBASE_CONFIG) {
-          config = window.FIREBASE_CONFIG;
-        } else {
-          config = DEFAULT_APPLET_CONFIG;
         }
       } catch {
         config = DEFAULT_APPLET_CONFIG;
       }
 
-      document.getElementById('firebaseConfigTextarea').value = JSON.stringify(config, null, 2);
+      const configTextarea = document.getElementById('firebaseConfigTextarea');
+      if (configTextarea) configTextarea.value = JSON.stringify(config, null, 2);
 
       try {
         if (!getApps().length) {
@@ -2470,13 +2705,22 @@
         auth = getAuth(firebaseApp);
         db = getFirestore(firebaseApp, config.firestoreDatabaseId || undefined);
 
+        testFirestoreConnection();
+
         // Listen for Authentication state
         onAuthStateChanged(auth, (user) => {
           currentUser = user;
           updateAuthUI(user);
 
           if (user) {
-            // Subscribe to real-time Firestore Document
+            // Requirement: Once logged in, page should immediately open into dashboard!
+            setAppMode('dashboard');
+
+            // 1. Immediately hydrate from user's isolated local cache
+            state = loadInitialState(user.uid);
+            renderAll();
+
+            // 2. Subscribe to real-time Firestore Document for this user
             const userDocRef = doc(db, 'users', user.uid, 'data', 'financeState');
             if (firestoreUnsubscribe) firestoreUnsubscribe();
 
@@ -2494,25 +2738,34 @@
                       ...(cloudData.debtSimulator || {})
                     }
                   };
-                  localStorage.setItem('financeme_state_v1', JSON.stringify(state));
+                  localStorage.setItem(`financeme_state_${user.uid}`, JSON.stringify(state));
                   renderAll();
                 }
               } else {
-                // First time sign-in: push existing state to cloud
-                setDoc(userDocRef, state);
+                // First-time user document creation in Firestore
+                setDoc(userDocRef, {
+                  ...state,
+                  lastUpdated: new Date().toISOString()
+                }).catch(e => console.warn('Cloud init write:', e));
               }
             }, (error) => {
-              console.warn('Firestore sync subscription:', error);
+              console.warn('Firestore sync subscription notice:', error);
             });
 
             updateCloudStatus(true);
           } else {
-            if (firestoreUnsubscribe) firestoreUnsubscribe();
+            if (firestoreUnsubscribe) {
+              firestoreUnsubscribe();
+              firestoreUnsubscribe = null;
+            }
             updateCloudStatus(false);
+            if (!isDemoMode) {
+              setAppMode('landing');
+            }
           }
         });
       } catch (err) {
-        console.warn('Firebase initialization notice (running in local mode):', err);
+        console.warn('Firebase initialization notice:', err);
         updateCloudStatus(false);
       }
     }
@@ -2520,13 +2773,16 @@
     function updateCloudStatus(isCloud) {
       const badge = document.getElementById('cloudStatusBadge');
       const text = document.getElementById('cloudStatusText');
+      if (!badge || !text) return;
       if (isCloud) {
         badge.className = 'inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/25';
-        badge.querySelector('span').className = 'w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse';
+        const dot = badge.querySelector('span');
+        if (dot) dot.className = 'w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse';
         text.textContent = 'Cloud Synced';
       } else {
         badge.className = 'inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/25';
-        badge.querySelector('span').className = 'w-1.5 h-1.5 rounded-full bg-amber-400';
+        const dot = badge.querySelector('span');
+        if (dot) dot.className = 'w-1.5 h-1.5 rounded-full bg-amber-400';
         text.textContent = 'Local Mode';
       }
     }
@@ -2575,23 +2831,33 @@
       const authBtn = document.getElementById('authBtn');
       const authAvatar = document.getElementById('authBtnAvatar');
       const authLabel = document.getElementById('authBtnLabel');
+      const headerSignOutBtn = document.getElementById('headerSignOutBtn');
 
       if (user) {
-        authAvatar.textContent = (user.displayName || user.email || 'U').charAt(0).toUpperCase();
-        authLabel.textContent = user.displayName ? user.displayName.split(' ')[0] : (user.email ? user.email.split('@')[0] : 'Profile');
-        authBtn.onclick = () => {
-          openModal('accountSecurityModal');
-          renderAccountSecurityModal();
-        };
+        if (authAvatar) authAvatar.textContent = (user.displayName || user.email || 'U').charAt(0).toUpperCase();
+        if (authLabel) authLabel.textContent = user.displayName ? user.displayName.split(' ')[0] : (user.email ? user.email.split('@')[0] : 'Profile');
+        if (authBtn) {
+          authBtn.onclick = () => {
+            openModal('accountSecurityModal');
+            renderAccountSecurityModal();
+          };
+        }
 
-        // Once user logs in, show their own dedicated dashboard
-        if (!isViewingLanding) {
-          setAppMode('dashboard');
+        if (headerSignOutBtn) {
+          headerSignOutBtn.classList.remove('hidden');
+          headerSignOutBtn.classList.add('flex');
         }
       } else {
-        authAvatar.textContent = 'G';
-        authLabel.textContent = 'Sign In';
-        authBtn.onclick = () => openModal('authModal');
+        if (authAvatar) authAvatar.textContent = 'G';
+        if (authLabel) authLabel.textContent = 'Sign In';
+        if (authBtn) {
+          authBtn.onclick = () => openModal('authModal');
+        }
+
+        if (headerSignOutBtn) {
+          headerSignOutBtn.classList.add('hidden');
+          headerSignOutBtn.classList.remove('flex');
+        }
 
         if (isDemoMode && !isViewingLanding) {
           setAppMode('dashboard');
@@ -2601,21 +2867,107 @@
       }
     }
 
+    // Dedicated Sign Out Handler
+    function executeSignOut() {
+      promptConfirmation({
+        title: 'Sign Out Account',
+        message: `Currently signed in as ${currentUser?.email || currentUser?.displayName || 'user'}. Are you sure you want to sign out?`,
+        confirmText: 'Sign Out',
+        isDanger: false,
+        onConfirm: () => {
+          sessionStorage.removeItem('financeme_demo_mode');
+          isDemoMode = false;
+          if (firestoreUnsubscribe) {
+            firestoreUnsubscribe();
+            firestoreUnsubscribe = null;
+          }
+          signOut(auth).then(() => {
+            currentUser = null;
+            state = JSON.parse(JSON.stringify(LAUNCH_EMPTY_DATA));
+            updateAuthUI(null);
+            setAppMode('landing');
+            showToast('Signed out successfully');
+          }).catch(err => {
+            console.warn('Sign out error:', err);
+            currentUser = null;
+            state = JSON.parse(JSON.stringify(LAUNCH_EMPTY_DATA));
+            updateAuthUI(null);
+            setAppMode('landing');
+            showToast('Signed out');
+          });
+        }
+      });
+    }
+
+    // Permanent Account Deletion Engine
+    async function executeDeleteAccount() {
+      if (!currentUser) return;
+      const uid = currentUser.uid;
+      const email = currentUser.email;
+
+      showToast('Deleting account & erasing records...');
+      try {
+        // 1. Delete Firestore user records
+        if (db) {
+          try {
+            await deleteDoc(doc(db, 'users', uid, 'data', 'financeState'));
+            await deleteDoc(doc(db, 'users', uid));
+          } catch (e) {
+            console.warn('Firestore doc delete notice:', e);
+          }
+        }
+
+        // 2. Clear local storage
+        localStorage.removeItem(`financeme_state_${uid}`);
+        localStorage.removeItem('financeme_state_v1');
+        sessionStorage.removeItem('financeme_demo_mode');
+
+        // 3. Delete Firebase Auth user
+        await deleteUser(currentUser);
+
+        // 4. Reset memory & UI
+        currentUser = null;
+        state = JSON.parse(JSON.stringify(LAUNCH_EMPTY_DATA));
+        closeModal('deleteAccountModal');
+        closeModal('accountSecurityModal');
+        updateAuthUI(null);
+        setAppMode('landing');
+        showToast(`Account (${email || 'user'}) has been permanently deleted.`);
+      } catch (err) {
+        console.error('Account delete error:', err);
+        closeModal('deleteAccountModal');
+        if (err?.code === 'auth/requires-recent-login') {
+          showToast('Security requirement: Please sign out and sign in again before deleting your account.', 'error');
+        } else {
+          showToast(`Account deletion error: ${err.message || err}`, 'error');
+        }
+      }
+    }
+
     function renderAccountSecurityModal() {
       if (!currentUser) return;
       const avatar = document.getElementById('secModalAvatar');
       const name = document.getElementById('secModalDisplayName');
       const email = document.getElementById('secModalEmail');
+      const nameInput = document.getElementById('profileDisplayNameInput');
+      const deleteEmail = document.getElementById('deleteConfirmUserEmail');
 
-      if (avatar) avatar.textContent = (currentUser.displayName || currentUser.email || 'U').charAt(0).toUpperCase();
+      const initial = (currentUser.displayName || currentUser.email || 'U').charAt(0).toUpperCase();
+      if (avatar) avatar.textContent = initial;
       if (name) name.textContent = currentUser.displayName || (currentUser.email ? currentUser.email.split('@')[0] : 'FinanceMe Member');
       if (email) email.textContent = currentUser.email || 'No email associated';
+      if (nameInput) nameInput.value = currentUser.displayName || '';
+      if (deleteEmail) deleteEmail.textContent = currentUser.email || currentUser.displayName || 'Current User';
 
+      // Update theme active button state
+      const isDark = document.documentElement.classList.contains('dark');
+      applyTheme(isDark ? 'dark' : 'light');
+
+      // Google Provider
       const providers = currentUser.providerData || [];
       const hasGoogle = providers.some(p => p.providerId === 'google.com');
       const hasPassword = providers.some(p => p.providerId === 'password');
 
-      // 1. Google Account Status & Action
       const gStatus = document.getElementById('secGoogleStatusText');
       const gAction = document.getElementById('secGoogleActionContainer');
       if (hasGoogle) {
@@ -2660,7 +3012,7 @@
         }
       }
 
-      // 2. Email & Password Status & Action
+      // Password Provider
       const eStatus = document.getElementById('secEmailStatusText');
       const eAction = document.getElementById('secEmailActionContainer');
       const eForm = document.getElementById('secEmailLinkForm');
@@ -2709,7 +3061,8 @@
               const credential = EmailAuthProvider.credential(currentUser.email, pass);
               await linkWithCredential(currentUser, credential);
               showToast('✓ Email and password sign-in successfully linked!');
-              document.getElementById('secLinkPasswordInput').value = '';
+              const pInput = document.getElementById('secLinkPasswordInput');
+              if (pInput) pInput.value = '';
               renderAccountSecurityModal();
               updateAuthUI(currentUser);
             } catch (err) {
@@ -3021,7 +3374,10 @@
       const subSelect = document.getElementById('subAccountSelect');
       const depSelect = document.getElementById('depositSourceAccountSelect');
 
-      const optionsHtml = state.accounts.map(a => `<option value="${a.id}">${a.name} (${formatMoney(a.balanceUsd)})</option>`).join('');
+      let optionsHtml = state.accounts.map(a => `<option value="${a.id}">${a.name} (${formatMoney(a.balanceUsd)})</option>`).join('');
+      if (state.accounts.length === 0) {
+        optionsHtml = '<option value="__auto_primary__">Primary Checking (Auto-created)</option>';
+      }
 
       if (txSelect) txSelect.innerHTML = optionsHtml;
       if (fromSelect) fromSelect.innerHTML = optionsHtml;
@@ -5389,33 +5745,39 @@
         document.getElementById('debtPrepayForm').reset();
       });
 
-      document.getElementById('openCloudConfigBtn').onclick = () => openModal('cloudConfigModal');
-      document.getElementById('closeCloudModalBtn').onclick = () => closeModal('cloudConfigModal');
+      document.getElementById('openCloudConfigBtn')?.addEventListener('click', () => openModal('cloudConfigModal'));
+      document.getElementById('closeCloudModalBtn')?.addEventListener('click', () => closeModal('cloudConfigModal'));
 
-      document.getElementById('closeAuthModalBtn').onclick = () => closeModal('authModal');
-      document.getElementById('openBackupBtn').onclick = () => openModal('backupModal');
-      document.getElementById('closeBackupModalBtn').onclick = () => closeModal('backupModal');
+      document.getElementById('closeAuthModalBtn')?.addEventListener('click', () => closeModal('authModal'));
+      document.getElementById('openBackupBtn')?.addEventListener('click', () => openModal('backupModal'));
+      document.getElementById('closeBackupModalBtn')?.addEventListener('click', () => closeModal('backupModal'));
 
       // 5. Transaction Type Toggle in Modal
       let activeTxType = 'expense';
       const expBtn = document.getElementById('txTypeExpenseBtn');
       const incBtn = document.getElementById('txTypeIncomeBtn');
 
-      expBtn.onclick = () => {
-        activeTxType = 'expense';
-        expBtn.className = 'py-2 text-xs font-bold rounded-lg bg-rose-600/20 text-rose-300 border border-rose-500/30 cursor-pointer';
-        incBtn.className = 'py-2 text-xs font-bold rounded-lg text-slate-400 hover:text-slate-200 cursor-pointer';
-      };
+      if (expBtn) {
+        expBtn.onclick = () => {
+          activeTxType = 'expense';
+          expBtn.className = 'py-2 text-xs font-bold rounded-lg bg-rose-600/20 text-rose-300 border border-rose-500/30 cursor-pointer';
+          if (incBtn) incBtn.className = 'py-2 text-xs font-bold rounded-lg text-slate-400 hover:text-slate-200 cursor-pointer';
+        };
+      }
 
-      incBtn.onclick = () => {
-        activeTxType = 'income';
-        incBtn.className = 'py-2 text-xs font-bold rounded-lg bg-emerald-600/20 text-emerald-300 border border-emerald-500/30 cursor-pointer';
-        expBtn.className = 'py-2 text-xs font-bold rounded-lg text-slate-400 hover:text-slate-200 cursor-pointer';
-      };
+      if (incBtn) {
+        incBtn.onclick = () => {
+          activeTxType = 'income';
+          incBtn.className = 'py-2 text-xs font-bold rounded-lg bg-emerald-600/20 text-emerald-300 border border-emerald-500/30 cursor-pointer';
+          if (expBtn) expBtn.className = 'py-2 text-xs font-bold rounded-lg text-slate-400 hover:text-slate-200 cursor-pointer';
+        };
+      }
 
       // Set today as default date
-      document.getElementById('txDateInput').value = new Date().toISOString().split('T')[0];
-      document.getElementById('subNextDateInput').value = new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString().split('T')[0];
+      const txDateInput = document.getElementById('txDateInput');
+      if (txDateInput) txDateInput.value = new Date().toISOString().split('T')[0];
+      const subNextDateInput = document.getElementById('subNextDateInput');
+      if (subNextDateInput) subNextDateInput.value = new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString().split('T')[0];
 
       // 6. Submit Transaction Form (Create OR Edit)
       document.getElementById('txForm').onsubmit = (e) => {
@@ -5425,12 +5787,30 @@
         const rawAmount = parseFloat(document.getElementById('txAmountInput').value) || 0;
         const date = document.getElementById('txDateInput').value;
         const category = document.getElementById('txCategorySelect').value;
-        const accountId = document.getElementById('txAccountSelect').value;
+        let accountId = document.getElementById('txAccountSelect').value;
         const notes = document.getElementById('txNotesInput').value.trim();
 
         if (!title || rawAmount <= 0) return;
 
         const amountUsd = toUsd(rawAmount, state.currency);
+
+        // Auto-resolve or create primary checking account if none exists
+        let account = state.accounts.find(a => a.id === accountId);
+        if (!account) {
+          if (state.accounts.length === 0) {
+            account = {
+              id: `acc_${Date.now()}`,
+              name: 'Primary Checking',
+              type: 'Checking',
+              balanceUsd: 0
+            };
+            state.accounts.push(account);
+            accountId = account.id;
+          } else {
+            account = state.accounts[0];
+            accountId = account.id;
+          }
+        }
 
         if (editId) {
           const tx = state.transactions.find(t => t.id === editId);
@@ -5443,11 +5823,8 @@
             }
 
             // Apply new balance adjustment to new/updated account
-            const newAccount = state.accounts.find(a => a.id === accountId);
-            if (newAccount) {
-              if (activeTxType === 'expense') newAccount.balanceUsd -= amountUsd;
-              else if (activeTxType === 'income') newAccount.balanceUsd += amountUsd;
-            }
+            if (activeTxType === 'expense') account.balanceUsd -= amountUsd;
+            else if (activeTxType === 'income') account.balanceUsd += amountUsd;
 
             // Update tx properties
             tx.title = title;
@@ -5473,13 +5850,10 @@
           };
 
           // Adjust target account balance
-          const account = state.accounts.find(a => a.id === accountId);
-          if (account) {
-            if (activeTxType === 'expense') {
-              account.balanceUsd -= amountUsd;
-            } else {
-              account.balanceUsd += amountUsd;
-            }
+          if (activeTxType === 'expense') {
+            account.balanceUsd -= amountUsd;
+          } else {
+            account.balanceUsd += amountUsd;
           }
 
           state.transactions.unshift(newTx);
@@ -6092,7 +6466,7 @@
         if (installBtn) installBtn.classList.remove('hidden');
       });
 
-      document.getElementById('installPwaBtn').onclick = async () => {
+      document.getElementById('installPwaBtn')?.addEventListener('click', async () => {
         if (deferredInstallPrompt) {
           deferredInstallPrompt.prompt();
           const { outcome } = await deferredInstallPrompt.userChoice;
@@ -6101,7 +6475,7 @@
         } else {
           showToast('iOS Safari: Tap Share (box with arrow) → Add to Home Screen', 'warning');
         }
-      };
+      });
 
       // Register In-Memory Service Worker for Offline Execution
       if ('serviceWorker' in navigator) {
@@ -6120,7 +6494,24 @@
         navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(() => {});
       }
 
-      // 19. Account Security Modal Wireup
+      // 19. Theme Toggles, Profile Settings & Security Modal Wireup
+      // Header Theme Toggle (Sun/Moon)
+      document.getElementById('themeToggleBtn')?.addEventListener('click', toggleTheme);
+
+      // Modal Theme Buttons (Dark & Light)
+      document.getElementById('modalThemeDarkBtn')?.addEventListener('click', () => {
+        applyTheme('dark');
+        showToast('Dark mode activated');
+      });
+      document.getElementById('modalThemeLightBtn')?.addEventListener('click', () => {
+        applyTheme('light');
+        showToast('Light mode activated');
+      });
+
+      // Header Sign Out Button
+      document.getElementById('headerSignOutBtn')?.addEventListener('click', executeSignOut);
+
+      // Profile Modal Close and Switches
       document.getElementById('closeAccountSecurityModalBtn')?.addEventListener('click', () => closeModal('accountSecurityModal'));
       document.getElementById('secSwitchToLandingBtn')?.addEventListener('click', () => {
         closeModal('accountSecurityModal');
@@ -6128,21 +6519,38 @@
       });
       document.getElementById('secSignOutBtn')?.addEventListener('click', () => {
         closeModal('accountSecurityModal');
-        promptConfirmation({
-          title: 'Sign Out Account',
-          message: `Currently signed in as ${currentUser?.email || currentUser?.displayName}. Are you sure you want to sign out?`,
-          confirmText: 'Sign Out',
-          isDanger: false,
-          onConfirm: () => {
-            sessionStorage.removeItem('financeme_demo_mode');
-            isDemoMode = false;
-            signOut(auth).then(() => {
-              showToast('Signed out successfully');
-              setAppMode('landing');
-            });
-          }
-        });
+        executeSignOut();
       });
+
+      // Save Display Name in Profile
+      document.getElementById('saveProfileNameBtn')?.addEventListener('click', async () => {
+        if (!currentUser) return;
+        const newName = document.getElementById('profileDisplayNameInput')?.value.trim();
+        if (!newName) {
+          showToast('Please enter a display name', 'warning');
+          return;
+        }
+        try {
+          await updateProfile(currentUser, { displayName: newName });
+          updateAuthUI(currentUser);
+          renderAccountSecurityModal();
+          showToast('✓ Profile name updated successfully!', 'success');
+        } catch (err) {
+          console.error('Update profile error:', err);
+          showToast(`Could not update profile: ${err.message}`, 'error');
+        }
+      });
+
+      // Delete Account Modal Flow
+      document.getElementById('openDeleteAccountModalBtn')?.addEventListener('click', () => {
+        const emailEl = document.getElementById('deleteConfirmUserEmail');
+        if (emailEl && currentUser) {
+          emailEl.textContent = currentUser.email || currentUser.displayName || 'Current User';
+        }
+        openModal('deleteAccountModal');
+      });
+      document.getElementById('cancelDeleteAccountBtn')?.addEventListener('click', () => closeModal('deleteAccountModal'));
+      document.getElementById('confirmExecuteDeleteAccountBtn')?.addEventListener('click', executeDeleteAccount);
 
       // 20. Setup D3 Multi-Strategy Curve Toggles
       function setupD3CurveToggles() {
