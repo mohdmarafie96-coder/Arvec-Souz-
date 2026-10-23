@@ -48,6 +48,9 @@
   <!-- Chart.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 
+  <!-- D3.js v7 CDN for Interactive Amortization & Strategy Payoff Visualizations -->
+  <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+
   <!-- Canvas Confetti CDN -->
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 
@@ -1249,24 +1252,46 @@
         </div>
       </div>
 
-      <!-- 5. Interactive Amortization Chart -->
+      <!-- 5. Interactive D3 Debt Payoff & Strategy Simulator Chart -->
       <div class="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div>
-            <h3 class="text-sm font-bold text-white flex items-center gap-2">
-              <svg class="w-4 h-4 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
-              <span>Balance Paydown Trajectory (Amortization Curve)</span>
-            </h3>
-            <p class="text-xs text-slate-400">Visual comparison between baseline minimum paydown and accelerated payoff with extra prepayments.</p>
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div class="space-y-1">
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-mono font-bold uppercase tracking-wider">D3 Interactive Engine</span>
+              <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                <svg class="w-4 h-4 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+                <span>Projected Balance Reduction & Strategy Trajectory</span>
+              </h3>
+            </div>
+            <p class="text-xs text-slate-400">Interactive D3 timeline comparing balance paydown across strategies. Click curves to toggle visibility, hover over points, and inspect month-by-month financial projection.</p>
           </div>
-          <div class="flex items-center gap-4 text-xs font-mono">
-            <span class="flex items-center gap-1.5"><span class="w-3 h-1.5 rounded-full bg-rose-400"></span> Baseline Curve</span>
-            <span class="flex items-center gap-1.5"><span class="w-3 h-1.5 rounded-full bg-emerald-400"></span> Accelerated Curve</span>
+
+          <!-- Strategy Visual Toggles & Multi-Curve Selectors -->
+          <div class="flex flex-wrap items-center gap-2 text-xs">
+            <button id="d3ToggleAvalanche" type="button" class="px-3 py-1.5 rounded-xl text-xs font-semibold font-mono flex items-center gap-1.5 transition-all cursor-pointer bg-emerald-950/80 text-emerald-300 border border-emerald-500/50 shadow-sm" data-active="true">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/50"></span>
+              <span>Avalanche (High APR)</span>
+            </button>
+            <button id="d3ToggleSnowball" type="button" class="px-3 py-1.5 rounded-xl text-xs font-semibold font-mono flex items-center gap-1.5 transition-all cursor-pointer bg-cyan-950/80 text-cyan-300 border border-cyan-500/50 shadow-sm" data-active="true">
+              <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 shadow-sm shadow-cyan-400/50"></span>
+              <span>Snowball (Low Bal)</span>
+            </button>
+            <button id="d3ToggleBaseline" type="button" class="px-3 py-1.5 rounded-xl text-xs font-semibold font-mono flex items-center gap-1.5 transition-all cursor-pointer bg-rose-950/80 text-rose-300 border border-rose-500/50 shadow-sm" data-active="true">
+              <span class="w-2.5 h-1 rounded-sm bg-rose-400"></span>
+              <span>Baseline (Minimums)</span>
+            </button>
+            <button id="d3CompareAllBtn" type="button" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-750 text-slate-200 border border-slate-700 cursor-pointer transition-colors">
+              Compare All
+            </button>
           </div>
         </div>
 
-        <div class="relative h-72 sm:h-80">
-          <canvas id="amortizationChart"></canvas>
+        <!-- D3 SVG Container with glassmorphism tooltip overlay -->
+        <div class="relative w-full overflow-hidden rounded-2xl bg-slate-950/70 border border-slate-800/80 p-2 sm:p-4">
+          <div id="d3DebtChartContainer" class="w-full h-80 sm:h-96 min-h-[320px] relative"></div>
+          
+          <!-- Interactive Floating Hover Readout Tooltip -->
+          <div id="d3DebtHoverTooltip" class="hidden absolute pointer-events-none z-20 text-xs font-mono bg-slate-900/95 backdrop-blur-md border border-slate-700/80 p-3 rounded-2xl shadow-2xl space-y-1.5 min-w-[210px] transition-opacity"></div>
         </div>
       </div>
 
@@ -1585,10 +1610,95 @@
           <span class="text-slate-500 font-mono">Firebase v10 Auth</span>
         </div>
 
+        <!-- Dynamic Auth Alert Banner -->
+        <div id="authAlertBanner" class="hidden"></div>
+
         <button type="submit" id="authSubmitBtn" class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg shadow-emerald-600/20 active:scale-95 transition-all cursor-pointer">
           Sign In
         </button>
       </form>
+    </div>
+  </div>
+
+  <!-- 1.1 ACCOUNT SECURITY & PROVIDER LINKING MODAL -->
+  <div id="accountSecurityModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm hidden">
+    <div class="w-full max-w-md rounded-3xl bg-slate-900 border border-slate-800 p-6 sm:p-8 space-y-5 shadow-2xl relative">
+      <button id="closeAccountSecurityModalBtn" class="absolute top-5 right-5 text-slate-400 hover:text-white p-1 rounded-lg cursor-pointer">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+
+      <div class="flex items-center gap-3.5 pb-2 border-b border-slate-800">
+        <div id="secModalAvatar" class="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center font-bold text-lg font-mono">
+          U
+        </div>
+        <div class="space-y-0.5">
+          <h3 id="secModalDisplayName" class="text-base font-bold text-white tracking-tight">User Account</h3>
+          <p id="secModalEmail" class="text-xs text-slate-400 font-mono">user@example.com</p>
+        </div>
+      </div>
+
+      <div class="space-y-3">
+        <div class="flex items-center justify-between">
+          <h4 class="text-xs font-bold uppercase tracking-wider text-slate-300 font-mono">Linked Sign-In Methods</h4>
+          <span class="text-[10px] text-emerald-400 font-mono">Multi-Credential Security</span>
+        </div>
+
+        <!-- Google Provider Card -->
+        <div class="p-3.5 rounded-2xl bg-slate-950/70 border border-slate-800 flex items-center justify-between gap-3">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
+              <svg class="w-4 h-4" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+              </svg>
+            </div>
+            <div>
+              <div class="text-xs font-bold text-white">Google Account</div>
+              <div id="secGoogleStatusText" class="text-[11px] text-slate-400">Checking...</div>
+            </div>
+          </div>
+          <div id="secGoogleActionContainer"></div>
+        </div>
+
+        <!-- Email & Password Provider Card -->
+        <div class="p-3.5 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-2.5">
+          <div class="flex items-center justify-between gap-3">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0 text-slate-300">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              </div>
+              <div>
+                <div class="text-xs font-bold text-white">Email & Password</div>
+                <div id="secEmailStatusText" class="text-[11px] text-slate-400">Checking...</div>
+              </div>
+            </div>
+            <div id="secEmailActionContainer"></div>
+          </div>
+
+          <!-- Expandable Password Link Form -->
+          <div id="secEmailLinkForm" class="hidden pt-2 border-t border-slate-800 space-y-2 text-xs">
+            <p class="text-[11px] text-slate-400">Set a password to link email credentials to your Google account:</p>
+            <div class="flex gap-2">
+              <input id="secLinkPasswordInput" type="password" placeholder="Create password (min 6 chars)" minlength="6" class="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-3 py-1.5 text-white text-xs placeholder-slate-500 focus:outline-none focus:border-emerald-500 font-mono" />
+              <button id="secExecuteLinkEmailBtn" type="button" class="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs cursor-pointer transition-colors shadow-sm">
+                Link Password
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="pt-2 flex items-center justify-between border-t border-slate-800 text-xs">
+        <button id="secSwitchToLandingBtn" type="button" class="text-slate-400 hover:text-white font-semibold cursor-pointer">
+          Website Preview
+        </button>
+        <button id="secSignOutBtn" type="button" class="px-4 py-2 rounded-xl bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 border border-rose-500/30 font-semibold cursor-pointer transition-colors">
+          Sign Out
+        </button>
+      </div>
     </div>
   </div>
 
@@ -1636,8 +1746,8 @@
       </button>
 
       <div class="space-y-1">
-        <h3 class="text-lg font-bold text-white tracking-tight">Record Financial Transaction</h3>
-        <p class="text-xs text-slate-400">Log an income or expense with immediate account reconciliation.</p>
+        <h3 id="txModalTitle" class="text-lg font-bold text-white tracking-tight">Record Financial Transaction</h3>
+        <p id="txModalSubtitle" class="text-xs text-slate-400">Log an income or expense with immediate account reconciliation.</p>
       </div>
 
       <!-- Type Toggle: Expense vs Income -->
@@ -1647,6 +1757,7 @@
       </div>
 
       <form id="txForm" class="space-y-3.5 text-xs">
+        <input type="hidden" id="txEditIdInput" />
         <div>
           <label class="block text-slate-300 font-medium mb-1">Title / Payee *</label>
           <input id="txTitleInput" type="text" required placeholder="e.g. Whole Foods Market, Salary Deposit" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 font-medium" />
@@ -1746,11 +1857,12 @@
       </button>
 
       <div class="space-y-1">
-        <h3 class="text-lg font-bold text-white tracking-tight">Add Financial Account</h3>
-        <p class="text-xs text-slate-400">Classify as Asset (checking/savings) or Liability (credit card/loan).</p>
+        <h3 id="accountModalTitle" class="text-lg font-bold text-white tracking-tight">Add Financial Account</h3>
+        <p id="accountModalSubtitle" class="text-xs text-slate-400">Classify as Asset (checking/savings) or Liability (credit card/loan).</p>
       </div>
 
       <form id="accountForm" class="space-y-3.5 text-xs">
+        <input type="hidden" id="accountEditIdInput" />
         <div>
           <label class="block text-slate-300 font-medium mb-1">Account Name *</label>
           <input id="accountNameInput" type="text" required placeholder="e.g. High-Yield Savings, Chase Sapphire, Auto Loan" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 font-medium" />
@@ -2130,7 +2242,10 @@
       signInWithEmailAndPassword, 
       createUserWithEmailAndPassword, 
       signOut, 
-      sendPasswordResetEmail 
+      sendPasswordResetEmail,
+      linkWithPopup,
+      linkWithCredential,
+      EmailAuthProvider
     } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
     import { 
       getFirestore, 
@@ -2465,20 +2580,8 @@
         authAvatar.textContent = (user.displayName || user.email || 'U').charAt(0).toUpperCase();
         authLabel.textContent = user.displayName ? user.displayName.split(' ')[0] : (user.email ? user.email.split('@')[0] : 'Profile');
         authBtn.onclick = () => {
-          promptConfirmation({
-            title: 'Sign Out Account',
-            message: `Currently signed in as ${user.email || user.displayName}. Are you sure you want to sign out?`,
-            confirmText: 'Sign Out',
-            isDanger: false,
-            onConfirm: () => {
-              sessionStorage.removeItem('financeme_demo_mode');
-              isDemoMode = false;
-              signOut(auth).then(() => {
-                showToast('Signed out successfully');
-                setAppMode('landing');
-              });
-            }
-          });
+          openModal('accountSecurityModal');
+          renderAccountSecurityModal();
         };
 
         // Once user logs in, show their own dedicated dashboard
@@ -2494,6 +2597,129 @@
           setAppMode('dashboard');
         } else {
           setAppMode('landing');
+        }
+      }
+    }
+
+    function renderAccountSecurityModal() {
+      if (!currentUser) return;
+      const avatar = document.getElementById('secModalAvatar');
+      const name = document.getElementById('secModalDisplayName');
+      const email = document.getElementById('secModalEmail');
+
+      if (avatar) avatar.textContent = (currentUser.displayName || currentUser.email || 'U').charAt(0).toUpperCase();
+      if (name) name.textContent = currentUser.displayName || (currentUser.email ? currentUser.email.split('@')[0] : 'FinanceMe Member');
+      if (email) email.textContent = currentUser.email || 'No email associated';
+
+      const providers = currentUser.providerData || [];
+      const hasGoogle = providers.some(p => p.providerId === 'google.com');
+      const hasPassword = providers.some(p => p.providerId === 'password');
+
+      // 1. Google Account Status & Action
+      const gStatus = document.getElementById('secGoogleStatusText');
+      const gAction = document.getElementById('secGoogleActionContainer');
+      if (hasGoogle) {
+        if (gStatus) {
+          const gEmail = providers.find(p => p.providerId === 'google.com')?.email || currentUser.email;
+          gStatus.textContent = `Connected (${gEmail})`;
+          gStatus.className = 'text-[11px] text-emerald-400 font-medium truncate max-w-[190px]';
+        }
+        if (gAction) {
+          gAction.innerHTML = `
+            <span class="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 text-[10px] font-mono font-bold flex items-center gap-1">
+              <span>✓</span> Linked
+            </span>
+          `;
+        }
+      } else {
+        if (gStatus) {
+          gStatus.textContent = 'Not linked to this login';
+          gStatus.className = 'text-[11px] text-slate-400';
+        }
+        if (gAction) {
+          gAction.innerHTML = `
+            <button id="secLinkGoogleBtn" type="button" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-750 text-white font-semibold text-xs border border-slate-700 cursor-pointer transition-colors shadow-sm flex items-center gap-1.5">
+              <span>🔗 Link Google</span>
+            </button>
+          `;
+          document.getElementById('secLinkGoogleBtn')?.addEventListener('click', async () => {
+            try {
+              const provider = new GoogleAuthProvider();
+              await linkWithPopup(currentUser, provider);
+              showToast('✓ Google sign-in linked successfully!');
+              renderAccountSecurityModal();
+              updateAuthUI(currentUser);
+            } catch (err) {
+              console.warn('Google account linking notice:', err);
+              const msg = err.code === 'auth/credential-already-in-use'
+                ? 'This Google account is already linked to another user.'
+                : (err.message || 'Google account linking failed');
+              showToast(msg, 'warning');
+            }
+          });
+        }
+      }
+
+      // 2. Email & Password Status & Action
+      const eStatus = document.getElementById('secEmailStatusText');
+      const eAction = document.getElementById('secEmailActionContainer');
+      const eForm = document.getElementById('secEmailLinkForm');
+
+      if (hasPassword) {
+        if (eStatus) {
+          const passEmail = providers.find(p => p.providerId === 'password')?.email || currentUser.email;
+          eStatus.textContent = `Connected (${passEmail})`;
+          eStatus.className = 'text-[11px] text-emerald-400 font-medium truncate max-w-[190px]';
+        }
+        if (eAction) {
+          eAction.innerHTML = `
+            <span class="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 text-[10px] font-mono font-bold flex items-center gap-1">
+              <span>✓</span> Linked
+            </span>
+          `;
+        }
+        if (eForm) eForm.classList.add('hidden');
+      } else {
+        if (eStatus) {
+          eStatus.textContent = 'Password login not set up';
+          eStatus.className = 'text-[11px] text-amber-400 font-medium';
+        }
+        if (eAction) {
+          eAction.innerHTML = `
+            <button id="secToggleLinkEmailFormBtn" type="button" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-750 text-white font-semibold text-xs border border-slate-700 cursor-pointer transition-colors">
+              Set Password
+            </button>
+          `;
+          document.getElementById('secToggleLinkEmailFormBtn')?.addEventListener('click', () => {
+            if (eForm) eForm.classList.toggle('hidden');
+          });
+
+          document.getElementById('secExecuteLinkEmailBtn')?.addEventListener('click', async () => {
+            const pass = document.getElementById('secLinkPasswordInput')?.value.trim();
+            if (!pass || pass.length < 6) {
+              showToast('Password must be at least 6 characters.', 'warning');
+              return;
+            }
+            if (!currentUser.email) {
+              showToast('No email associated with current user.', 'error');
+              return;
+            }
+
+            try {
+              const credential = EmailAuthProvider.credential(currentUser.email, pass);
+              await linkWithCredential(currentUser, credential);
+              showToast('✓ Email and password sign-in successfully linked!');
+              document.getElementById('secLinkPasswordInput').value = '';
+              renderAccountSecurityModal();
+              updateAuthUI(currentUser);
+            } catch (err) {
+              console.warn('Email password linking notice:', err);
+              const msg = err.code === 'auth/credential-already-in-use'
+                ? 'This email is already associated with another account.'
+                : (err.message || 'Password linking failed');
+              showToast(msg, 'warning');
+            }
+          });
         }
       }
     }
@@ -2683,9 +2909,14 @@
               <span class="text-[10px] font-mono tracking-wider uppercase font-semibold ${isLiability ? 'text-rose-400' : 'text-emerald-400'}">${acc.type}</span>
               <h4 class="text-sm font-bold text-white group-hover:text-emerald-300 transition-colors">${acc.name}</h4>
             </div>
-            <button class="delete-acc-btn p-1.5 rounded-lg bg-slate-950 text-slate-500 hover:text-rose-400 hover:bg-rose-950/30 border border-slate-800 hover:border-rose-500/30 text-xs transition-colors cursor-pointer" data-id="${acc.id}" title="Delete account">
-              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-            </button>
+            <div class="flex items-center gap-1.5">
+              <button class="edit-acc-btn p-1.5 rounded-lg bg-slate-950 text-slate-400 hover:text-emerald-400 hover:bg-emerald-950/30 border border-slate-800 hover:border-emerald-500/30 text-xs transition-colors cursor-pointer" title="Edit account details">
+                <svg class="w-3.5 h-3.5 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+              </button>
+              <button class="delete-acc-btn p-1.5 rounded-lg bg-slate-950 text-slate-500 hover:text-rose-400 hover:bg-rose-950/30 border border-slate-800 hover:border-rose-500/30 text-xs transition-colors cursor-pointer" data-id="${acc.id}" title="Delete account">
+                <svg class="w-3.5 h-3.5 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              </button>
+            </div>
           </div>
 
           <div class="pt-1 flex items-baseline justify-between">
@@ -2731,6 +2962,22 @@
             `}
           </div>
         `;
+
+        // Wire edit account action
+        card.querySelector('.edit-acc-btn').onclick = (e) => {
+          e.stopPropagation();
+          document.getElementById('accountEditIdInput').value = acc.id;
+          document.getElementById('accountModalTitle').textContent = `Edit Account: ${acc.name}`;
+          document.getElementById('accountModalSubtitle').textContent = 'Update account balance, credit limit, or debt parameters.';
+          document.getElementById('accountNameInput').value = acc.name;
+          document.getElementById('accountTypeSelect').value = acc.type;
+          const curr = CURRENCIES[state.currency] || CURRENCIES.USD;
+          document.getElementById('accountBalanceInput').value = Number((acc.balanceUsd * curr.rate).toFixed(curr.decimals));
+          document.getElementById('accountCreditLimitInput').value = acc.creditLimitUsd ? Number((acc.creditLimitUsd * curr.rate).toFixed(curr.decimals)) : '';
+          document.getElementById('accountAprInput').value = acc.apr || '';
+          document.getElementById('accountMinPayInput').value = acc.minPaymentUsd ? Number((acc.minPaymentUsd * curr.rate).toFixed(curr.decimals)) : '';
+          openModal('accountModal');
+        };
 
         // Wire delete account action
         card.querySelector('.delete-acc-btn').onclick = (e) => {
@@ -2886,11 +3133,36 @@
           <td class="p-3.5 text-slate-400 text-[11px]">${acc?.name || 'Account'}</td>
           <td class="p-3.5 text-right font-mono font-bold ${isIncome ? 'text-emerald-400' : 'text-slate-100'}">${isIncome ? '+' : '-'}${formatMoney(t.amountUsd)}</td>
           <td class="p-3.5 text-center">
-            <button class="delete-tx-btn p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-950/20 text-xs font-bold cursor-pointer transition-colors" data-id="${t.id}" title="Delete record">
-              <svg class="w-3.5 h-3.5 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-            </button>
+            <div class="flex items-center justify-center gap-1">
+              <button class="edit-tx-btn p-1.5 rounded-lg text-slate-400 hover:text-emerald-400 hover:bg-emerald-950/20 text-xs font-bold cursor-pointer transition-colors" data-id="${t.id}" title="Edit transaction">
+                <svg class="w-3.5 h-3.5 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+              </button>
+              <button class="delete-tx-btn p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-950/20 text-xs font-bold cursor-pointer transition-colors" data-id="${t.id}" title="Delete record">
+                <svg class="w-3.5 h-3.5 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              </button>
+            </div>
           </td>
         `;
+
+        tr.querySelector('.edit-tx-btn').onclick = () => {
+          document.getElementById('txEditIdInput').value = t.id;
+          document.getElementById('txModalTitle').textContent = `Edit Transaction: ${t.title}`;
+          document.getElementById('txModalSubtitle').textContent = 'Update transaction details and adjust account reconciliation.';
+          document.getElementById('txTitleInput').value = t.title;
+          const curr = CURRENCIES[state.currency] || CURRENCIES.USD;
+          document.getElementById('txAmountInput').value = Number((t.amountUsd * curr.rate).toFixed(curr.decimals));
+          document.getElementById('txDateInput').value = t.date;
+          document.getElementById('txCategorySelect').value = t.category;
+          populateAccountDropdowns();
+          document.getElementById('txAccountSelect').value = t.accountId;
+          document.getElementById('txNotesInput').value = t.notes || '';
+          if (t.type === 'income') {
+            document.getElementById('txTypeIncomeBtn').click();
+          } else {
+            document.getElementById('txTypeExpenseBtn').click();
+          }
+          openModal('txModal');
+        };
 
         tr.querySelector('.delete-tx-btn').onclick = () => {
           promptConfirmation({
@@ -3921,8 +4193,8 @@
         document.getElementById('simPrepayRoi').textContent = '0.0%';
       }
 
-      // 5. Amortization Line/Area Chart
-      renderAmortizationChart(baselineSim, activeSim);
+      // 5. Interactive D3 Multi-Strategy Amortization Line Chart
+      renderD3AmortizationChart(baselineSim, avalancheSim, snowballSim);
 
       // 6. Amortization Schedule Table
       renderAmortizationTable(activeSim);
@@ -3931,78 +4203,415 @@
       renderDebtsGrid();
     }
 
-    function renderAmortizationChart(baselineSim, activeSim) {
-      if (typeof Chart === 'undefined') return;
-      const amortCanvas = document.getElementById('amortizationChart')?.getContext('2d');
-      if (!amortCanvas) return;
+    let d3CurveToggles = {
+      avalanche: true,
+      snowball: true,
+      baseline: true
+    };
 
-      const curr = CURRENCIES[state.currency] || CURRENCIES.USD;
-      const maxLen = Math.max(baselineSim.months.length, activeSim.months.length, 1);
-      
-      const labels = ['Start'];
-      const baselineData = [Number((state.debts.reduce((s, d) => s + (d.balanceUsd || 0), 0) * curr.rate).toFixed(curr.decimals))];
-      const activeData = [Number((state.debts.reduce((s, d) => s + (d.balanceUsd || 0), 0) * curr.rate).toFixed(curr.decimals))];
+    function renderD3AmortizationChart(baselineSim, avalancheSim, snowballSim) {
+      const container = document.getElementById('d3DebtChartContainer');
+      const tooltip = document.getElementById('d3DebtHoverTooltip');
+      if (!container) return;
 
-      for (let i = 0; i < maxLen; i++) {
-        const mObj = activeSim.months[i] || baselineSim.months[i];
-        labels.push(mObj?.dateStr || `M${i + 1}`);
-
-        const bEnd = baselineSim.months[i] ? baselineSim.months[i].endBalance : 0;
-        baselineData.push(Number((bEnd * curr.rate).toFixed(curr.decimals)));
-
-        const aEnd = activeSim.months[i] ? activeSim.months[i].endBalance : 0;
-        activeData.push(Number((aEnd * curr.rate).toFixed(curr.decimals)));
+      if (typeof d3 === 'undefined') {
+        container.innerHTML = '<div class="h-full flex items-center justify-center text-xs text-slate-500 font-mono">Loading D3 visualization engine...</div>';
+        return;
       }
 
-      if (amortizationChartInstance) amortizationChartInstance.destroy();
-      amortizationChartInstance = new Chart(amortCanvas, {
-        type: 'line',
-        data: {
-          labels,
-          datasets: [
-            {
-              label: `Baseline Minimum Curve (${state.currency})`,
-              data: baselineData,
-              borderColor: '#f43f5e',
-              backgroundColor: '#f43f5e12',
-              fill: true,
-              borderDash: [5, 5],
-              borderWidth: 2,
-              tension: 0.3,
-              pointRadius: 0,
-              pointHoverRadius: 5
-            },
-            {
-              label: `Accelerated Payoff Curve (${state.currency})`,
-              data: activeData,
-              borderColor: '#10b981',
-              backgroundColor: '#10b98125',
-              fill: true,
-              borderWidth: 2.5,
-              tension: 0.3,
-              pointRadius: 0,
-              pointHoverRadius: 5
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          interaction: { mode: 'index', intersect: false },
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              callbacks: {
-                label: (ctx) => `${ctx.dataset.label}: ${formatMoney(toUsd(ctx.parsed.y, state.currency))}`
-              }
-            }
-          },
-          scales: {
-            x: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8', font: { family: 'JetBrains Mono', size: 10 } } },
-            y: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8', font: { family: 'JetBrains Mono', size: 10 } } }
+      container.innerHTML = '';
+
+      const curr = CURRENCIES[state.currency] || CURRENCIES.USD;
+      const totalStartDebtUsd = (state.debts || []).reduce((s, d) => s + (d.balanceUsd || 0), 0);
+      const startBalance = Number((totalStartDebtUsd * curr.rate).toFixed(curr.decimals));
+
+      if (totalStartDebtUsd <= 0) {
+        container.innerHTML = `
+          <div class="h-full min-h-[300px] flex flex-col items-center justify-center text-center p-6 space-y-3">
+            <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
+              <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>
+            </div>
+            <div class="space-y-1">
+              <h4 class="text-sm font-bold text-white">No Active Debt Obligations</h4>
+              <p class="text-xs text-slate-400">Your liabilities balance is 0.00. Add a debt or loan above to simulate repayment strategies in D3.</p>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      const maxLen = Math.max(baselineSim.months.length, avalancheSim.months.length, snowballSim.months.length, 1);
+
+      // Prepare data series
+      const baselineData = [{ month: 0, dateStr: 'Start', balance: startBalance, interestPaid: 0 }];
+      const avalancheData = [{ month: 0, dateStr: 'Start', balance: startBalance, interestPaid: 0 }];
+      const snowballData = [{ month: 0, dateStr: 'Start', balance: startBalance, interestPaid: 0 }];
+
+      let cumBaseInt = 0;
+      let cumAvInt = 0;
+      let cumSnInt = 0;
+
+      for (let i = 0; i < maxLen; i++) {
+        const mBase = baselineSim.months[i];
+        if (mBase) {
+          cumBaseInt += (mBase.interestPaid || 0) * curr.rate;
+          baselineData.push({
+            month: i + 1,
+            dateStr: mBase.dateStr,
+            balance: Number(((mBase.endBalance || 0) * curr.rate).toFixed(curr.decimals)),
+            interestPaid: cumBaseInt
+          });
+        } else if (baselineData.length <= maxLen) {
+          baselineData.push({
+            month: i + 1,
+            dateStr: `M${i + 1}`,
+            balance: 0,
+            interestPaid: cumBaseInt
+          });
+        }
+
+        const mAv = avalancheSim.months[i];
+        if (mAv) {
+          cumAvInt += (mAv.interestPaid || 0) * curr.rate;
+          avalancheData.push({
+            month: i + 1,
+            dateStr: mAv.dateStr,
+            balance: Number(((mAv.endBalance || 0) * curr.rate).toFixed(curr.decimals)),
+            interestPaid: cumAvInt
+          });
+        } else if (avalancheData.length <= maxLen) {
+          avalancheData.push({
+            month: i + 1,
+            dateStr: `M${i + 1}`,
+            balance: 0,
+            interestPaid: cumAvInt
+          });
+        }
+
+        const mSn = snowballSim.months[i];
+        if (mSn) {
+          cumSnInt += (mSn.interestPaid || 0) * curr.rate;
+          snowballData.push({
+            month: i + 1,
+            dateStr: mSn.dateStr,
+            balance: Number(((mSn.endBalance || 0) * curr.rate).toFixed(curr.decimals)),
+            interestPaid: cumSnInt
+          });
+        } else if (snowballData.length <= maxLen) {
+          snowballData.push({
+            month: i + 1,
+            dateStr: `M${i + 1}`,
+            balance: 0,
+            interestPaid: cumSnInt
+          });
+        }
+      }
+
+      // Container Dimensions
+      const width = container.clientWidth || 800;
+      const height = container.clientHeight || 340;
+      const margin = { top: 25, right: 35, bottom: 40, left: 70 };
+      const innerWidth = Math.max(10, width - margin.left - margin.right);
+      const innerHeight = Math.max(10, height - margin.top - margin.bottom);
+
+      const svg = d3.select(container)
+        .append('svg')
+        .attr('width', '100%')
+        .attr('height', '100%')
+        .attr('viewBox', `0 0 ${width} ${height}`)
+        .attr('class', 'overflow-visible');
+
+      // Gradients
+      const defs = svg.append('defs');
+
+      // Avalanche Gradient (Emerald)
+      const avGrad = defs.append('linearGradient')
+        .attr('id', 'd3AvGradient')
+        .attr('x1', '0%').attr('y1', '0%')
+        .attr('x2', '0%').attr('y2', '100%');
+      avGrad.append('stop').attr('offset', '0%').attr('stop-color', '#10b981').attr('stop-opacity', 0.28);
+      avGrad.append('stop').attr('offset', '100%').attr('stop-color', '#10b981').attr('stop-opacity', 0.0);
+
+      // Snowball Gradient (Cyan)
+      const snGrad = defs.append('linearGradient')
+        .attr('id', 'd3SnGradient')
+        .attr('x1', '0%').attr('y1', '0%')
+        .attr('x2', '0%').attr('y2', '100%');
+      snGrad.append('stop').attr('offset', '0%').attr('stop-color', '#06b6d4').attr('stop-opacity', 0.25);
+      snGrad.append('stop').attr('offset', '100%').attr('stop-color', '#06b6d4').attr('stop-opacity', 0.0);
+
+      // Baseline Gradient (Rose)
+      const baseGrad = defs.append('linearGradient')
+        .attr('id', 'd3BaseGradient')
+        .attr('x1', '0%').attr('y1', '0%')
+        .attr('x2', '0%').attr('y2', '100%');
+      baseGrad.append('stop').attr('offset', '0%').attr('stop-color', '#f43f5e').attr('stop-opacity', 0.15);
+      baseGrad.append('stop').attr('offset', '100%').attr('stop-color', '#f43f5e').attr('stop-opacity', 0.0);
+
+      // Scales
+      const xScale = d3.scaleLinear()
+        .domain([0, maxLen])
+        .range([margin.left, width - margin.right]);
+
+      const yScale = d3.scaleLinear()
+        .domain([0, Math.max(startBalance * 1.05, 10)])
+        .range([height - margin.bottom, margin.top]);
+
+      // Grid Lines
+      const yAxisGrid = d3.axisLeft(yScale)
+        .ticks(5)
+        .tickSize(-innerWidth)
+        .tickFormat('');
+
+      svg.append('g')
+        .attr('class', 'grid')
+        .attr('transform', `translate(${margin.left},0)`)
+        .call(yAxisGrid)
+        .selectAll('line')
+        .attr('stroke', '#1e293b')
+        .attr('stroke-dasharray', '2,2');
+
+      svg.select('.grid .domain').remove();
+
+      // X Axis
+      const xAxis = d3.axisBottom(xScale)
+        .ticks(Math.min(maxLen, 8))
+        .tickFormat(d => {
+          if (d === 0) return 'Start';
+          const target = avalancheData[d] || baselineData[d];
+          return target ? target.dateStr : `M${d}`;
+        });
+
+      svg.append('g')
+        .attr('transform', `translate(0,${height - margin.bottom})`)
+        .call(xAxis)
+        .attr('color', '#64748b')
+        .selectAll('text')
+        .attr('font-size', '10px')
+        .attr('font-family', 'JetBrains Mono, monospace');
+
+      // Y Axis
+      const yAxis = d3.axisLeft(yScale)
+        .ticks(5)
+        .tickFormat(d => formatMoney(toUsd(d, state.currency)));
+
+      svg.append('g')
+        .attr('transform', `translate(${margin.left},0)`)
+        .call(yAxis)
+        .attr('color', '#64748b')
+        .selectAll('text')
+        .attr('font-size', '10px')
+        .attr('font-family', 'JetBrains Mono, monospace');
+
+      // Area and Line Generators
+      const areaGen = d3.area()
+        .x(d => xScale(d.month))
+        .y0(height - margin.bottom)
+        .y1(d => yScale(d.balance))
+        .curve(d3.curveMonotoneX);
+
+      const lineGen = d3.line()
+        .x(d => xScale(d.month))
+        .y(d => yScale(d.balance))
+        .curve(d3.curveMonotoneX);
+
+      // Render Baseline
+      if (d3CurveToggles.baseline) {
+        svg.append('path')
+          .datum(baselineData)
+          .attr('fill', 'url(#d3BaseGradient)')
+          .attr('d', areaGen);
+
+        svg.append('path')
+          .datum(baselineData)
+          .attr('fill', 'none')
+          .attr('stroke', '#f43f5e')
+          .attr('stroke-width', 2)
+          .attr('stroke-dasharray', '5,5')
+          .attr('d', lineGen);
+
+        // Milestone Marker: Baseline Zero Month
+        if (baselineSim.totalMonths > 0 && baselineSim.totalMonths <= maxLen) {
+          const zeroPt = baselineData[baselineSim.totalMonths];
+          if (zeroPt) {
+            svg.append('circle')
+              .attr('cx', xScale(zeroPt.month))
+              .attr('cy', yScale(0))
+              .attr('r', 4.5)
+              .attr('fill', '#f43f5e')
+              .attr('stroke', '#0f172a')
+              .attr('stroke-width', 2);
           }
         }
-      });
+      }
+
+      // Render Snowball
+      if (d3CurveToggles.snowball) {
+        svg.append('path')
+          .datum(snowballData)
+          .attr('fill', 'url(#d3SnGradient)')
+          .attr('d', areaGen);
+
+        svg.append('path')
+          .datum(snowballData)
+          .attr('fill', 'none')
+          .attr('stroke', '#06b6d4')
+          .attr('stroke-width', 2.5)
+          .attr('d', lineGen);
+
+        // Milestone Marker: Snowball Zero Month
+        if (snowballSim.totalMonths > 0 && snowballSim.totalMonths <= maxLen) {
+          const zeroPt = snowballData[snowballSim.totalMonths];
+          if (zeroPt) {
+            svg.append('circle')
+              .attr('cx', xScale(zeroPt.month))
+              .attr('cy', yScale(0))
+              .attr('r', 5)
+              .attr('fill', '#06b6d4')
+              .attr('stroke', '#0f172a')
+              .attr('stroke-width', 2)
+              .attr('class', 'animate-pulse');
+          }
+        }
+      }
+
+      // Render Avalanche
+      if (d3CurveToggles.avalanche) {
+        svg.append('path')
+          .datum(avalancheData)
+          .attr('fill', 'url(#d3AvGradient)')
+          .attr('d', areaGen);
+
+        svg.append('path')
+          .datum(avalancheData)
+          .attr('fill', 'none')
+          .attr('stroke', '#10b981')
+          .attr('stroke-width', 3)
+          .attr('d', lineGen);
+
+        // Milestone Marker: Avalanche Zero Month
+        if (avalancheSim.totalMonths > 0 && avalancheSim.totalMonths <= maxLen) {
+          const zeroPt = avalancheData[avalancheSim.totalMonths];
+          if (zeroPt) {
+            svg.append('circle')
+              .attr('cx', xScale(zeroPt.month))
+              .attr('cy', yScale(0))
+              .attr('r', 5.5)
+              .attr('fill', '#10b981')
+              .attr('stroke', '#0f172a')
+              .attr('stroke-width', 2)
+              .attr('class', 'animate-pulse');
+          }
+        }
+      }
+
+      // Interactive Crosshair & Tooltip Overlay
+      const crosshair = svg.append('line')
+        .attr('stroke', '#94a3b8')
+        .attr('stroke-width', 1)
+        .attr('stroke-dasharray', '3,3')
+        .attr('y1', margin.top)
+        .attr('y2', height - margin.bottom)
+        .style('display', 'none');
+
+      const focusDots = svg.append('g').style('display', 'none');
+      const dotAv = focusDots.append('circle').attr('r', 5).attr('fill', '#10b981').attr('stroke', '#0f172a').attr('stroke-width', 2);
+      const dotSn = focusDots.append('circle').attr('r', 5).attr('fill', '#06b6d4').attr('stroke', '#0f172a').attr('stroke-width', 2);
+      const dotBase = focusDots.append('circle').attr('r', 5).attr('fill', '#f43f5e').attr('stroke', '#0f172a').attr('stroke-width', 2);
+
+      svg.append('rect')
+        .attr('class', 'overlay')
+        .attr('x', margin.left)
+        .attr('y', margin.top)
+        .attr('width', innerWidth)
+        .attr('height', innerHeight)
+        .attr('fill', 'transparent')
+        .attr('cursor', 'crosshair')
+        .on('mousemove touchmove', function(event) {
+          const [pointerX] = d3.pointer(event, this);
+          const rawMonth = xScale.invert(pointerX);
+          const mIdx = Math.max(0, Math.min(maxLen, Math.round(rawMonth)));
+
+          const basePt = baselineData[mIdx] || baselineData[baselineData.length - 1];
+          const avPt = avalancheData[mIdx] || avalancheData[avalancheData.length - 1];
+          const snPt = snowballData[mIdx] || snowballData[snowballData.length - 1];
+
+          const cx = xScale(mIdx);
+          crosshair.style('display', null).attr('x1', cx).attr('x2', cx);
+          focusDots.style('display', null);
+
+          if (d3CurveToggles.avalanche && avPt) dotAv.attr('cx', cx).attr('cy', yScale(avPt.balance)).style('display', null);
+          else dotAv.style('display', 'none');
+
+          if (d3CurveToggles.snowball && snPt) dotSn.attr('cx', cx).attr('cy', yScale(snPt.balance)).style('display', null);
+          else dotSn.style('display', 'none');
+
+          if (d3CurveToggles.baseline && basePt) dotBase.attr('cx', cx).attr('cy', yScale(basePt.balance)).style('display', null);
+          else dotBase.style('display', 'none');
+
+          if (tooltip) {
+            tooltip.classList.remove('hidden');
+            const targetDateStr = (avPt || snPt || basePt)?.dateStr || `Month ${mIdx}`;
+            
+            let html = `
+              <div class="font-bold text-white text-xs border-b border-slate-800 pb-1 flex items-center justify-between">
+                <span>${targetDateStr}</span>
+                <span class="text-[10px] text-slate-400 font-mono">Month ${mIdx}</span>
+              </div>
+            `;
+
+            if (d3CurveToggles.avalanche && avPt) {
+              html += `
+                <div class="flex items-center justify-between gap-3 text-emerald-300">
+                  <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-400"></span> Avalanche:</span>
+                  <span class="font-bold font-mono">${formatMoney(toUsd(avPt.balance, state.currency))}</span>
+                </div>
+              `;
+            }
+
+            if (d3CurveToggles.snowball && snPt) {
+              html += `
+                <div class="flex items-center justify-between gap-3 text-cyan-300">
+                  <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-cyan-400"></span> Snowball:</span>
+                  <span class="font-bold font-mono">${formatMoney(toUsd(snPt.balance, state.currency))}</span>
+                </div>
+              `;
+            }
+
+            if (d3CurveToggles.baseline && basePt) {
+              html += `
+                <div class="flex items-center justify-between gap-3 text-rose-300">
+                  <span class="flex items-center gap-1.5"><span class="w-2 h-1 rounded-sm bg-rose-400"></span> Baseline:</span>
+                  <span class="font-bold font-mono">${formatMoney(toUsd(basePt.balance, state.currency))}</span>
+                </div>
+              `;
+            }
+
+            // Interest saved comparison callout
+            if (basePt && avPt && d3CurveToggles.avalanche && d3CurveToggles.baseline) {
+              const interestDiff = Math.max(0, basePt.interestPaid - avPt.interestPaid);
+              if (interestDiff > 0) {
+                html += `
+                  <div class="pt-1 border-t border-slate-800/80 text-[10px] text-emerald-400 font-mono flex items-center justify-between">
+                    <span>Int. Saved (Av vs Base):</span>
+                    <span class="font-bold">+${formatMoney(toUsd(interestDiff, state.currency))}</span>
+                  </div>
+                `;
+              }
+            }
+
+            tooltip.innerHTML = html;
+            const tooltipWidth = 230;
+            const xPos = cx > (width - tooltipWidth - 20) ? (cx - tooltipWidth - 15) : (cx + 15);
+            tooltip.style.left = `${Math.max(10, xPos)}px`;
+            tooltip.style.top = '20px';
+          }
+        })
+        .on('mouseleave', function() {
+          crosshair.style('display', 'none');
+          focusDots.style('display', 'none');
+          if (tooltip) tooltip.classList.add('hidden');
+        });
     }
 
     function renderAmortizationTable(activeSim) {
@@ -4523,8 +5132,16 @@
       });
 
       // 4. Modal Open/Close wiring
-      document.getElementById('openNewTxBtn').onclick = () => openModal('txModal');
-      document.getElementById('ledgerNewTxBtn').onclick = () => openModal('txModal');
+      const handleOpenNewTx = () => {
+        document.getElementById('txEditIdInput').value = '';
+        document.getElementById('txModalTitle').textContent = 'Record Financial Transaction';
+        document.getElementById('txModalSubtitle').textContent = 'Log an income or expense with immediate account reconciliation.';
+        document.getElementById('txForm').reset();
+        document.getElementById('txDateInput').value = new Date().toISOString().split('T')[0];
+        openModal('txModal');
+      };
+      document.getElementById('openNewTxBtn').onclick = handleOpenNewTx;
+      document.getElementById('ledgerNewTxBtn').onclick = handleOpenNewTx;
       document.getElementById('closeTxModalBtn').onclick = () => closeModal('txModal');
       document.getElementById('cancelTxBtn').onclick = () => closeModal('txModal');
 
@@ -4532,7 +5149,13 @@
       document.getElementById('closeTransferModalBtn').onclick = () => closeModal('transferModal');
       document.getElementById('cancelTransferBtn').onclick = () => closeModal('transferModal');
 
-      document.getElementById('openAddAccountBtn').onclick = () => openModal('accountModal');
+      document.getElementById('openAddAccountBtn').onclick = () => {
+        document.getElementById('accountEditIdInput').value = '';
+        document.getElementById('accountModalTitle').textContent = 'Add Financial Account';
+        document.getElementById('accountModalSubtitle').textContent = 'Classify as Asset (checking/savings) or Liability (credit card/loan).';
+        document.getElementById('accountForm').reset();
+        openModal('accountModal');
+      };
       document.getElementById('closeAccountModalBtn').onclick = () => closeModal('accountModal');
       document.getElementById('cancelAccountBtn').onclick = () => closeModal('accountModal');
 
@@ -4794,9 +5417,10 @@
       document.getElementById('txDateInput').value = new Date().toISOString().split('T')[0];
       document.getElementById('subNextDateInput').value = new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString().split('T')[0];
 
-      // 6. Submit Transaction Form
+      // 6. Submit Transaction Form (Create OR Edit)
       document.getElementById('txForm').onsubmit = (e) => {
         e.preventDefault();
+        const editId = document.getElementById('txEditIdInput').value;
         const title = document.getElementById('txTitleInput').value.trim();
         const rawAmount = parseFloat(document.getElementById('txAmountInput').value) || 0;
         const date = document.getElementById('txDateInput').value;
@@ -4808,32 +5432,64 @@
 
         const amountUsd = toUsd(rawAmount, state.currency);
 
-        const newTx = {
-          id: `tx_${Date.now()}`,
-          title,
-          amountUsd,
-          type: activeTxType,
-          category,
-          accountId,
-          date,
-          notes
-        };
+        if (editId) {
+          const tx = state.transactions.find(t => t.id === editId);
+          if (tx) {
+            // Reverse previous balance adjustment on old account
+            const oldAccount = state.accounts.find(a => a.id === tx.accountId);
+            if (oldAccount) {
+              if (tx.type === 'expense') oldAccount.balanceUsd += tx.amountUsd;
+              else if (tx.type === 'income') oldAccount.balanceUsd -= tx.amountUsd;
+            }
 
-        // Adjust target account balance
-        const account = state.accounts.find(a => a.id === accountId);
-        if (account) {
-          if (activeTxType === 'expense') {
-            account.balanceUsd -= amountUsd;
-          } else {
-            account.balanceUsd += amountUsd;
+            // Apply new balance adjustment to new/updated account
+            const newAccount = state.accounts.find(a => a.id === accountId);
+            if (newAccount) {
+              if (activeTxType === 'expense') newAccount.balanceUsd -= amountUsd;
+              else if (activeTxType === 'income') newAccount.balanceUsd += amountUsd;
+            }
+
+            // Update tx properties
+            tx.title = title;
+            tx.amountUsd = amountUsd;
+            tx.type = activeTxType;
+            tx.category = category;
+            tx.accountId = accountId;
+            tx.date = date;
+            tx.notes = notes;
+
+            showToast(`✓ Transaction "${title}" updated successfully`, 'success');
           }
+        } else {
+          const newTx = {
+            id: `tx_${Date.now()}`,
+            title,
+            amountUsd,
+            type: activeTxType,
+            category,
+            accountId,
+            date,
+            notes
+          };
+
+          // Adjust target account balance
+          const account = state.accounts.find(a => a.id === accountId);
+          if (account) {
+            if (activeTxType === 'expense') {
+              account.balanceUsd -= amountUsd;
+            } else {
+              account.balanceUsd += amountUsd;
+            }
+          }
+
+          state.transactions.unshift(newTx);
+          showToast(`✓ Transaction "${title}" (${formatMoney(amountUsd)}) added successfully`, 'success');
         }
 
-        state.transactions.unshift(newTx);
         saveState();
         closeModal('txModal');
-        showToast('Transaction logged successfully');
         document.getElementById('txForm').reset();
+        document.getElementById('txEditIdInput').value = '';
         document.getElementById('txDateInput').value = new Date().toISOString().split('T')[0];
       };
 
@@ -4872,13 +5528,14 @@
         state.transactions.unshift(transferTx);
         saveState();
         closeModal('transferModal');
-        showToast('Funds transferred successfully');
+        showToast(`✓ Transfer of ${formatMoney(amountUsd)} completed successfully`, 'success');
         document.getElementById('transferForm').reset();
       };
 
-      // 8. Submit Account Form
+      // 8. Submit Account Form (Create OR Edit)
       document.getElementById('accountForm').onsubmit = (e) => {
         e.preventDefault();
+        const editId = document.getElementById('accountEditIdInput').value;
         const name = document.getElementById('accountNameInput').value.trim();
         const type = document.getElementById('accountTypeSelect').value;
         const rawBalance = parseFloat(document.getElementById('accountBalanceInput').value) || 0;
@@ -4886,21 +5543,36 @@
         const apr = parseFloat(document.getElementById('accountAprInput').value) || 0;
         const rawMinPay = parseFloat(document.getElementById('accountMinPayInput').value) || 0;
 
-        const newAcc = {
-          id: `acc_${Date.now()}`,
-          name,
-          type,
-          balanceUsd: toUsd(rawBalance, state.currency),
-          creditLimitUsd: rawCreditLimit > 0 ? toUsd(rawCreditLimit, state.currency) : undefined,
-          apr: apr > 0 ? apr : undefined,
-          minPaymentUsd: rawMinPay > 0 ? toUsd(rawMinPay, state.currency) : undefined
-        };
+        if (editId) {
+          const acc = state.accounts.find(a => a.id === editId);
+          if (acc) {
+            acc.name = name;
+            acc.type = type;
+            acc.balanceUsd = toUsd(rawBalance, state.currency);
+            acc.creditLimitUsd = rawCreditLimit > 0 ? toUsd(rawCreditLimit, state.currency) : undefined;
+            acc.apr = apr > 0 ? apr : undefined;
+            acc.minPaymentUsd = rawMinPay > 0 ? toUsd(rawMinPay, state.currency) : undefined;
+            showToast(`✓ Account "${name}" updated successfully`, 'success');
+          }
+        } else {
+          const newAcc = {
+            id: `acc_${Date.now()}`,
+            name,
+            type,
+            balanceUsd: toUsd(rawBalance, state.currency),
+            creditLimitUsd: rawCreditLimit > 0 ? toUsd(rawCreditLimit, state.currency) : undefined,
+            apr: apr > 0 ? apr : undefined,
+            minPaymentUsd: rawMinPay > 0 ? toUsd(rawMinPay, state.currency) : undefined
+          };
 
-        state.accounts.push(newAcc);
+          state.accounts.push(newAcc);
+          showToast(`✓ Account "${name}" added successfully`, 'success');
+        }
+
         saveState();
         closeModal('accountModal');
-        showToast(`Account "${name}" created with Debt Shield specs`);
         document.getElementById('accountForm').reset();
+        document.getElementById('accountEditIdInput').value = '';
       };
 
       // 9. Submit Subscription Form
@@ -5289,8 +5961,17 @@
 
       // 17. Authentication modal tabs & actions
       let isSignUpTab = false;
+      function clearAuthAlert() {
+        const banner = document.getElementById('authAlertBanner');
+        if (banner) {
+          banner.className = 'hidden';
+          banner.innerHTML = '';
+        }
+      }
+
       document.getElementById('tabAuthSignIn').onclick = () => {
         isSignUpTab = false;
+        clearAuthAlert();
         document.getElementById('tabAuthSignIn').className = 'flex-1 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 text-white shadow-sm cursor-pointer';
         document.getElementById('tabAuthSignUp').className = 'flex-1 py-1.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-slate-200 cursor-pointer';
         document.getElementById('authSubmitBtn').textContent = 'Sign In';
@@ -5298,6 +5979,7 @@
 
       document.getElementById('tabAuthSignUp').onclick = () => {
         isSignUpTab = true;
+        clearAuthAlert();
         document.getElementById('tabAuthSignUp').className = 'flex-1 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 text-white shadow-sm cursor-pointer';
         document.getElementById('tabAuthSignIn').className = 'flex-1 py-1.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-slate-200 cursor-pointer';
         document.getElementById('authSubmitBtn').textContent = 'Create Account';
@@ -5311,11 +5993,12 @@
         try {
           const provider = new GoogleAuthProvider();
           await signInWithPopup(auth, provider);
+          clearAuthAlert();
           closeModal('authModal');
           showToast('Signed in with Google!');
         } catch (err) {
           console.warn('Google sign in error:', err);
-          showToast('Google sign in: running in Local Mode', 'warning');
+          showToast(`Google sign in notice: ${err.message || 'Popup closed or unavailable'}`, 'warning');
         }
       };
 
@@ -5339,12 +6022,15 @@
 
       document.getElementById('authForm').onsubmit = async (e) => {
         e.preventDefault();
+        clearAuthAlert();
         const email = document.getElementById('authEmailInput').value.trim();
         const pass = document.getElementById('authPasswordInput').value.trim();
         if (!auth) {
           showToast('Firebase Auth not connected. Please connect in cloud settings.', 'warning');
           return;
         }
+
+        const banner = document.getElementById('authAlertBanner');
 
         try {
           if (isSignUpTab) {
@@ -5354,9 +6040,47 @@
             await signInWithEmailAndPassword(auth, email, pass);
             showToast('Logged in successfully!');
           }
+          clearAuthAlert();
           closeModal('authModal');
         } catch (err) {
-          showToast(`Authentication error: ${err.message}`, 'error');
+          console.warn('Firebase Auth error:', err);
+          const errCode = err?.code || '';
+          const errMsg = err?.message || String(err);
+
+          if (errCode === 'auth/operation-not-allowed' || errMsg.includes('operation-not-allowed')) {
+            if (banner) {
+              banner.className = 'block rounded-2xl bg-amber-950/40 border border-amber-500/30 p-3.5 space-y-2 text-left';
+              banner.innerHTML = `
+                <div class="flex items-center gap-2 text-amber-300 font-bold text-xs">
+                  <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4m0 4h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
+                  <span>Email/Password Provider Not Yet Enabled</span>
+                </div>
+                <p class="text-[11px] text-slate-300 leading-relaxed">
+                  In Firebase project <strong>${DEFAULT_APPLET_CONFIG.projectId}</strong>, the Email/Password sign-in method needs to be toggled ON in the Firebase console.
+                </p>
+                <div class="pt-1 flex flex-col gap-2">
+                  <a href="https://console.firebase.google.com/project/${DEFAULT_APPLET_CONFIG.projectId}/authentication/providers" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition-colors shadow-sm">
+                    <span>Enable in Firebase Console (30 secs)</span>
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/></svg>
+                  </a>
+                  <button type="button" id="authAlertGoogleBtn" class="w-full text-center py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-400 font-semibold text-xs border border-slate-700/80 cursor-pointer">
+                    ⚡ Use Google Sign In (Already Enabled)
+                  </button>
+                </div>
+              `;
+              const gBtn = document.getElementById('authAlertGoogleBtn');
+              if (gBtn) {
+                gBtn.onclick = () => document.getElementById('googleSignInBtn').click();
+              }
+            }
+            showToast('Email/Password provider is disabled in Firebase console. See instructions in modal or use Google sign in.', 'warning');
+          } else {
+            if (banner) {
+              banner.className = 'block rounded-2xl bg-rose-950/40 border border-rose-500/30 p-3 text-left text-xs text-rose-300';
+              banner.textContent = errMsg.replace('Firebase: ', '');
+            }
+            showToast(`Authentication error: ${errMsg}`, 'error');
+          }
         }
       };
 
@@ -5395,6 +6119,95 @@
         const blob = new Blob([swScript], { type: 'application/javascript' });
         navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(() => {});
       }
+
+      // 19. Account Security Modal Wireup
+      document.getElementById('closeAccountSecurityModalBtn')?.addEventListener('click', () => closeModal('accountSecurityModal'));
+      document.getElementById('secSwitchToLandingBtn')?.addEventListener('click', () => {
+        closeModal('accountSecurityModal');
+        setAppMode('landing');
+      });
+      document.getElementById('secSignOutBtn')?.addEventListener('click', () => {
+        closeModal('accountSecurityModal');
+        promptConfirmation({
+          title: 'Sign Out Account',
+          message: `Currently signed in as ${currentUser?.email || currentUser?.displayName}. Are you sure you want to sign out?`,
+          confirmText: 'Sign Out',
+          isDanger: false,
+          onConfirm: () => {
+            sessionStorage.removeItem('financeme_demo_mode');
+            isDemoMode = false;
+            signOut(auth).then(() => {
+              showToast('Signed out successfully');
+              setAppMode('landing');
+            });
+          }
+        });
+      });
+
+      // 20. Setup D3 Multi-Strategy Curve Toggles
+      function setupD3CurveToggles() {
+        const btnAv = document.getElementById('d3ToggleAvalanche');
+        const btnSn = document.getElementById('d3ToggleSnowball');
+        const btnBase = document.getElementById('d3ToggleBaseline');
+        const btnAll = document.getElementById('d3CompareAllBtn');
+
+        if (btnAv) {
+          btnAv.onclick = () => {
+            d3CurveToggles.avalanche = !d3CurveToggles.avalanche;
+            btnAv.className = d3CurveToggles.avalanche 
+              ? 'px-3 py-1.5 rounded-xl text-xs font-semibold font-mono flex items-center gap-1.5 transition-all cursor-pointer bg-emerald-950/80 text-emerald-300 border border-emerald-500/50 shadow-sm'
+              : 'px-3 py-1.5 rounded-xl text-xs font-semibold font-mono flex items-center gap-1.5 transition-all cursor-pointer bg-slate-900 text-slate-500 border border-slate-800 opacity-60';
+            if (latestDebtSimulation) {
+              renderD3AmortizationChart(latestDebtSimulation.baselineSim, latestDebtSimulation.avalancheSim, latestDebtSimulation.snowballSim);
+            }
+          };
+        }
+
+        if (btnSn) {
+          btnSn.onclick = () => {
+            d3CurveToggles.snowball = !d3CurveToggles.snowball;
+            btnSn.className = d3CurveToggles.snowball 
+              ? 'px-3 py-1.5 rounded-xl text-xs font-semibold font-mono flex items-center gap-1.5 transition-all cursor-pointer bg-cyan-950/80 text-cyan-300 border border-cyan-500/50 shadow-sm'
+              : 'px-3 py-1.5 rounded-xl text-xs font-semibold font-mono flex items-center gap-1.5 transition-all cursor-pointer bg-slate-900 text-slate-500 border border-slate-800 opacity-60';
+            if (latestDebtSimulation) {
+              renderD3AmortizationChart(latestDebtSimulation.baselineSim, latestDebtSimulation.avalancheSim, latestDebtSimulation.snowballSim);
+            }
+          };
+        }
+
+        if (btnBase) {
+          btnBase.onclick = () => {
+            d3CurveToggles.baseline = !d3CurveToggles.baseline;
+            btnBase.className = d3CurveToggles.baseline 
+              ? 'px-3 py-1.5 rounded-xl text-xs font-semibold font-mono flex items-center gap-1.5 transition-all cursor-pointer bg-rose-950/80 text-rose-300 border border-rose-500/50 shadow-sm'
+              : 'px-3 py-1.5 rounded-xl text-xs font-semibold font-mono flex items-center gap-1.5 transition-all cursor-pointer bg-slate-900 text-slate-500 border border-slate-800 opacity-60';
+            if (latestDebtSimulation) {
+              renderD3AmortizationChart(latestDebtSimulation.baselineSim, latestDebtSimulation.avalancheSim, latestDebtSimulation.snowballSim);
+            }
+          };
+        }
+
+        if (btnAll) {
+          btnAll.onclick = () => {
+            d3CurveToggles = { avalanche: true, snowball: true, baseline: true };
+            if (btnAv) btnAv.className = 'px-3 py-1.5 rounded-xl text-xs font-semibold font-mono flex items-center gap-1.5 transition-all cursor-pointer bg-emerald-950/80 text-emerald-300 border border-emerald-500/50 shadow-sm';
+            if (btnSn) btnSn.className = 'px-3 py-1.5 rounded-xl text-xs font-semibold font-mono flex items-center gap-1.5 transition-all cursor-pointer bg-cyan-950/80 text-cyan-300 border border-cyan-500/50 shadow-sm';
+            if (btnBase) btnBase.className = 'px-3 py-1.5 rounded-xl text-xs font-semibold font-mono flex items-center gap-1.5 transition-all cursor-pointer bg-rose-950/80 text-rose-300 border border-rose-500/50 shadow-sm';
+            if (latestDebtSimulation) {
+              renderD3AmortizationChart(latestDebtSimulation.baselineSim, latestDebtSimulation.avalancheSim, latestDebtSimulation.snowballSim);
+            }
+          };
+        }
+
+        // Responsive redraw on window resize
+        window.addEventListener('resize', () => {
+          if (latestDebtSimulation && document.getElementById('tab-debts') && !document.getElementById('tab-debts').classList.contains('hidden')) {
+            renderD3AmortizationChart(latestDebtSimulation.baselineSim, latestDebtSimulation.avalancheSim, latestDebtSimulation.snowballSim);
+          }
+        });
+      }
+
+      setupD3CurveToggles();
 
       // Initial Bootstrap
       initFirebase();
