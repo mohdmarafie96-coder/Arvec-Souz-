@@ -38,6 +38,14 @@
           "type": "object",
           "description": "Debt snowball/avalanche settings and extra payment simulation parameters"
         },
+        "salaryConfig": {
+          "type": "object",
+          "description": "Automated recurring salary deposit parameters including employer, monthly amount, payday, and target account"
+        },
+        "financialPlanEstablished": {
+          "type": "boolean",
+          "description": "Whether the user has completed the post-verification financial plan setup wizard"
+        },
         "lastUpdated": {
           "type": "string",
           "description": "ISO timestamp of last cloud state synchronization"

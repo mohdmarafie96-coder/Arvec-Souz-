@@ -900,6 +900,10 @@
               <span class="text-emerald-400 font-bold">💼</span>
               <span>Automate Salary</span>
             </button>
+            <button id="openPlanWizardBtn" class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-750 text-emerald-300 font-semibold text-xs border border-emerald-500/30 active:scale-95 transition-all cursor-pointer" title="Establish or revise your complete financial plan">
+              <span>🧭</span>
+              <span id="planWizardBtnLabel">Plan Setup Wizard</span>
+            </button>
           </div>
 
           <div class="flex items-center gap-2">
@@ -909,6 +913,25 @@
             </button>
           </div>
         </div>
+      </div>
+
+      <!-- Financial Plan Onboarding Banner (Visible until financial plan is established) -->
+      <div id="setupPlanPromptBanner" class="p-5 rounded-3xl bg-gradient-to-r from-emerald-950/60 via-slate-900 to-teal-950/60 border border-emerald-500/40 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div class="flex items-center gap-3.5">
+          <div class="w-12 h-12 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center justify-center text-2xl shrink-0 shadow-inner">
+            🧭
+          </div>
+          <div class="space-y-1">
+            <div class="flex items-center gap-2">
+              <h3 class="text-sm sm:text-base font-bold text-white tracking-tight">Establish Your Financial Plan</h3>
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-semibold animate-pulse">Required Onboarding</span>
+            </div>
+            <p class="text-xs text-slate-300">Enter your accounts, income & payday, debts, and recurring bills to automatically generate your complete personal portfolio.</p>
+          </div>
+        </div>
+        <button id="bannerStartPlanWizardBtn" type="button" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-lg shadow-emerald-600/25 active:scale-95 transition-all cursor-pointer whitespace-nowrap flex items-center justify-center gap-2 self-start md:self-auto">
+          <span>Start Setup Wizard (2 mins) →</span>
+        </button>
       </div>
 
       <!-- Automated Salary & Recurring Payday Banner -->
@@ -2993,6 +3016,456 @@
     </div>
   </div>
 
+  <!-- 14. FINANCIAL PLAN SETUP WIZARD MODAL (Post-Verification Onboarding & Planning Engine) -->
+  <div id="financialPlanWizardModal" class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/90 backdrop-blur-md hidden overflow-y-auto">
+    <div class="w-full max-w-2xl rounded-3xl bg-slate-900 border border-slate-800 p-5 sm:p-8 space-y-5 shadow-2xl relative my-auto max-h-[92vh] flex flex-col">
+      
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800 shrink-0">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-500/20 to-teal-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 text-xl shadow-inner shrink-0">
+            🧭
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 class="text-base sm:text-lg font-bold text-white tracking-tight">Financial Plan Setup Wizard</h3>
+              <span id="wizardStepBadge" class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-semibold">Step 1 of 5</span>
+            </div>
+            <p class="text-xs text-slate-400">Establish your complete personalized portfolio in 5 guided steps.</p>
+          </div>
+        </div>
+        <button id="closePlanWizardBtn" type="button" class="text-slate-400 hover:text-white p-1.5 rounded-xl hover:bg-slate-800 transition-colors cursor-pointer" title="Close Wizard">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <!-- Step Indicator Dots & Progress Bar -->
+      <div class="space-y-2 shrink-0">
+        <div class="flex items-center justify-between text-[11px] font-mono">
+          <span id="wizardStepTitle" class="text-emerald-400 font-bold">1. Base Currency & Accounts</span>
+          <span id="wizardProgressPercent" class="text-slate-400">20% Completed</span>
+        </div>
+        <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+          <div id="wizardProgressBar" class="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full transition-all duration-300 w-[20%]"></div>
+        </div>
+      </div>
+
+      <!-- Wizard Form Body (Scrollable) -->
+      <form id="financialPlanWizardForm" class="flex-1 overflow-y-auto space-y-5 pr-1 text-xs">
+        
+        <!-- STEP 1: BASE CURRENCY & LIQUID ACCOUNTS -->
+        <div id="wizardStep1" class="wizard-step-panel space-y-4">
+          <div class="p-3.5 rounded-2xl bg-emerald-950/20 border border-emerald-500/20 text-emerald-300 space-y-1">
+            <strong class="font-bold flex items-center gap-1.5 text-xs text-white">
+              <span>🏦</span> Choose Base Currency & Initial Bank Accounts
+            </strong>
+            <p class="text-[11px] text-slate-300">Set your primary currency and opening balances for your everyday checking and high-yield savings accounts.</p>
+          </div>
+
+          <!-- Currency Selection -->
+          <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+            <label class="block font-semibold text-slate-200">Base Currency for Portfolio</label>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <select id="wizardCurrencySelect" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 text-white font-mono font-bold focus:outline-none focus:border-emerald-500 cursor-pointer">
+                <option value="USD">USD ($) - US Dollar</option>
+                <option value="KWD">KWD (KD) - Kuwaiti Dinar</option>
+                <option value="EUR">EUR (€) - Euro</option>
+                <option value="GBP">GBP (£) - British Pound</option>
+                <option value="SAR">SAR (SR) - Saudi Riyal</option>
+                <option value="AED">AED (AED) - UAE Dirham</option>
+                <option value="QAR">QAR (QR) - Qatari Riyal</option>
+                <option value="BHD">BHD (BD) - Bahraini Dinar</option>
+                <option value="OMR">OMR (OMR) - Omani Rial</option>
+                <option value="CAD">CAD (C$) - Canadian Dollar</option>
+                <option value="AUD">AUD (A$) - Australian Dollar</option>
+                <option value="JPY">JPY (¥) - Japanese Yen</option>
+                <option value="CHF">CHF (CHF) - Swiss Franc</option>
+                <option value="INR">INR (₹) - Indian Rupee</option>
+                <option value="CNY">CNY (¥) - Chinese Yuan</option>
+                <option value="BRL">BRL (R$) - Brazilian Real</option>
+              </select>
+              <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800/80 flex items-center justify-between text-[11px] font-mono text-slate-400">
+                <span>Active Symbol:</span>
+                <span id="wizardCurrencySymbolDisplay" class="font-bold text-emerald-400 text-sm">$</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Primary Checking Account -->
+          <div class="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-white flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-400"></span> Primary Checking / Cash Account
+              </span>
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-800 text-slate-300">Asset</span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block text-slate-400 mb-1">Account Label</label>
+                <input id="wizardCheckingName" type="text" value="Primary Checking" required class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-emerald-500 font-medium" />
+              </div>
+              <div>
+                <label class="block text-slate-400 mb-1">Current Balance (<span class="wizardCurrSym">$</span>)</label>
+                <input id="wizardCheckingBalance" type="number" step="any" min="0" value="3500.00" required class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-emerald-400 font-mono font-bold focus:outline-none focus:border-emerald-500" />
+              </div>
+            </div>
+          </div>
+
+          <!-- High Yield Savings / Emergency Account -->
+          <div class="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-white flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-teal-400"></span> High-Yield Savings / Emergency Fund
+              </span>
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-800 text-slate-300">Asset</span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div class="sm:col-span-1">
+                <label class="block text-slate-400 mb-1">Account Label</label>
+                <input id="wizardSavingsName" type="text" value="High-Yield Savings" required class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-emerald-500 font-medium" />
+              </div>
+              <div class="sm:col-span-1">
+                <label class="block text-slate-400 mb-1">Current Balance (<span class="wizardCurrSym">$</span>)</label>
+                <input id="wizardSavingsBalance" type="number" step="any" min="0" value="8000.00" required class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-emerald-400 font-mono font-bold focus:outline-none focus:border-emerald-500" />
+              </div>
+              <div class="sm:col-span-1">
+                <label class="block text-slate-400 mb-1">Annual APY % (Optional)</label>
+                <input id="wizardSavingsApy" type="number" step="any" min="0" max="100" value="4.50" placeholder="4.5" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 font-mono focus:outline-none focus:border-emerald-500" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 2: MONTHLY INCOME & PAYDAY AUTOMATION -->
+        <div id="wizardStep2" class="wizard-step-panel space-y-4 hidden">
+          <div class="p-3.5 rounded-2xl bg-emerald-950/20 border border-emerald-500/20 text-emerald-300 space-y-1">
+            <strong class="font-bold flex items-center gap-1.5 text-xs text-white">
+              <span>💼</span> Monthly Salary & Automated Payday
+            </strong>
+            <p class="text-[11px] text-slate-300">Configure your primary monthly income source so FinanceMe can automate your payday deposit and calculate savings capacity.</p>
+          </div>
+
+          <div class="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-3.5">
+            <div>
+              <label class="block text-slate-300 font-medium mb-1">Employer / Income Source Name *</label>
+              <input id="wizardEmployerName" type="text" value="Primary Employer" required placeholder="e.g. Acme Tech, Ministry of Finance, Consulting" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-emerald-500 font-medium" />
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block text-slate-300 font-medium mb-1">Monthly Net Take-Home Salary (<span class="wizardCurrSym">$</span>) *</label>
+                <input id="wizardSalaryAmount" type="number" step="any" min="1" value="5000.00" required class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-emerald-400 font-mono font-bold focus:outline-none focus:border-emerald-500 text-sm" />
+              </div>
+              <div>
+                <label class="block text-slate-300 font-medium mb-1">Monthly Payday (Day 1 - 31) *</label>
+                <select id="wizardSalaryPayday" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white font-mono font-bold focus:outline-none focus:border-emerald-500 cursor-pointer">
+                  <!-- Generated 1-31 -->
+                </select>
+              </div>
+            </div>
+
+            <!-- Auto-Deposit Toggle -->
+            <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between">
+              <div>
+                <span class="font-bold text-white block">Automate Salary Deposit</span>
+                <span class="text-[10px] text-slate-400">Credited automatically into your Primary Checking account on each monthly payday</span>
+              </div>
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" id="wizardSalaryAutoDeposit" class="sr-only peer" checked />
+                <div class="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600"></div>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 3: DEBTS & LIABILITIES -->
+        <div id="wizardStep3" class="wizard-step-panel space-y-4 hidden">
+          <div class="p-3.5 rounded-2xl bg-emerald-950/20 border border-emerald-500/20 text-emerald-300 space-y-1">
+            <strong class="font-bold flex items-center gap-1.5 text-xs text-white">
+              <span>💳</span> Debts, Credit Cards & Active Loans
+            </strong>
+            <p class="text-[11px] text-slate-300">Are you currently paying off credit cards, auto financing, or personal loans?</p>
+          </div>
+
+          <!-- Debt Status Choice Radio -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <label id="wizardDebtChoiceNoneLabel" class="p-3.5 rounded-2xl bg-slate-950 border-2 border-emerald-500 text-white cursor-pointer transition-all flex items-start gap-3">
+              <input type="radio" name="wizardDebtChoice" id="wizardDebtChoiceNone" value="none" class="mt-0.5 accent-emerald-500" checked />
+              <div>
+                <strong class="block font-bold text-sm text-emerald-400">🌟 I am Debt-Free</strong>
+                <span class="text-[11px] text-slate-400 block pt-0.5">I have zero credit card balances or active loans. Keep my debt ratio pristine at 0%.</span>
+              </div>
+            </label>
+
+            <label id="wizardDebtChoiceHaveLabel" class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 text-slate-300 cursor-pointer transition-all flex items-start gap-3">
+              <input type="radio" name="wizardDebtChoice" id="wizardDebtChoiceHave" value="have" class="mt-0.5 accent-emerald-500" />
+              <div>
+                <strong class="block font-bold text-sm text-white">💳 I Have Cards / Loans</strong>
+                <span class="text-[11px] text-slate-400 block pt-0.5">Track balances, APR interest, credit limits, and accelerate my payoff journey.</span>
+              </div>
+            </label>
+          </div>
+
+          <!-- Dynamic Debt Cards Container -->
+          <div id="wizardDebtsContainer" class="space-y-3 hidden">
+            <div id="wizardDebtRowsList" class="space-y-3">
+              <!-- Dynamically populated debt rows -->
+            </div>
+
+            <button type="button" id="wizardAddDebtRowBtn" class="w-full py-2.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-dashed border-slate-700 hover:border-emerald-500 text-emerald-400 font-semibold text-xs cursor-pointer transition-colors flex items-center justify-center gap-2">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+              <span>+ Add Another Credit Card or Loan</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- STEP 4: RECURRING LIVING BILLS & SUBSCRIPTIONS -->
+        <div id="wizardStep4" class="wizard-step-panel space-y-4 hidden">
+          <div class="p-3.5 rounded-2xl bg-emerald-950/20 border border-emerald-500/20 text-emerald-300 space-y-1">
+            <strong class="font-bold flex items-center gap-1.5 text-xs text-white">
+              <span>📅</span> Recurring Monthly Living Bills & Subscriptions
+            </strong>
+            <p class="text-[11px] text-slate-300">Select which recurring living expenses you pay monthly. You can adjust the amounts or uncheck what doesn't apply.</p>
+          </div>
+
+          <!-- Standard Household Bills Checklist -->
+          <div class="space-y-2.5">
+            <!-- Rent / Housing -->
+            <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between gap-3">
+              <div class="flex items-center gap-3">
+                <input type="checkbox" id="billCheckHousing" checked class="w-4 h-4 rounded accent-emerald-500 cursor-pointer" />
+                <div>
+                  <span class="font-bold text-white block">🏠 Rent / Housing</span>
+                  <span class="text-[10px] text-slate-400">Monthly apartment rent or mortgage</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-1.5 font-mono">
+                <span class="text-slate-400 wizardCurrSym">$</span>
+                <input id="billAmountHousing" type="number" step="any" min="0" value="1200.00" class="w-24 bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1 text-right text-white font-bold focus:outline-none focus:border-emerald-500" />
+              </div>
+            </div>
+
+            <!-- Utilities -->
+            <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between gap-3">
+              <div class="flex items-center gap-3">
+                <input type="checkbox" id="billCheckUtilities" checked class="w-4 h-4 rounded accent-emerald-500 cursor-pointer" />
+                <div>
+                  <span class="font-bold text-white block">💡 Utilities & Electricity</span>
+                  <span class="text-[10px] text-slate-400">Power, water, gas, cooling</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-1.5 font-mono">
+                <span class="text-slate-400 wizardCurrSym">$</span>
+                <input id="billAmountUtilities" type="number" step="any" min="0" value="140.00" class="w-24 bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1 text-right text-white font-bold focus:outline-none focus:border-emerald-500" />
+              </div>
+            </div>
+
+            <!-- Internet & Mobile -->
+            <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between gap-3">
+              <div class="flex items-center gap-3">
+                <input type="checkbox" id="billCheckInternet" checked class="w-4 h-4 rounded accent-emerald-500 cursor-pointer" />
+                <div>
+                  <span class="font-bold text-white block">📱 Mobile & High-Speed Internet</span>
+                  <span class="text-[10px] text-slate-400">Fiber, 5G wireless plan</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-1.5 font-mono">
+                <span class="text-slate-400 wizardCurrSym">$</span>
+                <input id="billAmountInternet" type="number" step="any" min="0" value="80.00" class="w-24 bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1 text-right text-white font-bold focus:outline-none focus:border-emerald-500" />
+              </div>
+            </div>
+
+            <!-- Subscriptions & Streaming -->
+            <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between gap-3">
+              <div class="flex items-center gap-3">
+                <input type="checkbox" id="billCheckStreaming" checked class="w-4 h-4 rounded accent-emerald-500 cursor-pointer" />
+                <div>
+                  <span class="font-bold text-white block">🎬 Streaming & Digital Memberships</span>
+                  <span class="text-[10px] text-slate-400">Netflix, Spotify, iCloud, gym</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-1.5 font-mono">
+                <span class="text-slate-400 wizardCurrSym">$</span>
+                <input id="billAmountStreaming" type="number" step="any" min="0" value="45.00" class="w-24 bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1 text-right text-white font-bold focus:outline-none focus:border-emerald-500" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Custom Bills List & Add -->
+          <div id="wizardCustomBillsContainer" class="space-y-2 pt-1">
+            <!-- Dynamically added custom bills -->
+          </div>
+
+          <button type="button" id="wizardAddCustomBillBtn" class="w-full py-2 rounded-xl bg-slate-950 hover:bg-slate-800 border border-dashed border-slate-700 hover:border-emerald-500 text-emerald-400 font-semibold text-xs cursor-pointer transition-colors flex items-center justify-center gap-2">
+            <span>+ Add Another Recurring Bill</span>
+          </button>
+        </div>
+
+        <!-- STEP 5: SAVINGS GOAL & PAYOFF STRATEGY -->
+        <div id="wizardStep5" class="wizard-step-panel space-y-4 hidden">
+          <div class="p-3.5 rounded-2xl bg-emerald-950/20 border border-emerald-500/20 text-emerald-300 space-y-1">
+            <strong class="font-bold flex items-center gap-1.5 text-xs text-white">
+              <span>🎯</span> Savings Milestone & Payoff Strategy
+            </strong>
+            <p class="text-[11px] text-slate-300">Set your primary savings milestone and choose how you prefer to optimize any debts.</p>
+          </div>
+
+          <!-- Savings Goal -->
+          <div class="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
+            <span class="font-bold text-white block">Primary Savings Milestone</span>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block text-slate-400 mb-1">Goal Name</label>
+                <input id="wizardGoalName" type="text" value="Emergency Safety Net (6 Months)" required class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-emerald-500 font-medium" />
+              </div>
+              <div>
+                <label class="block text-slate-400 mb-1">Target Amount (<span class="wizardCurrSym">$</span>)</label>
+                <input id="wizardGoalTarget" type="number" step="any" min="1" value="15000.00" required class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-emerald-400 font-mono font-bold focus:outline-none focus:border-emerald-500" />
+              </div>
+              <div>
+                <label class="block text-slate-400 mb-1">Current Saved (<span class="wizardCurrSym">$</span>)</label>
+                <input id="wizardGoalCurrent" type="number" step="any" min="0" value="8000.00" required class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 font-mono focus:outline-none focus:border-emerald-500" />
+              </div>
+              <div>
+                <label class="block text-slate-400 mb-1">Target Timeline</label>
+                <select id="wizardGoalMonths" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-emerald-500 cursor-pointer">
+                  <option value="6">6 Months</option>
+                  <option value="12" selected>12 Months (1 Year)</option>
+                  <option value="18">18 Months</option>
+                  <option value="24">24 Months (2 Years)</option>
+                  <option value="36">36 Months (3 Years)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Payoff Optimization Strategy Preference -->
+          <div class="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
+            <span class="font-bold text-white block">Debt Payoff Optimization Strategy</span>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <label class="p-3 rounded-xl bg-slate-900 border-2 border-emerald-500 cursor-pointer flex items-start gap-2.5">
+                <input type="radio" name="wizardPayoffStrategy" id="wizardStratAvalanche" value="avalanche" checked class="mt-0.5 accent-emerald-500" />
+                <div>
+                  <strong class="text-white block font-bold">Avalanche (Recommended)</strong>
+                  <span class="text-[10px] text-slate-400">Target highest APR first. Mathematically minimizes interest paid.</span>
+                </div>
+              </label>
+
+              <label class="p-3 rounded-xl bg-slate-900 border border-slate-800 cursor-pointer flex items-start gap-2.5">
+                <input type="radio" name="wizardPayoffStrategy" id="wizardStratSnowball" value="snowball" class="mt-0.5 accent-emerald-500" />
+                <div>
+                  <strong class="text-white block font-bold">Snowball</strong>
+                  <span class="text-[10px] text-slate-400">Target smallest balance first. Delivers rapid psychological momentum.</span>
+                </div>
+              </label>
+            </div>
+
+            <div class="pt-1">
+              <label class="block text-slate-400 mb-1">Extra Monthly Debt Accelerator Prepayment (<span class="wizardCurrSym">$</span>/mo)</label>
+              <input id="wizardExtraDebtPayment" type="number" step="any" min="0" value="100.00" class="w-full sm:w-1/2 bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-emerald-400 font-mono font-bold focus:outline-none focus:border-emerald-500" />
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 6: EXECUTIVE BLUEPRINT REVIEW & CONFIRMATION -->
+        <div id="wizardStepSummary" class="wizard-step-panel space-y-4 hidden">
+          <div class="p-4 rounded-2xl bg-gradient-to-r from-emerald-950/40 to-teal-950/40 border border-emerald-500/30 text-white space-y-1">
+            <div class="flex items-center gap-2">
+              <span class="text-lg">📊</span>
+              <h4 class="font-bold text-sm">Your Personal Financial Blueprint Is Ready</h4>
+            </div>
+            <p class="text-[11px] text-slate-300">Review your consolidated metrics below. Clicking establish will instantiate your portfolio across your dashboard and store your data in your cloud database.</p>
+          </div>
+
+          <!-- Calculated Metrics Blueprint Grid -->
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 font-mono">
+            <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
+              <span class="text-[10px] uppercase text-slate-400 block">Total Assets</span>
+              <div id="summaryTotalAssets" class="text-base sm:text-lg font-bold text-emerald-400 tabular-nums">$11,500.00</div>
+              <span class="text-[9px] text-slate-500">Checking + Savings</span>
+            </div>
+
+            <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
+              <span class="text-[10px] uppercase text-slate-400 block">Total Liabilities</span>
+              <div id="summaryTotalDebts" class="text-base sm:text-lg font-bold text-rose-400 tabular-nums">$0.00</div>
+              <span class="text-[9px] text-slate-500">Credit cards & loans</span>
+            </div>
+
+            <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-1 col-span-2 sm:col-span-1">
+              <span class="text-[10px] uppercase text-slate-400 block">Starting Net Worth</span>
+              <div id="summaryNetWorth" class="text-base sm:text-lg font-black text-white tabular-nums">$11,500.00</div>
+              <span id="summaryNetWorthRatio" class="text-[9px] text-emerald-400 font-semibold">100% Equity</span>
+            </div>
+
+            <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
+              <span class="text-[10px] uppercase text-slate-400 block">Monthly Inflow</span>
+              <div id="summaryMonthlyInflow" class="text-base font-bold text-emerald-400 tabular-nums">$5,000.00</div>
+              <span id="summaryPaydayDay" class="text-[9px] text-slate-500">Payday: Day 25</span>
+            </div>
+
+            <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
+              <span class="text-[10px] uppercase text-slate-400 block">Fixed Outflow</span>
+              <div id="summaryMonthlyOutflow" class="text-base font-bold text-rose-400 tabular-nums">$1,465.00</div>
+              <span class="text-[9px] text-slate-500">Bills + Min payments</span>
+            </div>
+
+            <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-1 col-span-2 sm:col-span-1">
+              <span class="text-[10px] uppercase text-slate-400 block">Free Cash Flow</span>
+              <div id="summaryFreeCashFlow" class="text-base font-bold text-emerald-400 tabular-nums">+$3,535.00</div>
+              <span id="summarySavingsRate" class="text-[9px] text-teal-400 font-semibold">70.7% Savings Capacity</span>
+            </div>
+          </div>
+
+          <!-- Plan Inclusions Summary List -->
+          <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2 text-[11px] text-slate-300 font-mono">
+            <div class="text-xs font-bold text-white flex items-center gap-1.5 font-sans">
+              <span>🚀</span> Included in Your Live Portfolio:
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[10px]">
+              <div class="flex items-center gap-1.5">
+                <span class="text-emerald-400 font-bold">✓</span>
+                <span id="summaryAccountsCount">2 Bank accounts linked</span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span class="text-emerald-400 font-bold">✓</span>
+                <span id="summarySalarySchedule">Automated salary on Day 25</span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span class="text-emerald-400 font-bold">✓</span>
+                <span id="summaryDebtsCount">Debt-Free Portfolio</span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span class="text-emerald-400 font-bold">✓</span>
+                <span id="summaryBillsCount">4 Recurring monthly bills</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </form>
+
+      <!-- Wizard Navigation Toolbar (Sticky Bottom) -->
+      <div class="pt-3 border-t border-slate-800 flex items-center justify-between gap-3 shrink-0">
+        <button type="button" id="wizardBackBtn" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-300 font-semibold text-xs cursor-pointer transition-colors disabled:opacity-40 disabled:pointer-events-none" disabled>
+          ← Back
+        </button>
+
+        <div class="flex items-center gap-2">
+          <button type="button" id="wizardSkipBtn" class="px-3.5 py-2 rounded-xl text-slate-400 hover:text-white text-xs cursor-pointer transition-colors">
+            Exit Wizard
+          </button>
+          <button type="button" id="wizardNextBtn" class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg shadow-emerald-600/20 active:scale-95 cursor-pointer transition-all flex items-center gap-1.5">
+            <span>Next Step →</span>
+          </button>
+          <button type="button" id="wizardSubmitBtn" class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-xl shadow-emerald-600/25 active:scale-95 cursor-pointer transition-all hidden flex items-center gap-2">
+            <span>Establish Financial Plan 🚀</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
   <!-- 11. TOAST CONTAINER -->
   <div id="toastContainer" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none"></div>
 
@@ -3063,6 +3536,7 @@
     const LAUNCH_EMPTY_DATA = {
       currency: 'USD',
       privacyMask: false,
+      financialPlanEstablished: false,
       accounts: [],
       transactions: [],
       subscriptions: [],
@@ -3329,6 +3803,7 @@
             return {
               ...LAUNCH_EMPTY_DATA,
               ...parsed,
+              financialPlanEstablished: parsed.financialPlanEstablished || false,
               accounts: Array.isArray(parsed.accounts) ? parsed.accounts : [],
               transactions: Array.isArray(parsed.transactions) ? parsed.transactions : [],
               subscriptions: Array.isArray(parsed.subscriptions) ? parsed.subscriptions : [],
@@ -3424,6 +3899,7 @@
             state = {
               ...state,
               ...cloudData,
+              financialPlanEstablished: (cloudData.financialPlanEstablished !== undefined) ? cloudData.financialPlanEstablished : state.financialPlanEstablished,
               accounts: Array.isArray(cloudData.accounts) ? cloudData.accounts : (state.accounts || []),
               transactions: Array.isArray(cloudData.transactions) ? cloudData.transactions : (state.transactions || []),
               subscriptions: Array.isArray(cloudData.subscriptions) ? cloudData.subscriptions : (state.subscriptions || []),
@@ -3433,6 +3909,11 @@
                 ...LAUNCH_EMPTY_DATA.debtSimulator,
                 ...(state.debtSimulator || {}),
                 ...(cloudData.debtSimulator || {})
+              },
+              salaryConfig: {
+                ...LAUNCH_EMPTY_DATA.salaryConfig,
+                ...(state.salaryConfig || {}),
+                ...(cloudData.salaryConfig || {})
               }
             };
             const storageKey = getStorageKey();
@@ -3524,6 +4005,7 @@
                 state = {
                   ...LAUNCH_EMPTY_DATA,
                   ...cloudData,
+                  financialPlanEstablished: cloudData.financialPlanEstablished || false,
                   accounts: Array.isArray(cloudData.accounts) ? cloudData.accounts : [],
                   transactions: Array.isArray(cloudData.transactions) ? cloudData.transactions : [],
                   subscriptions: Array.isArray(cloudData.subscriptions) ? cloudData.subscriptions : [],
@@ -3594,6 +4076,13 @@
 
           renderAll();
           setupFirestoreSubscription();
+
+          // Prompt Financial Plan Setup Wizard if verified user has not established their plan yet
+          if (user && isUserVerified(user) && !state.financialPlanEstablished && state.accounts.length === 0) {
+            setTimeout(() => {
+              openFinancialPlanWizard();
+            }, 350);
+          }
         }
 
         // Listen for Authentication state
@@ -3614,6 +4103,13 @@
             closeModal('emailVerificationModal');
             setAppMode('dashboard');
             await loadAndSyncUserData(user);
+
+            // Open financial plan wizard if needed
+            if (!state.financialPlanEstablished && state.accounts.length === 0) {
+              setTimeout(() => {
+                openFinancialPlanWizard();
+              }, 400);
+            }
           } else {
             // Unauthenticated / Guest session
             closeModal('emailVerificationModal');
@@ -4253,6 +4749,814 @@
       renderAll();
     }
 
+    // ================= FINANCIAL PLAN SETUP WIZARD CONTROLLER =================
+    let currentWizardStep = 1;
+    let wizardDebtRows = [];
+    let wizardCustomBills = [];
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function updateWizardCurrencySymbols() {
+      const sel = document.getElementById('wizardCurrencySelect');
+      const currCode = sel ? sel.value : (state.currency || 'USD');
+      const curr = CURRENCIES[currCode] || CURRENCIES.USD;
+      setElementText('wizardCurrencySymbolDisplay', curr.symbol);
+      document.querySelectorAll('.wizardCurrSym').forEach(el => {
+        el.textContent = curr.symbol;
+      });
+    }
+
+    function renderPlanPromptBanner() {
+      const banner = document.getElementById('setupPlanPromptBanner');
+      const wizardBtnLabel = document.getElementById('planWizardBtnLabel');
+      if (!banner) return;
+      const isEstablished = state.financialPlanEstablished || (state.accounts && state.accounts.length > 0);
+      if (!isEstablished) {
+        banner.classList.remove('hidden');
+        if (wizardBtnLabel) wizardBtnLabel.textContent = 'Setup Financial Plan';
+      } else {
+        banner.classList.add('hidden');
+        if (wizardBtnLabel) wizardBtnLabel.textContent = 'Plan Setup Wizard';
+      }
+    }
+
+    function openFinancialPlanWizard() {
+      currentWizardStep = 1;
+      
+      // Sync currency
+      const currSel = document.getElementById('wizardCurrencySelect');
+      if (currSel) {
+        currSel.value = state.currency || 'USD';
+      }
+      updateWizardCurrencySymbols();
+
+      // Populate checking & savings from existing state if present
+      const curr = CURRENCIES[state.currency] || CURRENCIES.USD;
+      const existingChecking = (state.accounts || []).find(a => a.type === 'Checking');
+      const existingSavings = (state.accounts || []).find(a => a.type === 'Savings');
+
+      const chkNameInput = document.getElementById('wizardCheckingName');
+      const chkBalInput = document.getElementById('wizardCheckingBalance');
+      if (chkNameInput) chkNameInput.value = existingChecking ? existingChecking.name : 'Primary Checking';
+      if (chkBalInput) {
+        chkBalInput.value = existingChecking ? Number((existingChecking.balanceUsd * curr.rate).toFixed(curr.decimals)) : 3500;
+      }
+
+      const savNameInput = document.getElementById('wizardSavingsName');
+      const savBalInput = document.getElementById('wizardSavingsBalance');
+      const savApyInput = document.getElementById('wizardSavingsApy');
+      if (savNameInput) savNameInput.value = existingSavings ? existingSavings.name : 'High-Yield Savings';
+      if (savBalInput) {
+        savBalInput.value = existingSavings ? Number((existingSavings.balanceUsd * curr.rate).toFixed(curr.decimals)) : 8000;
+      }
+      if (savApyInput) {
+        savApyInput.value = existingSavings && existingSavings.apr ? existingSavings.apr : 4.5;
+      }
+
+      // Populate salary
+      const salaryCfg = state.salaryConfig || {};
+      const empInput = document.getElementById('wizardEmployerName');
+      const salAmtInput = document.getElementById('wizardSalaryAmount');
+      const salPaydaySel = document.getElementById('wizardSalaryPayday');
+      const salAutoToggle = document.getElementById('wizardSalaryAutoDeposit');
+
+      if (empInput) empInput.value = salaryCfg.employer || 'Primary Employer';
+      if (salAmtInput) {
+        salAmtInput.value = salaryCfg.amountUsd ? Number((salaryCfg.amountUsd * curr.rate).toFixed(curr.decimals)) : 5000;
+      }
+      
+      // Populate payday select 1-31
+      if (salPaydaySel) {
+        salPaydaySel.innerHTML = '';
+        for (let d = 1; d <= 31; d++) {
+          const opt = document.createElement('option');
+          opt.value = String(d);
+          opt.textContent = `Day ${d} of the month`;
+          if (d === (salaryCfg.payday || 25)) opt.selected = true;
+          salPaydaySel.appendChild(opt);
+        }
+      }
+      if (salAutoToggle) salAutoToggle.checked = salaryCfg.enabled !== false;
+
+      // Populate debts
+      const existingDebts = state.debts || [];
+      const debtNoneRadio = document.getElementById('wizardDebtChoiceNone');
+      const debtHaveRadio = document.getElementById('wizardDebtChoiceHave');
+      const debtsContainer = document.getElementById('wizardDebtsContainer');
+
+      if (existingDebts.length > 0) {
+        if (debtHaveRadio) debtHaveRadio.checked = true;
+        if (debtNoneRadio) debtNoneRadio.checked = false;
+        if (debtsContainer) debtsContainer.classList.remove('hidden');
+        wizardDebtRows = existingDebts.map(d => ({
+          id: d.id,
+          name: d.name,
+          category: d.category || 'credit_card',
+          balance: Number((d.balanceUsd * curr.rate).toFixed(curr.decimals)),
+          apr: d.apr || (d.category === 'credit_card' ? 21.99 : 6.5),
+          minPayment: Number(((d.minPaymentUsd || Math.max(25, d.balanceUsd * 0.02)) * curr.rate).toFixed(curr.decimals)),
+          creditLimit: d.creditLimitUsd ? Number((d.creditLimitUsd * curr.rate).toFixed(curr.decimals)) : 5000,
+          autoDebit: d.autoDebitEnabled !== false
+        }));
+      } else {
+        if (debtNoneRadio) debtNoneRadio.checked = true;
+        if (debtHaveRadio) debtHaveRadio.checked = false;
+        if (debtsContainer) debtsContainer.classList.add('hidden');
+        wizardDebtRows = [{
+          id: `w_debt_${Date.now()}`,
+          name: 'Primary Credit Card',
+          category: 'credit_card',
+          balance: 1500,
+          apr: 21.99,
+          minPayment: 45,
+          creditLimit: 5000,
+          autoDebit: true
+        }];
+      }
+      renderWizardDebtRows();
+
+      // Populate bills
+      const existingSubs = state.subscriptions || [];
+      const housingSub = existingSubs.find(s => /rent|housing|mortgage/i.test(s.name));
+      const utilSub = existingSubs.find(s => /utilit|electric|water|power/i.test(s.name));
+      const netSub = existingSubs.find(s => /internet|mobile|phone|wifi/i.test(s.name));
+      const streamSub = existingSubs.find(s => /stream|netflix|spotify|saas/i.test(s.name));
+
+      const billHousing = document.getElementById('billAmountHousing');
+      const billUtil = document.getElementById('billAmountUtilities');
+      const billNet = document.getElementById('billAmountInternet');
+      const billStream = document.getElementById('billAmountStreaming');
+
+      if (billHousing && housingSub) billHousing.value = Number((housingSub.amountUsd * curr.rate).toFixed(curr.decimals));
+      if (billUtil && utilSub) billUtil.value = Number((utilSub.amountUsd * curr.rate).toFixed(curr.decimals));
+      if (billNet && netSub) billNet.value = Number((netSub.amountUsd * curr.rate).toFixed(curr.decimals));
+      if (billStream && streamSub) billStream.value = Number((streamSub.amountUsd * curr.rate).toFixed(curr.decimals));
+
+      // Extra custom bills from subscriptions
+      const standardIds = [housingSub?.id, utilSub?.id, netSub?.id, streamSub?.id].filter(Boolean);
+      const otherSubs = existingSubs.filter(s => !standardIds.includes(s.id));
+      wizardCustomBills = otherSubs.map(s => ({
+        id: s.id,
+        name: s.name,
+        amount: Number((s.amountUsd * curr.rate).toFixed(curr.decimals))
+      }));
+      renderWizardCustomBills();
+
+      // Populate goal
+      const existingGoal = (state.goals || [])[0];
+      const goalNameInput = document.getElementById('wizardGoalName');
+      const goalTargetInput = document.getElementById('wizardGoalTarget');
+      const goalCurrentInput = document.getElementById('wizardGoalCurrent');
+      const goalMonthsSel = document.getElementById('wizardGoalMonths');
+
+      if (goalNameInput) goalNameInput.value = existingGoal ? existingGoal.name : 'Emergency Safety Net (6 Months)';
+      if (goalTargetInput) {
+        goalTargetInput.value = existingGoal ? Number((existingGoal.targetAmountUsd * curr.rate).toFixed(curr.decimals)) : 15000;
+      }
+      if (goalCurrentInput) {
+        goalCurrentInput.value = existingGoal ? Number((existingGoal.currentAmountUsd * curr.rate).toFixed(curr.decimals)) : (savBalInput ? savBalInput.value : 8000);
+      }
+      if (goalMonthsSel) goalMonthsSel.value = '12';
+
+      // Simulator preferences
+      const sim = state.debtSimulator || {};
+      const stratAvalanche = document.getElementById('wizardStratAvalanche');
+      const stratSnowball = document.getElementById('wizardStratSnowball');
+      if (sim.strategy === 'snowball') {
+        if (stratSnowball) stratSnowball.checked = true;
+      } else {
+        if (stratAvalanche) stratAvalanche.checked = true;
+      }
+      const extraPayInput = document.getElementById('wizardExtraDebtPayment');
+      if (extraPayInput) {
+        extraPayInput.value = sim.extraMonthlyUsd ? Number((sim.extraMonthlyUsd * curr.rate).toFixed(curr.decimals)) : 100;
+      }
+
+      setWizardStep(1);
+      openModal('financialPlanWizardModal');
+    }
+
+    function closeFinancialPlanWizard() {
+      closeModal('financialPlanWizardModal');
+    }
+
+    function renderWizardDebtRows() {
+      const listEl = document.getElementById('wizardDebtRowsList');
+      if (!listEl) return;
+      const sel = document.getElementById('wizardCurrencySelect');
+      const currCode = sel ? sel.value : (state.currency || 'USD');
+      const curr = CURRENCIES[currCode] || CURRENCIES.USD;
+
+      listEl.innerHTML = wizardDebtRows.map((d, idx) => `
+        <div class="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-3 relative group" data-debt-index="${idx}">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-white flex items-center gap-1.5">
+              <span class="text-rose-400">💳</span> Debt / Liability #${idx + 1}
+            </span>
+            ${wizardDebtRows.length > 1 ? `
+              <button type="button" class="remove-wizard-debt-btn text-xs text-rose-400 hover:text-rose-300 font-mono cursor-pointer" data-index="${idx}">
+                ✕ Remove
+              </button>
+            ` : ''}
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-slate-400 mb-1">Debt Label / Account Name</label>
+              <input type="text" class="wizard-debt-name w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-medium focus:outline-none focus:border-emerald-500" value="${escapeHtml(d.name)}" placeholder="e.g. Chase Sapphire, Auto Loan" required />
+            </div>
+            <div>
+              <label class="block text-slate-400 mb-1">Liability Type</label>
+              <select class="wizard-debt-cat w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-emerald-500 cursor-pointer">
+                <option value="credit_card" ${d.category === 'credit_card' ? 'selected' : ''}>Credit Card (Revolving)</option>
+                <option value="loan" ${d.category === 'loan' ? 'selected' : ''}>Fixed Term Financing / Loan</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div>
+              <label class="block text-slate-400 mb-1">Current Balance (${curr.symbol})</label>
+              <input type="number" step="any" min="0" class="wizard-debt-bal w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-rose-400 font-mono font-bold focus:outline-none focus:border-emerald-500" value="${d.balance}" required />
+            </div>
+            <div>
+              <label class="block text-slate-400 mb-1">APR Interest %</label>
+              <input type="number" step="any" min="0" max="100" class="wizard-debt-apr w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-mono focus:outline-none focus:border-emerald-500" value="${d.apr}" required />
+            </div>
+            <div>
+              <label class="block text-slate-400 mb-1">Min Monthly Due (${curr.symbol})</label>
+              <input type="number" step="any" min="0" class="wizard-debt-minpay w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-amber-300 font-mono font-bold focus:outline-none focus:border-emerald-500" value="${d.minPayment}" required />
+            </div>
+            <div>
+              <label class="block text-slate-400 mb-1">Credit Limit (${curr.symbol})</label>
+              <input type="number" step="any" min="0" class="wizard-debt-limit w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 font-mono focus:outline-none focus:border-emerald-500" value="${d.creditLimit}" placeholder="Limit" />
+            </div>
+          </div>
+
+          <div class="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800 flex items-center justify-between">
+            <div>
+              <span class="font-semibold text-slate-200 block text-[11px]">Enable Auto-Debit Payoff</span>
+              <span class="text-[10px] text-slate-400">Automatically debit minimum due from Primary Checking on payday</span>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" class="wizard-debt-autodebit sr-only peer" ${d.autoDebit ? 'checked' : ''} />
+              <div class="w-8 h-4 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-emerald-600"></div>
+            </label>
+          </div>
+        </div>
+      `).join('');
+
+      // Wire remove buttons
+      listEl.querySelectorAll('.remove-wizard-debt-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const idx = parseInt(e.target.dataset.index, 10);
+          saveCurrentWizardDebtInputs();
+          wizardDebtRows.splice(idx, 1);
+          renderWizardDebtRows();
+        });
+      });
+    }
+
+    function saveCurrentWizardDebtInputs() {
+      const rows = document.querySelectorAll('#wizardDebtRowsList > div');
+      rows.forEach((row, idx) => {
+        if (!wizardDebtRows[idx]) return;
+        const nameInput = row.querySelector('.wizard-debt-name');
+        const catSelect = row.querySelector('.wizard-debt-cat');
+        const balInput = row.querySelector('.wizard-debt-bal');
+        const aprInput = row.querySelector('.wizard-debt-apr');
+        const minPayInput = row.querySelector('.wizard-debt-minpay');
+        const limitInput = row.querySelector('.wizard-debt-limit');
+        const autoDebitToggle = row.querySelector('.wizard-debt-autodebit');
+
+        if (nameInput) wizardDebtRows[idx].name = nameInput.value.trim();
+        if (catSelect) wizardDebtRows[idx].category = catSelect.value;
+        if (balInput) wizardDebtRows[idx].balance = parseFloat(balInput.value) || 0;
+        if (aprInput) wizardDebtRows[idx].apr = parseFloat(aprInput.value) || 0;
+        if (minPayInput) wizardDebtRows[idx].minPayment = parseFloat(minPayInput.value) || 0;
+        if (limitInput) wizardDebtRows[idx].creditLimit = parseFloat(limitInput.value) || 0;
+        if (autoDebitToggle) wizardDebtRows[idx].autoDebit = autoDebitToggle.checked;
+      });
+    }
+
+    function addWizardDebtRow() {
+      saveCurrentWizardDebtInputs();
+      wizardDebtRows.push({
+        id: `w_debt_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+        name: `Liability #${wizardDebtRows.length + 1}`,
+        category: 'credit_card',
+        balance: 1000,
+        apr: 19.99,
+        minPayment: 35,
+        creditLimit: 3000,
+        autoDebit: true
+      });
+      renderWizardDebtRows();
+    }
+
+    function renderWizardCustomBills() {
+      const container = document.getElementById('wizardCustomBillsContainer');
+      if (!container) return;
+      const sel = document.getElementById('wizardCurrencySelect');
+      const currCode = sel ? sel.value : (state.currency || 'USD');
+      const curr = CURRENCIES[currCode] || CURRENCIES.USD;
+
+      container.innerHTML = wizardCustomBills.map((b, idx) => `
+        <div class="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between gap-3" data-bill-index="${idx}">
+          <div class="flex items-center gap-2 flex-1">
+            <span class="text-emerald-400">📄</span>
+            <input type="text" class="wizard-custom-bill-name w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1 text-white font-medium focus:outline-none focus:border-emerald-500" value="${escapeHtml(b.name)}" placeholder="Bill Name" />
+          </div>
+          <div class="flex items-center gap-1.5 font-mono">
+            <span class="text-slate-400">${curr.symbol}</span>
+            <input type="number" step="any" min="0" class="wizard-custom-bill-amount w-24 bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1 text-right text-white font-bold focus:outline-none focus:border-emerald-500" value="${b.amount}" />
+            <button type="button" class="remove-custom-bill-btn text-rose-400 hover:text-rose-300 p-1 cursor-pointer" data-index="${idx}" title="Remove Bill">✕</button>
+          </div>
+        </div>
+      `).join('');
+
+      container.querySelectorAll('.remove-custom-bill-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const idx = parseInt(e.target.dataset.index, 10);
+          saveCurrentCustomBillsInputs();
+          wizardCustomBills.splice(idx, 1);
+          renderWizardCustomBills();
+        });
+      });
+    }
+
+    function saveCurrentCustomBillsInputs() {
+      const rows = document.querySelectorAll('#wizardCustomBillsContainer > div');
+      rows.forEach((row, idx) => {
+        if (!wizardCustomBills[idx]) return;
+        const nameInput = row.querySelector('.wizard-custom-bill-name');
+        const amtInput = row.querySelector('.wizard-custom-bill-amount');
+        if (nameInput) wizardCustomBills[idx].name = nameInput.value.trim();
+        if (amtInput) wizardCustomBills[idx].amount = parseFloat(amtInput.value) || 0;
+      });
+    }
+
+    function addWizardCustomBillRow() {
+      saveCurrentCustomBillsInputs();
+      wizardCustomBills.push({
+        id: `w_bill_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+        name: 'Gym / Membership',
+        amount: 50
+      });
+      renderWizardCustomBills();
+    }
+
+    function setWizardStep(step) {
+      if (step > currentWizardStep) {
+        // Validate prior step
+        if (currentWizardStep === 1) {
+          const chkName = document.getElementById('wizardCheckingName')?.value.trim();
+          const chkBal = parseFloat(document.getElementById('wizardCheckingBalance')?.value);
+          const savName = document.getElementById('wizardSavingsName')?.value.trim();
+          const savBal = parseFloat(document.getElementById('wizardSavingsBalance')?.value);
+
+          if (!chkName) { showToast('Please enter a checking account name', 'warning'); return; }
+          if (isNaN(chkBal) || chkBal < 0) { showToast('Checking balance must be 0 or greater', 'warning'); return; }
+          if (!savName) { showToast('Please enter a savings account name', 'warning'); return; }
+          if (isNaN(savBal) || savBal < 0) { showToast('Savings balance must be 0 or greater', 'warning'); return; }
+
+          // Auto update current saved in step 5
+          const goalCur = document.getElementById('wizardGoalCurrent');
+          if (goalCur) goalCur.value = savBal;
+        } else if (currentWizardStep === 2) {
+          const emp = document.getElementById('wizardEmployerName')?.value.trim();
+          const sal = parseFloat(document.getElementById('wizardSalaryAmount')?.value);
+          if (!emp) { showToast('Please enter your employer or income source name', 'warning'); return; }
+          if (isNaN(sal) || sal <= 0) { showToast('Please enter a valid monthly salary amount', 'warning'); return; }
+        } else if (currentWizardStep === 3) {
+          saveCurrentWizardDebtInputs();
+          const haveDebts = document.getElementById('wizardDebtChoiceHave')?.checked;
+          if (haveDebts) {
+            for (let i = 0; i < wizardDebtRows.length; i++) {
+              if (!wizardDebtRows[i].name) {
+                showToast(`Please enter a label for Liability #${i + 1}`, 'warning');
+                return;
+              }
+              if (isNaN(wizardDebtRows[i].balance) || wizardDebtRows[i].balance < 0) {
+                showToast(`Please enter a valid balance for "${wizardDebtRows[i].name}"`, 'warning');
+                return;
+              }
+            }
+          }
+        } else if (currentWizardStep === 4) {
+          saveCurrentCustomBillsInputs();
+        } else if (currentWizardStep === 5) {
+          const goalName = document.getElementById('wizardGoalName')?.value.trim();
+          const goalTarget = parseFloat(document.getElementById('wizardGoalTarget')?.value);
+          if (!goalName) { showToast('Please enter your primary savings goal name', 'warning'); return; }
+          if (isNaN(goalTarget) || goalTarget <= 0) { showToast('Please specify a positive target savings amount', 'warning'); return; }
+        }
+      }
+
+      currentWizardStep = Math.max(1, Math.min(6, step));
+
+      // Hide all panels
+      for (let i = 1; i <= 5; i++) {
+        document.getElementById(`wizardStep${i}`)?.classList.add('hidden');
+      }
+      document.getElementById('wizardStepSummary')?.classList.add('hidden');
+
+      // Show active panel
+      if (currentWizardStep <= 5) {
+        document.getElementById(`wizardStep${currentWizardStep}`)?.classList.remove('hidden');
+      } else {
+        document.getElementById('wizardStepSummary')?.classList.remove('hidden');
+        renderWizardStepSummary();
+      }
+
+      // Step badges and headers
+      const badge = document.getElementById('wizardStepBadge');
+      const title = document.getElementById('wizardStepTitle');
+      const progressPercent = document.getElementById('wizardProgressPercent');
+      const progressBar = document.getElementById('wizardProgressBar');
+
+      const stepTitles = [
+        '',
+        '1. Base Currency & Bank Accounts',
+        '2. Monthly Salary & Automated Payday',
+        '3. Debts, Credit Cards & Loans',
+        '4. Fixed Monthly Living Bills',
+        '5. Savings Goal & Payoff Strategy',
+        '6. Personal Blueprint Review'
+      ];
+
+      const percentages = [0, 20, 40, 60, 80, 95, 100];
+      const percentVal = percentages[currentWizardStep] || 20;
+
+      if (badge) badge.textContent = currentWizardStep < 6 ? `Step ${currentWizardStep} of 5` : 'Final Review';
+      if (title) title.textContent = stepTitles[currentWizardStep] || '';
+      if (progressPercent) progressPercent.textContent = `${percentVal}% Completed`;
+      if (progressBar) progressBar.style.width = `${percentVal}%`;
+
+      // Button controls
+      const backBtn = document.getElementById('wizardBackBtn');
+      const nextBtn = document.getElementById('wizardNextBtn');
+      const submitBtn = document.getElementById('wizardSubmitBtn');
+
+      if (backBtn) backBtn.disabled = currentWizardStep === 1;
+
+      if (currentWizardStep === 6) {
+        if (nextBtn) nextBtn.classList.add('hidden');
+        if (submitBtn) submitBtn.classList.remove('hidden');
+      } else {
+        if (nextBtn) {
+          nextBtn.classList.remove('hidden');
+          nextBtn.innerHTML = currentWizardStep === 5 ? 'Review Blueprint →' : 'Next Step →';
+        }
+        if (submitBtn) submitBtn.classList.add('hidden');
+      }
+    }
+
+    function renderWizardStepSummary() {
+      const sel = document.getElementById('wizardCurrencySelect');
+      const currCode = sel ? sel.value : (state.currency || 'USD');
+      const curr = CURRENCIES[currCode] || CURRENCIES.USD;
+
+      const chkBal = parseFloat(document.getElementById('wizardCheckingBalance')?.value) || 0;
+      const savBal = parseFloat(document.getElementById('wizardSavingsBalance')?.value) || 0;
+      const totalAssets = chkBal + savBal;
+
+      saveCurrentWizardDebtInputs();
+      const haveDebts = document.getElementById('wizardDebtChoiceHave')?.checked;
+      let totalDebts = 0;
+      let totalMinDue = 0;
+      if (haveDebts) {
+        wizardDebtRows.forEach(d => {
+          totalDebts += (d.balance || 0);
+          totalMinDue += (d.minPayment || 0);
+        });
+      }
+
+      const netWorth = totalAssets - totalDebts;
+      const salaryAmount = parseFloat(document.getElementById('wizardSalaryAmount')?.value) || 0;
+      const paydayDay = document.getElementById('wizardSalaryPayday')?.value || '25';
+
+      // Bills calculation
+      saveCurrentCustomBillsInputs();
+      let totalBills = 0;
+      let billsCount = 0;
+      if (document.getElementById('billCheckHousing')?.checked) {
+        totalBills += parseFloat(document.getElementById('billAmountHousing')?.value) || 0;
+        billsCount++;
+      }
+      if (document.getElementById('billCheckUtilities')?.checked) {
+        totalBills += parseFloat(document.getElementById('billAmountUtilities')?.value) || 0;
+        billsCount++;
+      }
+      if (document.getElementById('billCheckInternet')?.checked) {
+        totalBills += parseFloat(document.getElementById('billAmountInternet')?.value) || 0;
+        billsCount++;
+      }
+      if (document.getElementById('billCheckStreaming')?.checked) {
+        totalBills += parseFloat(document.getElementById('billAmountStreaming')?.value) || 0;
+        billsCount++;
+      }
+      wizardCustomBills.forEach(b => {
+        totalBills += (b.amount || 0);
+        billsCount++;
+      });
+
+      const totalOutflow = totalBills + totalMinDue;
+      const freeCashFlow = salaryAmount - totalOutflow;
+      const savingsRate = salaryAmount > 0 ? ((Math.max(0, freeCashFlow) / salaryAmount) * 100).toFixed(1) : '0.0';
+
+      const fmt = (val) => {
+        const sign = val < 0 ? '-' : '';
+        return `${sign}${curr.symbol}${Math.abs(val).toLocaleString(undefined, { minimumFractionDigits: curr.decimals, maximumFractionDigits: curr.decimals })}`;
+      };
+
+      setElementText('summaryTotalAssets', fmt(totalAssets));
+      setElementText('summaryTotalDebts', fmt(totalDebts));
+      setElementText('summaryNetWorth', fmt(netWorth));
+      setElementText('summaryMonthlyInflow', fmt(salaryAmount));
+      setElementText('summaryMonthlyOutflow', fmt(totalOutflow));
+      setElementText('summaryFreeCashFlow', (freeCashFlow >= 0 ? '+' : '') + fmt(freeCashFlow));
+      setElementText('summaryPaydayDay', `Payday: Day ${paydayDay}`);
+      setElementText('summarySavingsRate', `${savingsRate}% Monthly Savings Rate`);
+
+      if (totalAssets > 0) {
+        const equityPercent = Math.max(0, Math.min(100, Math.round(((totalAssets - totalDebts) / totalAssets) * 100)));
+        setElementText('summaryNetWorthRatio', `${equityPercent}% Net Worth Equity`);
+      } else {
+        setElementText('summaryNetWorthRatio', 'Healthy Ratio');
+      }
+
+      setElementText('summaryAccountsCount', '2 Bank Accounts (Checking & Savings)');
+      setElementText('summarySalarySchedule', `Automated Payday: Day ${paydayDay}`);
+      setElementText('summaryDebtsCount', haveDebts ? `${wizardDebtRows.length} Debts/Cards Configured` : 'Debt-Free Portfolio (0% Debt)');
+      setElementText('summaryBillsCount', `${billsCount} Recurring Living Bills Tracked`);
+    }
+
+    async function handleEstablishFinancialPlan() {
+      const sel = document.getElementById('wizardCurrencySelect');
+      const chosenCurrency = sel ? sel.value : 'USD';
+      state.currency = chosenCurrency;
+
+      const chkName = document.getElementById('wizardCheckingName')?.value.trim() || 'Primary Checking';
+      const chkBal = parseFloat(document.getElementById('wizardCheckingBalance')?.value) || 0;
+      const savName = document.getElementById('wizardSavingsName')?.value.trim() || 'High-Yield Savings';
+      const savBal = parseFloat(document.getElementById('wizardSavingsBalance')?.value) || 0;
+      const savApy = parseFloat(document.getElementById('wizardSavingsApy')?.value) || 4.5;
+
+      // 1. Establish Accounts
+      const checkingAccId = `acc_chk_${Date.now()}`;
+      const savingsAccId = `acc_sav_${Date.now() + 1}`;
+
+      const checkingAccount = {
+        id: checkingAccId,
+        name: chkName,
+        type: 'Checking',
+        balanceUsd: toUsd(chkBal, chosenCurrency)
+      };
+
+      const savingsAccount = {
+        id: savingsAccId,
+        name: savName,
+        type: 'Savings',
+        balanceUsd: toUsd(savBal, chosenCurrency),
+        apr: savApy > 0 ? savApy : undefined
+      };
+
+      state.accounts = [checkingAccount, savingsAccount];
+
+      // 2. Establish Initial Opening Ledger Transactions so accounts & ledger are in sync
+      state.transactions = [];
+      const todayIso = new Date().toISOString().split('T')[0];
+
+      if (chkBal > 0) {
+        state.transactions.push({
+          id: `tx_init_chk_${Date.now()}`,
+          title: `Opening Balance: ${chkName}`,
+          type: 'income',
+          category: 'Other',
+          amountUsd: toUsd(chkBal, chosenCurrency),
+          accountId: checkingAccId,
+          date: todayIso,
+          notes: 'Initial opening balance established via Financial Plan Wizard'
+        });
+      }
+
+      if (savBal > 0) {
+        state.transactions.push({
+          id: `tx_init_sav_${Date.now() + 1}`,
+          title: `Opening Balance: ${savName}`,
+          type: 'income',
+          category: 'Investments',
+          amountUsd: toUsd(savBal, chosenCurrency),
+          accountId: savingsAccId,
+          date: todayIso,
+          notes: 'Initial opening balance established via Financial Plan Wizard'
+        });
+      }
+
+      // 3. Establish Salary Configuration
+      const empName = document.getElementById('wizardEmployerName')?.value.trim() || 'Primary Employer';
+      const salaryAmt = parseFloat(document.getElementById('wizardSalaryAmount')?.value) || 5000;
+      const paydayDay = parseInt(document.getElementById('wizardSalaryPayday')?.value, 10) || 25;
+      const autoDepositEnabled = document.getElementById('wizardSalaryAutoDeposit')?.checked ?? true;
+
+      state.salaryConfig = {
+        enabled: autoDepositEnabled,
+        employer: empName,
+        amountUsd: toUsd(salaryAmt, chosenCurrency),
+        depositAccountId: checkingAccId,
+        payday: paydayDay,
+        lastDepositProcessed: ''
+      };
+
+      // 4. Establish Debts & Matching Liability Accounts
+      state.debts = [];
+      saveCurrentWizardDebtInputs();
+      const haveDebts = document.getElementById('wizardDebtChoiceHave')?.checked;
+      if (haveDebts && wizardDebtRows.length > 0) {
+        wizardDebtRows.forEach((d, idx) => {
+          const debtAccId = `acc_debt_${Date.now()}_${idx}`;
+          const isCard = d.category === 'credit_card';
+          const balanceUsd = toUsd(d.balance, chosenCurrency);
+          const limitUsd = d.creditLimit > 0 ? toUsd(d.creditLimit, chosenCurrency) : (isCard ? Math.max(3000, balanceUsd * 1.5) : undefined);
+          const minPayUsd = d.minPayment > 0 ? toUsd(d.minPayment, chosenCurrency) : Math.max(25, balanceUsd * 0.02);
+
+          // Add liability account
+          state.accounts.push({
+            id: debtAccId,
+            name: d.name,
+            type: isCard ? 'Credit Card' : 'Loan',
+            balanceUsd: -Math.abs(balanceUsd),
+            creditLimitUsd: limitUsd,
+            apr: d.apr,
+            minPaymentUsd: minPayUsd
+          });
+
+          // Add to state.debts with optional auto-debit
+          state.debts.push({
+            id: `debt_${Date.now()}_${idx}`,
+            name: d.name,
+            category: isCard ? 'credit_card' : 'loan',
+            balanceUsd: Math.abs(balanceUsd),
+            originalBalanceUsd: Math.abs(balanceUsd) > 0 ? Math.abs(balanceUsd) : 1000,
+            creditLimitUsd: limitUsd,
+            apr: d.apr,
+            minPaymentUsd: minPayUsd,
+            startDate: todayIso,
+            linkedAccountId: debtAccId,
+            autoDebitEnabled: d.autoDebit,
+            autoDebitAccountId: d.autoDebit ? checkingAccId : undefined,
+            autoDebitDay: Math.min(28, paydayDay + 3),
+            autoDebitType: 'min',
+            lastAutoDebitProcessed: ''
+          });
+        });
+      }
+
+      // 5. Establish Recurring Subscriptions & Bills
+      state.subscriptions = [];
+      const billDueDay = (offset) => {
+        const nextDate = new Date();
+        nextDate.setDate(nextDate.getDate() + offset);
+        return nextDate.toISOString().split('T')[0];
+      };
+
+      if (document.getElementById('billCheckHousing')?.checked) {
+        const val = parseFloat(document.getElementById('billAmountHousing')?.value) || 0;
+        if (val > 0) {
+          state.subscriptions.push({
+            id: `sub_housing_${Date.now()}`,
+            name: 'Rent / Housing',
+            amountUsd: toUsd(val, chosenCurrency),
+            cadence: 'monthly',
+            nextRenewalDate: billDueDay(7),
+            accountId: checkingAccId,
+            status: 'active'
+          });
+        }
+      }
+
+      if (document.getElementById('billCheckUtilities')?.checked) {
+        const val = parseFloat(document.getElementById('billAmountUtilities')?.value) || 0;
+        if (val > 0) {
+          state.subscriptions.push({
+            id: `sub_utilities_${Date.now()}`,
+            name: 'Utilities (Power, Water & Gas)',
+            amountUsd: toUsd(val, chosenCurrency),
+            cadence: 'monthly',
+            nextRenewalDate: billDueDay(12),
+            accountId: checkingAccId,
+            status: 'active'
+          });
+        }
+      }
+
+      if (document.getElementById('billCheckInternet')?.checked) {
+        const val = parseFloat(document.getElementById('billAmountInternet')?.value) || 0;
+        if (val > 0) {
+          state.subscriptions.push({
+            id: `sub_internet_${Date.now()}`,
+            name: 'Mobile & High-Speed Internet',
+            amountUsd: toUsd(val, chosenCurrency),
+            cadence: 'monthly',
+            nextRenewalDate: billDueDay(15),
+            accountId: checkingAccId,
+            status: 'active'
+          });
+        }
+      }
+
+      if (document.getElementById('billCheckStreaming')?.checked) {
+        const val = parseFloat(document.getElementById('billAmountStreaming')?.value) || 0;
+        if (val > 0) {
+          state.subscriptions.push({
+            id: `sub_streaming_${Date.now()}`,
+            name: 'Streaming & Digital Subscriptions',
+            amountUsd: toUsd(val, chosenCurrency),
+            cadence: 'monthly',
+            nextRenewalDate: billDueDay(18),
+            accountId: checkingAccId,
+            status: 'active'
+          });
+        }
+      }
+
+      saveCurrentCustomBillsInputs();
+      wizardCustomBills.forEach((b, idx) => {
+        if (b.name && b.amount > 0) {
+          state.subscriptions.push({
+            id: `sub_custom_${Date.now()}_${idx}`,
+            name: b.name,
+            amountUsd: toUsd(b.amount, chosenCurrency),
+            cadence: 'monthly',
+            nextRenewalDate: billDueDay(20 + idx),
+            accountId: checkingAccId,
+            status: 'active'
+          });
+        }
+      });
+
+      // 6. Establish Primary Savings Goal
+      state.goals = [];
+      const goalName = document.getElementById('wizardGoalName')?.value.trim() || 'Emergency Safety Net';
+      const goalTarget = parseFloat(document.getElementById('wizardGoalTarget')?.value) || 15000;
+      const goalCurrent = parseFloat(document.getElementById('wizardGoalCurrent')?.value) || savBal;
+      const goalMonths = parseInt(document.getElementById('wizardGoalMonths')?.value, 10) || 12;
+
+      const targetDeadline = new Date();
+      targetDeadline.setMonth(targetDeadline.getMonth() + goalMonths);
+
+      state.goals.push({
+        id: `goal_primary_${Date.now()}`,
+        name: goalName,
+        targetAmountUsd: toUsd(goalTarget, chosenCurrency),
+        currentAmountUsd: toUsd(goalCurrent, chosenCurrency),
+        targetDate: targetDeadline.toISOString().split('T')[0]
+      });
+
+      // 7. Establish Debt Payoff Simulation Settings
+      const stratVal = document.querySelector('input[name="wizardPayoffStrategy"]:checked')?.value || 'avalanche';
+      const extraPayVal = parseFloat(document.getElementById('wizardExtraDebtPayment')?.value) || 100;
+
+      state.debtSimulator = {
+        strategy: stratVal,
+        extraMonthlyUsd: toUsd(extraPayVal, chosenCurrency),
+        lumpSumUsd: 0,
+        lumpSumMonth: 1,
+        lumpSumTarget: 'strategy'
+      };
+
+      // 8. Mark Financial Plan as Established
+      state.financialPlanEstablished = true;
+
+      // 9. Save State to Firestore and LocalStorage
+      await saveState();
+
+      // 10. Close Modal and Trigger Celebration
+      closeFinancialPlanWizard();
+
+      if (typeof confetti === 'function') {
+        confetti({
+          particleCount: 140,
+          spread: 80,
+          origin: { y: 0.6 }
+        });
+      }
+
+      showToast('🎉 Your financial plan has been established! Welcome to your personal portfolio.', 'success');
+      setAppMode('dashboard');
+      setTab('dashboard');
+      renderAll();
+    }
+
     // ================= RENDER ENGINES =================
 
     // Safe DOM text content helper that prevents null property exceptions
@@ -4264,6 +5568,7 @@
     function renderAll() {
       processScheduledAutomations();
       renderCurrencyHeader();
+      renderPlanPromptBanner();
       renderNetWorth();
       renderHealthStats();
       renderSalaryStatusCard();
@@ -7497,6 +8802,52 @@
         showToast(`✓ Automated recurring salary for ${employer} saved!`, 'success');
         renderAll();
       });
+
+      // Financial Plan Wizard Event Wiring
+      document.getElementById('openPlanWizardBtn')?.addEventListener('click', openFinancialPlanWizard);
+      document.getElementById('bannerStartPlanWizardBtn')?.addEventListener('click', openFinancialPlanWizard);
+      document.getElementById('closePlanWizardBtn')?.addEventListener('click', closeFinancialPlanWizard);
+      document.getElementById('wizardSkipBtn')?.addEventListener('click', closeFinancialPlanWizard);
+      document.getElementById('wizardBackBtn')?.addEventListener('click', () => {
+        if (currentWizardStep > 1) setWizardStep(currentWizardStep - 1);
+      });
+      document.getElementById('wizardNextBtn')?.addEventListener('click', () => {
+        setWizardStep(currentWizardStep + 1);
+      });
+      document.getElementById('wizardSubmitBtn')?.addEventListener('click', handleEstablishFinancialPlan);
+      document.getElementById('financialPlanWizardForm')?.addEventListener('submit', (e) => {
+        e.preventDefault();
+        if (currentWizardStep < 6) setWizardStep(currentWizardStep + 1);
+        else handleEstablishFinancialPlan();
+      });
+      document.getElementById('wizardCurrencySelect')?.addEventListener('change', updateWizardCurrencySymbols);
+
+      // Debt choice radio buttons in wizard
+      document.getElementById('wizardDebtChoiceNone')?.addEventListener('change', () => {
+        document.getElementById('wizardDebtsContainer')?.classList.add('hidden');
+        const noneLabel = document.getElementById('wizardDebtChoiceNoneLabel');
+        const haveLabel = document.getElementById('wizardDebtChoiceHaveLabel');
+        if (noneLabel) {
+          noneLabel.className = 'p-3.5 rounded-2xl bg-slate-950 border-2 border-emerald-500 text-white cursor-pointer transition-all flex items-start gap-3';
+        }
+        if (haveLabel) {
+          haveLabel.className = 'p-3.5 rounded-2xl bg-slate-950 border border-slate-800 text-slate-300 cursor-pointer transition-all flex items-start gap-3';
+        }
+      });
+      document.getElementById('wizardDebtChoiceHave')?.addEventListener('change', () => {
+        document.getElementById('wizardDebtsContainer')?.classList.remove('hidden');
+        const noneLabel = document.getElementById('wizardDebtChoiceNoneLabel');
+        const haveLabel = document.getElementById('wizardDebtChoiceHaveLabel');
+        if (haveLabel) {
+          haveLabel.className = 'p-3.5 rounded-2xl bg-slate-950 border-2 border-emerald-500 text-white cursor-pointer transition-all flex items-start gap-3';
+        }
+        if (noneLabel) {
+          noneLabel.className = 'p-3.5 rounded-2xl bg-slate-950 border border-slate-800 text-slate-300 cursor-pointer transition-all flex items-start gap-3';
+        }
+      });
+
+      document.getElementById('wizardAddDebtRowBtn')?.addEventListener('click', addWizardDebtRow);
+      document.getElementById('wizardAddCustomBillBtn')?.addEventListener('click', addWizardCustomBillRow);
 
       // Submit Debt Prepayment Form
       document.getElementById('debtPrepayForm')?.addEventListener('submit', (e) => {
