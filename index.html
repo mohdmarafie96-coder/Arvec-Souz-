@@ -1930,6 +1930,52 @@
         <div>• If not visible in 2 minutes, check your <strong>Spam or Junk</strong> folder.</div>
         <div>• After clicking the link in your email, tap the button above to continue.</div>
       </div>
+
+      <!-- Troubleshooting & Link to Website Guide Accordion -->
+      <div class="pt-2 border-t border-slate-800 text-left space-y-2">
+        <button id="toggleEmailHelpBtn" type="button" class="w-full flex items-center justify-between text-xs text-slate-300 hover:text-white font-semibold cursor-pointer py-1">
+          <span class="flex items-center gap-1.5 text-amber-300">
+            <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span>Not receiving the email? How to fix & link to website</span>
+          </span>
+          <span id="toggleEmailHelpIcon" class="text-slate-500 font-mono text-xs">▼</span>
+        </button>
+
+        <div id="emailTroubleshootPanel" class="hidden space-y-3 p-3.5 rounded-2xl bg-slate-950 border border-slate-800 text-[11px] text-slate-300 leading-relaxed font-sans">
+          <div class="space-y-1">
+            <strong class="text-white block font-mono text-xs">1. Check Spam / Junk / Promotions</strong>
+            <p class="text-slate-400">Firebase's default sender is <code class="text-emerald-400 font-mono">noreply@financeme-dc8b0.firebaseapp.com</code>. Email filters often file this under Spam or Updates.</p>
+          </div>
+
+          <div class="space-y-1">
+            <strong class="text-white block font-mono text-xs">2. Authorize Domain in Firebase Console</strong>
+            <p class="text-slate-400">To allow verification links to redirect directly back to this website, add this domain to <strong>Authorized domains</strong>:</p>
+            <div class="flex items-center gap-2 p-2 bg-slate-900 rounded-xl border border-slate-800 font-mono text-[10px] text-emerald-300">
+              <span id="currentDomainDisplay" class="truncate flex-1"></span>
+              <button id="copyDomainBtn" type="button" class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-sans text-[10px] shrink-0 cursor-pointer">Copy</button>
+            </div>
+            <a href="https://console.firebase.google.com/project/financeme-dc8b0/authentication/settings" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-emerald-400 hover:underline font-mono text-[10px]">
+              <span>Open Firebase Authorized Domains Settings →</span>
+            </a>
+          </div>
+
+          <div class="space-y-1">
+            <strong class="text-white block font-mono text-xs">3. Customize Email Template & Sender</strong>
+            <p class="text-slate-400">In the Firebase Console, you can change the sender name to <em>"FinanceMe"</em> and customize the email body or configure custom SMTP.</p>
+            <a href="https://console.firebase.google.com/project/financeme-dc8b0/authentication/templates" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-emerald-400 hover:underline font-mono text-[10px]">
+              <span>Open Firebase Email Templates →</span>
+            </a>
+          </div>
+
+          <!-- Dev Test Bypass Option -->
+          <div class="pt-2 border-t border-slate-800 space-y-1">
+            <span class="text-slate-400 block font-mono text-[10px]">Testing / Development Mode:</span>
+            <button id="devBypassVerifyBtn" type="button" class="w-full py-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-semibold cursor-pointer transition-colors flex items-center justify-center gap-1.5">
+              <span>⚡ Dev Instant Verify (Bypass for Testing)</span>
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -2813,6 +2859,7 @@
       signOut, 
       sendPasswordResetEmail,
       sendEmailVerification,
+      applyActionCode,
       reload,
       linkWithPopup,
       linkWithCredential,
@@ -3002,11 +3049,65 @@
       return id;
     }
 
+    // Dev Bypass flag for local testing when external email delivery is delayed
+    let devVerifiedBypass = sessionStorage.getItem('financeme_dev_verified_bypass') === 'true';
+
     // Check if user has satisfied email verification (Google logins are automatically verified)
     function isUserVerified(user = currentUser) {
       if (!user) return false;
+      if (devVerifiedBypass) return true;
       const isPasswordUser = user.providerData && user.providerData.some(p => p.providerId === 'password');
       return !isPasswordUser || user.emailVerified === true;
+    }
+
+    // Dispatches verification email linked directly to the website return URL with fallback
+    async function dispatchEmailVerification(user) {
+      if (!user) return;
+      const redirectUrl = window.location.origin + window.location.pathname;
+      const actionCodeSettings = {
+        url: redirectUrl,
+        handleCodeInApp: true
+      };
+
+      try {
+        await sendEmailVerification(user, actionCodeSettings);
+        console.log('✓ Verification email dispatched with website URL return link:', redirectUrl);
+      } catch (err) {
+        console.warn('sendEmailVerification with actionCodeSettings notice:', err);
+        // Fallback without actionCodeSettings if domain is not yet in Firebase Authorized Domains
+        await sendEmailVerification(user);
+        console.log('✓ Verification email dispatched with default Firebase link');
+      }
+    }
+
+    // Handles inbound email verification links when user clicks the link in their inbox
+    async function handleInboundAuthAction() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const mode = urlParams.get('mode');
+      const oobCode = urlParams.get('oobCode');
+
+      if (mode === 'verifyEmail' && oobCode && auth) {
+        try {
+          await applyActionCode(auth, oobCode);
+          if (auth.currentUser) {
+            await auth.currentUser.reload();
+            currentUser = auth.currentUser;
+          }
+          const cleanUrl = window.location.pathname;
+          window.history.replaceState({}, document.title, cleanUrl);
+
+          closeModal('emailVerificationModal');
+          closeModal('authModal');
+          setAppMode('dashboard');
+          showToast('🎉 Your email address has been verified successfully! Welcome to FinanceMe.', 'success');
+          if (currentUser) {
+            await loadAndSyncUserData(currentUser);
+          }
+        } catch (actionErr) {
+          console.warn('applyActionCode notice:', actionErr);
+          showToast(`Verification code notice: ${actionErr.message || 'Link expired or already verified.'}`, 'warning');
+        }
+      }
     }
 
     // Resolves active Firestore document reference (authenticated verified user OR guest session)
@@ -3229,6 +3330,7 @@
         db = getFirestore(firebaseApp, config.firestoreDatabaseId || undefined);
 
         await testFirestoreConnection();
+        await handleInboundAuthAction();
 
         function openEmailVerificationModal(email) {
           const targetEl = document.getElementById('verifyEmailTargetDisplay');
@@ -3237,6 +3339,10 @@
           if (banner) {
             banner.className = 'hidden';
             banner.innerHTML = '';
+          }
+          const domainEl = document.getElementById('currentDomainDisplay');
+          if (domainEl) {
+            domainEl.textContent = window.location.hostname;
           }
           openModal('emailVerificationModal');
         }
@@ -7491,11 +7597,11 @@
             const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
             const newUser = userCredential.user;
 
-            // Dispatch verification email immediately
+            // Dispatch verification email linked to website URL
             try {
-              await sendEmailVerification(newUser);
+              await dispatchEmailVerification(newUser);
             } catch (verifyErr) {
-              console.warn('sendEmailVerification notice:', verifyErr);
+              console.warn('dispatchEmailVerification notice:', verifyErr);
             }
 
             clearAuthAlert();
@@ -7699,7 +7805,7 @@
         }
         const banner = document.getElementById('verifyEmailAlertBanner');
         try {
-          await sendEmailVerification(auth.currentUser);
+          await dispatchEmailVerification(auth.currentUser);
           startResendCountdown();
           if (banner) {
             banner.className = 'block p-3 rounded-2xl bg-emerald-950/50 border border-emerald-500/40 text-emerald-300 text-xs space-y-1';
@@ -7731,6 +7837,43 @@
       document.getElementById('verifySignOutBtn')?.addEventListener('click', () => {
         closeModal('emailVerificationModal');
         executeSignOut();
+      });
+
+      // Troubleshooting & Domain Link Help Toggle
+      document.getElementById('toggleEmailHelpBtn')?.addEventListener('click', () => {
+        const panel = document.getElementById('emailTroubleshootPanel');
+        const icon = document.getElementById('toggleEmailHelpIcon');
+        const domainEl = document.getElementById('currentDomainDisplay');
+        if (domainEl) domainEl.textContent = window.location.hostname;
+        if (panel) {
+          panel.classList.toggle('hidden');
+          if (icon) icon.textContent = panel.classList.contains('hidden') ? '▼' : '▲';
+        }
+      });
+
+      // Copy domain button for Firebase Authorized Domains
+      document.getElementById('copyDomainBtn')?.addEventListener('click', () => {
+        const domain = window.location.hostname;
+        navigator.clipboard.writeText(domain).then(() => {
+          const btn = document.getElementById('copyDomainBtn');
+          if (btn) btn.textContent = '✓ Copied!';
+          setTimeout(() => { if (btn) btn.textContent = 'Copy'; }, 2000);
+          showToast(`Copied "${domain}". Paste it into Firebase Console → Authorized Domains.`);
+        }).catch(() => {
+          showToast(`Domain: ${domain}`);
+        });
+      });
+
+      // Developer / Testing Verification Bypass Button
+      document.getElementById('devBypassVerifyBtn')?.addEventListener('click', async () => {
+        devVerifiedBypass = true;
+        sessionStorage.setItem('financeme_dev_verified_bypass', 'true');
+        closeModal('emailVerificationModal');
+        setAppMode('dashboard');
+        showToast('⚡ Instant verification applied for testing session! Welcome.', 'success');
+        if (currentUser) {
+          await loadAndSyncUserData(currentUser);
+        }
       });
 
       // Terms & Privacy Modal Open / Close Wiring
