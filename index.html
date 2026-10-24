@@ -1884,6 +1884,55 @@
     </div>
   </div>
 
+  <!-- 1.05 EMAIL VERIFICATION MODAL (Interstitial Gate) -->
+  <div id="emailVerificationModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md hidden">
+    <div class="w-full max-w-md rounded-3xl bg-slate-900 border border-slate-800 p-6 sm:p-8 space-y-5 shadow-2xl text-center relative">
+      <div class="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center mx-auto shadow-inner">
+        <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect width="20" height="16" x="2" y="4" rx="2"/>
+          <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+        </svg>
+      </div>
+
+      <div class="space-y-1.5">
+        <h3 class="text-xl font-bold text-white tracking-tight">Verify Your Email Address</h3>
+        <p class="text-xs text-slate-300 leading-relaxed">
+          To protect your financial ledgers and personal portfolio, please verify your email address to unlock your dashboard.
+        </p>
+      </div>
+
+      <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 text-xs space-y-1.5 text-left">
+        <span class="text-[11px] text-slate-400 block font-mono">Verification link sent to:</span>
+        <div id="verifyEmailTargetDisplay" class="font-mono font-bold text-emerald-300 text-sm break-all">user@example.com</div>
+      </div>
+
+      <!-- Verification Alert Banner -->
+      <div id="verifyEmailAlertBanner" class="hidden text-xs rounded-2xl p-3 text-left"></div>
+
+      <div class="space-y-2.5 pt-1 text-xs">
+        <button id="checkEmailVerifiedBtn" type="button" class="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold shadow-lg shadow-emerald-600/20 active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-2">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+          <span>I've Verified My Email — Enter Dashboard</span>
+        </button>
+
+        <button id="resendVerificationEmailBtn" type="button" class="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-200 border border-slate-700 font-semibold cursor-pointer transition-colors flex items-center justify-center gap-2">
+          <svg class="w-4 h-4 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+          <span id="resendVerificationLabel">Resend Verification Email</span>
+        </button>
+
+        <button id="verifySignOutBtn" type="button" class="text-xs text-slate-400 hover:text-white cursor-pointer transition-colors py-1">
+          Sign Out / Use a Different Account
+        </button>
+      </div>
+
+      <div class="p-3 rounded-xl bg-slate-950/60 border border-slate-800/80 text-[11px] text-slate-400 text-left font-mono space-y-1">
+        <div>• Open the verification link delivered to your email inbox.</div>
+        <div>• If not visible in 2 minutes, check your <strong>Spam or Junk</strong> folder.</div>
+        <div>• After clicking the link in your email, tap the button above to continue.</div>
+      </div>
+    </div>
+  </div>
+
   <!-- 1.1 PROFILE SETTINGS & ACCOUNT SECURITY MODAL -->
   <div id="accountSecurityModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm hidden overflow-y-auto">
     <div class="w-full max-w-lg rounded-3xl bg-slate-900 border border-slate-800 p-6 sm:p-7 space-y-5 shadow-2xl relative my-auto">
@@ -2763,6 +2812,8 @@
       createUserWithEmailAndPassword, 
       signOut, 
       sendPasswordResetEmail,
+      sendEmailVerification,
+      reload,
       linkWithPopup,
       linkWithCredential,
       EmailAuthProvider,
@@ -2951,19 +3002,28 @@
       return id;
     }
 
-    // Resolves active Firestore document reference (authenticated user OR guest session)
+    // Check if user has satisfied email verification (Google logins are automatically verified)
+    function isUserVerified(user = currentUser) {
+      if (!user) return false;
+      const isPasswordUser = user.providerData && user.providerData.some(p => p.providerId === 'password');
+      return !isPasswordUser || user.emailVerified === true;
+    }
+
+    // Resolves active Firestore document reference (authenticated verified user OR guest session)
     function getFirestoreDocRef() {
       if (!db) return null;
-      if (currentUser?.uid) {
+      if (currentUser?.uid && isUserVerified(currentUser)) {
         return doc(db, 'users', currentUser.uid, 'data', 'financeState');
       } else {
         return doc(db, 'guest_sessions', getDeviceId(), 'data', 'financeState');
       }
     }
 
-    // Local Storage Key Resolver (Isolated per user or guest)
+    // Local Storage Key Resolver (Isolated per verified user or guest)
     function getStorageKey() {
-      return currentUser?.uid ? `financeme_state_${currentUser.uid}` : 'financeme_state_guest';
+      return (currentUser?.uid && isUserVerified(currentUser)) 
+        ? `financeme_state_${currentUser.uid}` 
+        : 'financeme_state_guest';
     }
 
     // Save and Sync Engine (Stores all user inputs in both Local Cache and Firestore Database)
@@ -3170,94 +3230,120 @@
 
         await testFirestoreConnection();
 
+        function openEmailVerificationModal(email) {
+          const targetEl = document.getElementById('verifyEmailTargetDisplay');
+          if (targetEl) targetEl.textContent = email || currentUser?.email || 'your email';
+          const banner = document.getElementById('verifyEmailAlertBanner');
+          if (banner) {
+            banner.className = 'hidden';
+            banner.innerHTML = '';
+          }
+          openModal('emailVerificationModal');
+        }
+
+        async function loadAndSyncUserData(user) {
+          if (!user) return;
+          updateCloudStatus('connecting');
+
+          const userDocRef = doc(db, 'users', user.uid, 'data', 'financeState');
+          let cloudLoaded = false;
+          try {
+            const snap = await getDoc(userDocRef);
+            if (snap.exists()) {
+              const cloudData = snap.data();
+              if (cloudData && typeof cloudData === 'object') {
+                state = {
+                  ...LAUNCH_EMPTY_DATA,
+                  ...cloudData,
+                  accounts: Array.isArray(cloudData.accounts) ? cloudData.accounts : [],
+                  transactions: Array.isArray(cloudData.transactions) ? cloudData.transactions : [],
+                  subscriptions: Array.isArray(cloudData.subscriptions) ? cloudData.subscriptions : [],
+                  goals: Array.isArray(cloudData.goals) ? cloudData.goals : [],
+                  debts: Array.isArray(cloudData.debts) ? cloudData.debts : [],
+                  debtSimulator: {
+                    ...LAUNCH_EMPTY_DATA.debtSimulator,
+                    ...(cloudData.debtSimulator || {})
+                  }
+                };
+                localStorage.setItem(`financeme_state_${user.uid}`, JSON.stringify(state));
+                cloudLoaded = true;
+                updateCloudStatus('synced');
+                showToast('✓ Cloud portfolio loaded from database!');
+              }
+            }
+          } catch (fetchErr) {
+            console.warn('Firestore initial getDoc error:', fetchErr);
+            handleFirestoreError(fetchErr, OperationType.GET, userDocRef.path);
+          }
+
+          // 2. If cloud doc didn't exist or was newly registered user:
+          if (!cloudLoaded) {
+            const userLocalState = loadInitialState(user.uid);
+            const guestState = loadInitialState(null);
+            const hasUserLocal = userLocalState && (
+              userLocalState.accounts.length > 0 ||
+              userLocalState.transactions.length > 0 ||
+              userLocalState.debts.length > 0 ||
+              userLocalState.goals.length > 0
+            );
+            const hasGuestLocal = guestState && (
+              guestState.accounts.length > 0 ||
+              guestState.transactions.length > 0 ||
+              guestState.debts.length > 0 ||
+              guestState.goals.length > 0
+            );
+
+            if (hasUserLocal) {
+              state = userLocalState;
+            } else if (hasGuestLocal) {
+              state = { ...guestState };
+              localStorage.setItem(`financeme_state_${user.uid}`, JSON.stringify(state));
+              localStorage.removeItem('financeme_state_guest');
+              showToast('✓ Saved your guest inputs to your user account!');
+            } else {
+              state = JSON.parse(JSON.stringify(LAUNCH_EMPTY_DATA));
+            }
+
+            // Only seed to Firestore if user actually had local/guest entries
+            const hasDataToSave = state.accounts.length > 0 || state.transactions.length > 0 || state.debts.length > 0 || state.goals.length > 0;
+            if (hasDataToSave) {
+              try {
+                await setDoc(userDocRef, {
+                  ...state,
+                  lastUpdated: new Date().toISOString()
+                }, { merge: true });
+                updateCloudStatus('synced');
+              } catch (saveErr) {
+                console.warn('Initial seed to Firestore error:', saveErr);
+              }
+            }
+          }
+
+          renderAll();
+          setupFirestoreSubscription();
+        }
+
         // Listen for Authentication state
         onAuthStateChanged(auth, async (user) => {
           currentUser = user;
           updateAuthUI(user);
 
           if (user) {
+            if (!isUserVerified(user)) {
+              // Unverified user: restrict dashboard access until email is verified
+              setAppMode('landing');
+              openEmailVerificationModal(user.email);
+              updateCloudStatus('Local Mode');
+              return;
+            }
+
+            // Verified user (or Google login): proceed into dashboard
+            closeModal('emailVerificationModal');
             setAppMode('dashboard');
-            updateCloudStatus('connecting');
-
-            // 1. Fetch First directly from Firestore before any saving
-            const userDocRef = doc(db, 'users', user.uid, 'data', 'financeState');
-            let cloudLoaded = false;
-            try {
-              const snap = await getDoc(userDocRef);
-              if (snap.exists()) {
-                const cloudData = snap.data();
-                if (cloudData && typeof cloudData === 'object') {
-                  state = {
-                    ...LAUNCH_EMPTY_DATA,
-                    ...cloudData,
-                    accounts: Array.isArray(cloudData.accounts) ? cloudData.accounts : [],
-                    transactions: Array.isArray(cloudData.transactions) ? cloudData.transactions : [],
-                    subscriptions: Array.isArray(cloudData.subscriptions) ? cloudData.subscriptions : [],
-                    goals: Array.isArray(cloudData.goals) ? cloudData.goals : [],
-                    debts: Array.isArray(cloudData.debts) ? cloudData.debts : [],
-                    debtSimulator: {
-                      ...LAUNCH_EMPTY_DATA.debtSimulator,
-                      ...(cloudData.debtSimulator || {})
-                    }
-                  };
-                  localStorage.setItem(`financeme_state_${user.uid}`, JSON.stringify(state));
-                  cloudLoaded = true;
-                  updateCloudStatus('synced');
-                  showToast('✓ Cloud portfolio loaded from database!');
-                }
-              }
-            } catch (fetchErr) {
-              console.warn('Firestore initial getDoc error:', fetchErr);
-              handleFirestoreError(fetchErr, OperationType.GET, userDocRef.path);
-            }
-
-            // 2. If cloud doc didn't exist or was newly registered user:
-            if (!cloudLoaded) {
-              const userLocalState = loadInitialState(user.uid);
-              const guestState = loadInitialState(null);
-              const hasUserLocal = userLocalState && (
-                userLocalState.accounts.length > 0 ||
-                userLocalState.transactions.length > 0 ||
-                userLocalState.debts.length > 0 ||
-                userLocalState.goals.length > 0
-              );
-              const hasGuestLocal = guestState && (
-                guestState.accounts.length > 0 ||
-                guestState.transactions.length > 0 ||
-                guestState.debts.length > 0 ||
-                guestState.goals.length > 0
-              );
-
-              if (hasUserLocal) {
-                state = userLocalState;
-              } else if (hasGuestLocal) {
-                state = { ...guestState };
-                localStorage.setItem(`financeme_state_${user.uid}`, JSON.stringify(state));
-                localStorage.removeItem('financeme_state_guest');
-                showToast('✓ Saved your guest inputs to your user account!');
-              } else {
-                state = JSON.parse(JSON.stringify(LAUNCH_EMPTY_DATA));
-              }
-
-              // Only seed to Firestore if user actually had local/guest entries
-              const hasDataToSave = state.accounts.length > 0 || state.transactions.length > 0 || state.debts.length > 0 || state.goals.length > 0;
-              if (hasDataToSave) {
-                try {
-                  await setDoc(userDocRef, {
-                    ...state,
-                    lastUpdated: new Date().toISOString()
-                  }, { merge: true });
-                  updateCloudStatus('synced');
-                } catch (saveErr) {
-                  console.warn('Initial seed to Firestore error:', saveErr);
-                }
-              }
-            }
-
-            renderAll();
-            setupFirestoreSubscription();
+            await loadAndSyncUserData(user);
           } else {
             // Unauthenticated / Guest session
+            closeModal('emailVerificationModal');
             state = loadInitialState(null);
             renderAll();
             setupFirestoreSubscription();
@@ -7376,6 +7462,8 @@
         clearAuthAlert();
         const email = document.getElementById('authEmailInput').value.trim();
         const pass = document.getElementById('authPasswordInput').value.trim();
+        const submitBtn = document.getElementById('authSubmitBtn');
+        const banner = document.getElementById('authAlertBanner');
 
         if (activeAuthTab === 'signup') {
           const consentCheckbox = document.getElementById('authTermsCheckbox');
@@ -7389,22 +7477,69 @@
           return;
         }
 
-        const banner = document.getElementById('authAlertBanner');
+        const originalBtnText = submitBtn ? submitBtn.innerHTML : '';
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.innerHTML = `
+            <svg class="w-4 h-4 animate-spin inline mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+            <span>${activeAuthTab === 'signup' ? 'Creating Account & Sending Link...' : 'Signing In...'}</span>
+          `;
+        }
 
         try {
           if (activeAuthTab === 'signup') {
-            await createUserWithEmailAndPassword(auth, email, pass);
-            showToast('Account created & logged in!');
+            const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
+            const newUser = userCredential.user;
+
+            // Dispatch verification email immediately
+            try {
+              await sendEmailVerification(newUser);
+            } catch (verifyErr) {
+              console.warn('sendEmailVerification notice:', verifyErr);
+            }
+
+            clearAuthAlert();
+            closeModal('authModal');
+            openEmailVerificationModal(newUser.email);
+            showToast('✓ Account created! A verification link has been sent to your email inbox.', 'success');
           } else {
-            await signInWithEmailAndPassword(auth, email, pass);
+            const userCredential = await signInWithEmailAndPassword(auth, email, pass);
+            const user = userCredential.user;
+
+            const isPasswordUser = user.providerData && user.providerData.some(p => p.providerId === 'password');
+            if (isPasswordUser && !user.emailVerified) {
+              clearAuthAlert();
+              closeModal('authModal');
+              openEmailVerificationModal(user.email);
+              showToast('Please verify your email address to unlock your dashboard.', 'warning');
+              return;
+            }
+
+            clearAuthAlert();
+            closeModal('authModal');
             showToast('Logged in successfully!');
           }
-          clearAuthAlert();
-          closeModal('authModal');
         } catch (err) {
           console.warn('Firebase Auth error:', err);
           const errCode = err?.code || '';
           const errMsg = err?.message || String(err);
+          let friendlyMsg = errMsg.replace('Firebase: ', '');
+
+          if (errCode === 'auth/invalid-credential' || errCode === 'auth/wrong-password' || errCode === 'auth/user-not-found') {
+            friendlyMsg = 'Incorrect email address or password. Please verify your credentials or use the "Reset Password" tab.';
+          } else if (errCode === 'auth/email-already-in-use') {
+            friendlyMsg = 'This email address is already registered. Please switch to the "Sign In" tab or reset your password.';
+          } else if (errCode === 'auth/weak-password') {
+            friendlyMsg = 'Password is too weak. Please use at least 6 characters with letters and numbers.';
+          } else if (errCode === 'auth/invalid-email') {
+            friendlyMsg = 'The email address entered is not valid. Please check for spelling mistakes.';
+          } else if (errCode === 'auth/too-many-requests') {
+            friendlyMsg = 'Too many attempts. Access is temporarily restricted. Please wait a few minutes or reset your password.';
+          } else if (errCode === 'auth/user-disabled') {
+            friendlyMsg = 'This user account has been disabled. Please contact support.';
+          } else if (errCode === 'auth/network-request-failed') {
+            friendlyMsg = 'Network connection failed. Please check your internet connection.';
+          }
 
           if (errCode === 'auth/operation-not-allowed' || errMsg.includes('operation-not-allowed')) {
             if (banner) {
@@ -7429,19 +7564,200 @@
               `;
               const gBtn = document.getElementById('authAlertGoogleBtn');
               if (gBtn) {
-                gBtn.onclick = () => document.getElementById('googleSignInBtn').click();
+                gBtn.onclick = () => document.getElementById('googleSignInBtn')?.click();
               }
             }
             showToast('Email/Password provider is disabled in Firebase console. See instructions in modal or use Google sign in.', 'warning');
           } else {
             if (banner) {
               banner.className = 'block rounded-2xl bg-rose-950/40 border border-rose-500/30 p-3 text-left text-xs text-rose-300';
-              banner.textContent = errMsg.replace('Firebase: ', '');
+              banner.textContent = friendlyMsg;
             }
-            showToast(`Authentication error: ${errMsg}`, 'error');
+            showToast(`Authentication error: ${friendlyMsg}`, 'error');
+          }
+        } finally {
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnText;
           }
         }
       };
+
+      // Google 1-Tap & Popup Sign-In Handler
+      document.getElementById('googleSignInBtn')?.addEventListener('click', async () => {
+        if (!auth) {
+          showToast('Firebase Auth is offline. Please check connection.', 'warning');
+          return;
+        }
+        clearAuthAlert();
+        try {
+          const provider = new GoogleAuthProvider();
+          provider.setCustomParameters({ prompt: 'select_account' });
+          const result = await signInWithPopup(auth, provider);
+          closeModal('authModal');
+          showToast(`✓ Welcome, ${result.user.displayName || result.user.email}!`);
+        } catch (err) {
+          console.warn('Google sign-in error:', err);
+          const code = err?.code || '';
+          if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
+            // Popup closed by user
+          } else if (code === 'auth/popup-blocked') {
+            showToast('Sign-in popup was blocked by browser. Please allow popups for this site.', 'warning');
+          } else {
+            showToast(`Google sign-in error: ${err.message || err}`, 'error');
+          }
+        }
+      });
+
+      // Email Verification Modal Controls
+      document.getElementById('checkEmailVerifiedBtn')?.addEventListener('click', async () => {
+        const btn = document.getElementById('checkEmailVerifiedBtn');
+        const banner = document.getElementById('verifyEmailAlertBanner');
+        if (!auth?.currentUser) {
+          showToast('Please sign in first.', 'warning');
+          closeModal('emailVerificationModal');
+          openModal('authModal');
+          return;
+        }
+
+        if (btn) {
+          btn.disabled = true;
+          btn.innerHTML = `
+            <svg class="w-4 h-4 animate-spin inline mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+            <span>Checking verification status...</span>
+          `;
+        }
+
+        try {
+          await auth.currentUser.reload();
+          if (auth.currentUser.emailVerified) {
+            currentUser = auth.currentUser;
+            if (banner) {
+              banner.className = 'block p-3 rounded-2xl bg-emerald-950/50 border border-emerald-500/40 text-emerald-300 font-semibold text-xs';
+              banner.textContent = '✓ Email verified successfully! Loading your dashboard...';
+            }
+            showToast('✓ Email verified! Welcome to FinanceMe.', 'success');
+            setTimeout(async () => {
+              closeModal('emailVerificationModal');
+              setAppMode('dashboard');
+              await loadAndSyncUserData(currentUser);
+            }, 600);
+          } else {
+            if (banner) {
+              banner.className = 'block p-3 rounded-2xl bg-amber-950/50 border border-amber-500/40 text-amber-300 text-xs space-y-1';
+              banner.innerHTML = `
+                <div class="font-bold flex items-center gap-1.5">
+                  <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                  <span>Email Not Yet Verified</span>
+                </div>
+                <p class="text-[11px] text-slate-300">We have not received confirmation yet. Please open the link sent to <strong>${auth.currentUser.email}</strong>, click the verification button, and then click this button again.</p>
+              `;
+            }
+            showToast('Email not yet verified. Please click the link in your email first.', 'warning');
+          }
+        } catch (err) {
+          console.warn('Check email verified error:', err);
+          showToast(`Verification check notice: ${err.message || err}`, 'error');
+        } finally {
+          if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = `
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>I've Verified My Email — Enter Dashboard</span>
+            `;
+          }
+        }
+      });
+
+      // Resend Verification Email with 60-Second Cooldown Timer
+      let resendTimer = null;
+      let resendCooldownSec = 0;
+      function startResendCountdown() {
+        resendCooldownSec = 60;
+        const btn = document.getElementById('resendVerificationEmailBtn');
+        const label = document.getElementById('resendVerificationLabel');
+        if (btn) btn.disabled = true;
+
+        if (resendTimer) clearInterval(resendTimer);
+        resendTimer = setInterval(() => {
+          resendCooldownSec--;
+          if (resendCooldownSec <= 0) {
+            clearInterval(resendTimer);
+            resendTimer = null;
+            if (btn) btn.disabled = false;
+            if (label) label.textContent = 'Resend Verification Email';
+          } else {
+            if (label) label.textContent = `Resend Link (${resendCooldownSec}s)`;
+          }
+        }, 1000);
+      }
+
+      document.getElementById('resendVerificationEmailBtn')?.addEventListener('click', async () => {
+        if (!auth?.currentUser) {
+          showToast('Please sign in first.', 'warning');
+          return;
+        }
+        const banner = document.getElementById('verifyEmailAlertBanner');
+        try {
+          await sendEmailVerification(auth.currentUser);
+          startResendCountdown();
+          if (banner) {
+            banner.className = 'block p-3 rounded-2xl bg-emerald-950/50 border border-emerald-500/40 text-emerald-300 text-xs space-y-1';
+            banner.innerHTML = `
+              <div class="font-bold flex items-center gap-1.5">
+                <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Verification Link Sent!</span>
+              </div>
+              <p class="text-[11px] text-slate-300">A fresh email verification link has been sent to <strong>${auth.currentUser.email}</strong>. Please check your inbox and spam folder.</p>
+            `;
+          }
+          showToast(`✓ Verification link sent to ${auth.currentUser.email}!`, 'success');
+        } catch (err) {
+          console.warn('Resend verification email error:', err);
+          const errCode = err?.code || '';
+          let msg = err.message || String(err);
+          if (errCode === 'auth/too-many-requests') {
+            msg = 'Too many requests sent. Please wait a minute before requesting another link.';
+            startResendCountdown();
+          }
+          if (banner) {
+            banner.className = 'block p-3 rounded-2xl bg-rose-950/50 border border-rose-500/30 text-rose-300 text-xs';
+            banner.textContent = msg;
+          }
+          showToast(`Could not send verification email: ${msg}`, 'error');
+        }
+      });
+
+      document.getElementById('verifySignOutBtn')?.addEventListener('click', () => {
+        closeModal('emailVerificationModal');
+        executeSignOut();
+      });
+
+      // Terms & Privacy Modal Open / Close Wiring
+      const openTermsModal = () => openModal('termsModal');
+      const closeTermsModal = () => closeModal('termsModal');
+      const openPrivacyModal = () => openModal('privacyPolicyModal');
+      const closePrivacyModal = () => closeModal('privacyPolicyModal');
+
+      document.getElementById('googleTermsLink')?.addEventListener('click', openTermsModal);
+      document.getElementById('authTermsLink')?.addEventListener('click', openTermsModal);
+      document.getElementById('footerTermsBtn')?.addEventListener('click', openTermsModal);
+      document.getElementById('privacyToTermsBtn')?.addEventListener('click', () => {
+        closePrivacyModal();
+        openTermsModal();
+      });
+      document.getElementById('closeTermsModalBtn')?.addEventListener('click', closeTermsModal);
+      document.getElementById('confirmTermsReadBtn')?.addEventListener('click', closeTermsModal);
+
+      document.getElementById('googlePrivacyLink')?.addEventListener('click', openPrivacyModal);
+      document.getElementById('authPrivacyLink')?.addEventListener('click', openPrivacyModal);
+      document.getElementById('footerPrivacyBtn')?.addEventListener('click', openPrivacyModal);
+      document.getElementById('termsToPrivacyBtn')?.addEventListener('click', () => {
+        closeTermsModal();
+        openPrivacyModal();
+      });
+      document.getElementById('closePrivacyModalBtn')?.addEventListener('click', closePrivacyModal);
+      document.getElementById('confirmPrivacyReadBtn')?.addEventListener('click', closePrivacyModal);
 
       // 18. PWA Service Worker & Install Prompt
       window.addEventListener('beforeinstallprompt', (e) => {
