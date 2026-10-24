@@ -896,6 +896,10 @@
               <svg class="w-4 h-4 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 16V4M7 4 3 8M7 4l4 4M17 8v12M17 20l4-4M17 20l-4-4"/></svg>
               <span>Transfer Funds</span>
             </button>
+            <button id="openSalaryModalBtn" class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-200 font-semibold text-xs border border-slate-700 active:scale-95 transition-all cursor-pointer" title="Configure recurring salary deposit">
+              <span class="text-emerald-400 font-bold">💼</span>
+              <span>Automate Salary</span>
+            </button>
           </div>
 
           <div class="flex items-center gap-2">
@@ -904,6 +908,30 @@
               <span>Add Account</span>
             </button>
           </div>
+        </div>
+      </div>
+
+      <!-- Automated Salary & Recurring Payday Banner -->
+      <div id="salaryStatusCard" class="p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-emerald-950/40 via-slate-900 to-slate-950 border border-emerald-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-lg">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 text-lg shrink-0">
+            💼
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span id="salaryStatusTitle" class="text-xs font-bold text-white font-mono uppercase tracking-wider">Automated Salary: Active</span>
+              <span id="salaryNextPaydayBadge" class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-semibold">Payday: Day 25</span>
+            </div>
+            <p id="salaryStatusDesc" class="text-xs text-slate-300 pt-0.5">$0.00 automatically deposited to account.</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 shrink-0">
+          <button id="quickTestSalaryDepositBtn" type="button" class="px-3 py-1.5 rounded-xl bg-emerald-600/15 hover:bg-emerald-600/25 text-emerald-300 border border-emerald-500/30 text-xs font-semibold cursor-pointer transition-colors flex items-center gap-1">
+            <span>⚡ Test Deposit</span>
+          </button>
+          <button id="openSalaryConfigBtn" type="button" class="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-750 text-white border border-slate-700 text-xs font-semibold cursor-pointer transition-colors">
+            Configure Salary
+          </button>
         </div>
       </div>
 
@@ -2596,7 +2624,7 @@
 
           <div>
             <label id="debtMinPayLabel" class="block text-slate-300 font-medium mb-1">Min Monthly Payment (<span class="debtCurrencyPrefixLabel">$</span>) *</label>
-            <input id="debtMinPaymentInput" type="number" step="any" min="1" required placeholder="50.00" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-mono font-bold focus:outline-none focus:border-emerald-500" />
+            <input id="debtMinPaymentInput" type="number" step="any" min="0" required placeholder="50.00" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-mono font-bold focus:outline-none focus:border-emerald-500" />
           </div>
         </div>
 
@@ -2611,6 +2639,61 @@
             <option value="">None (Independent liability entry)</option>
           </select>
           <span class="text-[10px] text-slate-500 font-mono mt-1 block">Links balances directly to your Net Worth balance sheet.</span>
+        </div>
+
+        <div id="debtAutoCreateAccountContainer" class="p-3 rounded-xl bg-slate-950/60 border border-slate-800/80 flex items-center gap-2.5">
+          <input type="checkbox" id="debtAutoCreateAccountCheckbox" checked class="w-4 h-4 rounded text-emerald-600 accent-emerald-500 bg-slate-900 border-slate-700 cursor-pointer" />
+          <label for="debtAutoCreateAccountCheckbox" class="text-[11px] text-slate-300 cursor-pointer select-none">
+            Also create and sync a matching account in Accounts roster (if unlinked)
+          </label>
+        </div>
+
+        <!-- Automated Monthly Auto-Debit Configuration -->
+        <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="w-6 h-6 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center font-bold text-xs">⚡</span>
+              <div>
+                <span class="text-xs font-bold text-white block">Automated Monthly Auto-Debit</span>
+                <span class="text-[10px] text-slate-400">Automatically debit source account on a scheduled date</span>
+              </div>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" id="debtAutoDebitToggle" class="sr-only peer" />
+              <div class="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600"></div>
+            </label>
+          </div>
+
+          <div id="debtAutoDebitConfigContainer" class="hidden space-y-2.5 pt-2 border-t border-slate-800/80">
+            <div>
+              <label class="block text-slate-300 font-medium mb-1">Debit From Asset Account *</label>
+              <select id="debtAutoDebitAccountSelect" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-emerald-500 cursor-pointer text-xs">
+                <!-- Populated with checking/savings accounts -->
+              </select>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-slate-300 font-medium mb-1">Debit Day of Month *</label>
+                <select id="debtAutoDebitDaySelect" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white font-mono focus:outline-none focus:border-emerald-500 cursor-pointer text-xs">
+                  <!-- Populated 1 to 31 -->
+                </select>
+              </div>
+              <div>
+                <label class="block text-slate-300 font-medium mb-1">Payment Strategy *</label>
+                <select id="debtAutoDebitTypeSelect" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-emerald-500 cursor-pointer text-xs">
+                  <option value="min">Minimum Payment Due</option>
+                  <option value="full">Statement Balance (Full)</option>
+                  <option value="custom">Custom Fixed Amount</option>
+                </select>
+              </div>
+            </div>
+
+            <div id="debtAutoDebitCustomAmountContainer" class="hidden">
+              <label class="block text-slate-300 font-medium mb-1">Custom Payment Amount (<span class="debtCurrencyPrefixLabel">$</span>) *</label>
+              <input id="debtAutoDebitCustomAmountInput" type="number" step="any" min="0.01" placeholder="250.00" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white font-mono font-bold focus:outline-none focus:border-emerald-500 text-xs" />
+            </div>
+          </div>
         </div>
 
         <div class="flex items-center justify-end gap-3 pt-3">
@@ -2668,6 +2751,74 @@
         <div class="flex items-center justify-end gap-3 pt-3">
           <button type="button" id="cancelDebtPrepayBtn" class="px-4 py-2 rounded-xl text-slate-400 hover:text-white cursor-pointer">Cancel</button>
           <button type="submit" class="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold shadow-lg shadow-emerald-600/20 active:scale-95 cursor-pointer">Confirm Prepayment</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 11.2 AUTOMATE SALARY & RECURRING INCOME MODAL -->
+  <div id="salaryModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm hidden">
+    <div class="w-full max-w-md rounded-3xl bg-slate-900 border border-slate-800 p-6 sm:p-8 space-y-5 shadow-2xl relative">
+      <button id="closeSalaryModalBtn" class="absolute top-5 right-5 text-slate-400 hover:text-white p-1 rounded-lg">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+
+      <div class="space-y-1">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center text-emerald-400 font-bold">
+            💼
+          </div>
+          <h3 class="text-lg font-bold text-white tracking-tight">Automate Salary Deposit</h3>
+        </div>
+        <p class="text-xs text-slate-400">Configure your recurring monthly payday to automatically deposit into your chosen checking or savings account.</p>
+      </div>
+
+      <form id="salaryForm" class="space-y-4 text-xs">
+        <div class="flex items-center justify-between p-3.5 rounded-2xl bg-slate-950 border border-slate-800">
+          <div>
+            <span class="text-xs font-bold text-white block">Enable Automated Deposit</span>
+            <span class="text-[10px] text-slate-400">Credited automatically on your monthly payday</span>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="salaryEnabledToggle" class="sr-only peer" checked />
+            <div class="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600"></div>
+          </label>
+        </div>
+
+        <div>
+          <label class="block text-slate-300 font-medium mb-1">Employer / Income Source *</label>
+          <input id="salaryEmployerInput" type="text" required placeholder="e.g. Acme Corp, Monthly Salary, Tech Co" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 font-medium" />
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Salary Amount (<span id="salaryCurrencyPrefixLabel">$</span>) *</label>
+            <input id="salaryAmountInput" type="number" step="any" min="0.01" required placeholder="5000.00" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-emerald-400 font-mono font-bold focus:outline-none focus:border-emerald-500" />
+          </div>
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Payday (Day of Month) *</label>
+            <select id="salaryPaydaySelect" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-mono focus:outline-none focus:border-emerald-500 cursor-pointer font-bold">
+              <!-- Populated with days 1 to 31 -->
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-slate-300 font-medium mb-1">Deposit Target Account *</label>
+          <select id="salaryAccountSelect" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-emerald-500 cursor-pointer">
+            <!-- Populated with checking/savings accounts -->
+          </select>
+          <span class="text-[10px] text-slate-500 font-mono mt-1 block">Account balance will be credited and an Income transaction logged automatically on payday.</span>
+        </div>
+
+        <div class="pt-2 flex items-center justify-between border-t border-slate-800/80">
+          <button type="button" id="triggerImmediateSalaryDepositBtn" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-750 text-emerald-300 border border-emerald-500/30 text-[11px] font-semibold cursor-pointer transition-all flex items-center gap-1.5" title="Run deposit immediately for testing">
+            <span>⚡ Test Deposit Now</span>
+          </button>
+          <div class="flex items-center gap-2">
+            <button type="button" id="cancelSalaryBtn" class="px-4 py-2 rounded-xl text-slate-400 hover:text-white cursor-pointer">Cancel</button>
+            <button type="submit" class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold shadow-lg shadow-emerald-600/20 active:scale-95 cursor-pointer">Save Salary Schedule</button>
+          </div>
         </div>
       </form>
     </div>
@@ -2923,6 +3074,14 @@
         lumpSumUsd: 0,
         lumpSumMonth: 1,
         lumpSumTarget: 'strategy'
+      },
+      salaryConfig: {
+        enabled: false,
+        employer: '',
+        amountUsd: 0,
+        depositAccountId: '',
+        payday: 25,
+        lastDepositProcessed: ''
       }
     };
 
@@ -3178,6 +3337,10 @@
               debtSimulator: {
                 ...LAUNCH_EMPTY_DATA.debtSimulator,
                 ...(parsed.debtSimulator || {})
+              },
+              salaryConfig: {
+                ...LAUNCH_EMPTY_DATA.salaryConfig,
+                ...(parsed.salaryConfig || {})
               }
             };
           }
@@ -3369,6 +3532,10 @@
                   debtSimulator: {
                     ...LAUNCH_EMPTY_DATA.debtSimulator,
                     ...(cloudData.debtSimulator || {})
+                  },
+                  salaryConfig: {
+                    ...LAUNCH_EMPTY_DATA.salaryConfig,
+                    ...(cloudData.salaryConfig || {})
                   }
                 };
                 localStorage.setItem(`financeme_state_${user.uid}`, JSON.stringify(state));
@@ -3815,6 +3982,277 @@
       if (el) el.classList.add('hidden');
     }
 
+    // ================= AUTOMATED SCHEDULE ENGINE =================
+    // Processes recurring salary deposits & automated debt auto-debits based on user-configured dates
+    function processScheduledAutomations() {
+      const now = new Date();
+      const currentYear = now.getFullYear();
+      const currentMonth = String(now.getMonth() + 1).padStart(2, '0');
+      const currentDay = now.getDate();
+      const currentMonthKey = `${currentYear}-${currentMonth}`;
+      let stateChanged = false;
+
+      // 1. Check & Process Recurring Salary Deposit
+      if (state.salaryConfig && state.salaryConfig.enabled && (state.salaryConfig.amountUsd || 0) > 0) {
+        const cfg = state.salaryConfig;
+        const payday = cfg.payday || 25;
+        const lastProcessed = cfg.lastDepositProcessed || '';
+
+        // If today is on or past the payday and not already credited this month
+        if (lastProcessed !== currentMonthKey && currentDay >= payday) {
+          let targetAcc = state.accounts.find(a => a.id === cfg.depositAccountId);
+          if (!targetAcc) {
+            targetAcc = state.accounts.find(a => a.type !== 'Credit Card' && a.type !== 'Loan');
+          }
+          if (!targetAcc && state.accounts.length > 0) {
+            targetAcc = state.accounts[0];
+          }
+
+          if (targetAcc) {
+            targetAcc.balanceUsd += cfg.amountUsd;
+            state.transactions.unshift({
+              id: `tx_salary_${Date.now()}`,
+              title: `Salary Deposit: ${cfg.employer || 'Employer'}`,
+              type: 'income',
+              category: 'Salary',
+              amountUsd: cfg.amountUsd,
+              accountId: targetAcc.id,
+              date: now.toISOString().split('T')[0],
+              notes: `Automated recurring monthly salary deposit (Day ${payday})`
+            });
+            cfg.lastDepositProcessed = currentMonthKey;
+            stateChanged = true;
+            showToast(`💰 Automated Payday: Credited ${formatMoney(cfg.amountUsd)} to ${targetAcc.name}!`, 'success');
+          }
+        }
+      }
+
+      // 2. Check & Process Scheduled Debt Auto-Debits
+      if (Array.isArray(state.debts)) {
+        state.debts.forEach(debt => {
+          if (!debt.autoDebitEnabled || (debt.balanceUsd || 0) <= 0.01) return;
+
+          const debitDay = debt.autoDebitDay || 15;
+          const lastProcessed = debt.lastAutoDebitProcessed || '';
+
+          // If today is on or past the auto-debit day and not already processed this month
+          if (lastProcessed !== currentMonthKey && currentDay >= debitDay) {
+            let sourceAcc = state.accounts.find(a => a.id === debt.autoDebitAccountId);
+            if (!sourceAcc) {
+              sourceAcc = state.accounts.find(a => a.type !== 'Credit Card' && a.type !== 'Loan');
+            }
+
+            if (sourceAcc) {
+              let paymentAmount = 0;
+              if (debt.autoDebitType === 'full') {
+                paymentAmount = debt.balanceUsd;
+              } else if (debt.autoDebitType === 'custom') {
+                paymentAmount = Math.min(debt.balanceUsd, debt.autoDebitCustomAmountUsd || debt.minPaymentUsd || 50);
+              } else {
+                paymentAmount = Math.min(debt.balanceUsd, debt.minPaymentUsd || 50);
+              }
+
+              if (paymentAmount > 0) {
+                sourceAcc.balanceUsd -= paymentAmount;
+                debt.balanceUsd = Math.max(0, debt.balanceUsd - paymentAmount);
+                if (debt.linkedAccountId) {
+                  const linkedAcc = state.accounts.find(a => a.id === debt.linkedAccountId);
+                  if (linkedAcc) {
+                    linkedAcc.balanceUsd = -Math.abs(debt.balanceUsd);
+                  }
+                }
+
+                state.transactions.unshift({
+                  id: `tx_autodebit_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+                  title: `Auto-Debit: ${debt.name}`,
+                  type: 'expense',
+                  category: 'Debt & Loans',
+                  amountUsd: paymentAmount,
+                  accountId: sourceAcc.id,
+                  date: now.toISOString().split('T')[0],
+                  notes: `Automated scheduled monthly debit from ${sourceAcc.name} (Day ${debitDay})`
+                });
+
+                debt.lastAutoDebitProcessed = currentMonthKey;
+                stateChanged = true;
+                showToast(`⚡ Auto-Debit: Debited ${formatMoney(paymentAmount)} from ${sourceAcc.name} for ${debt.name}`, 'success');
+
+                if (debt.balanceUsd <= 0.01) {
+                  showToast(`🎉 CONGRATULATIONS! "${debt.name}" has been 100% PAID OFF!`, 'success');
+                }
+              }
+            }
+          }
+        });
+      }
+
+      if (stateChanged) {
+        saveState();
+      }
+    }
+
+    function renderSalaryStatusCard() {
+      const card = document.getElementById('salaryStatusCard');
+      if (!card) return;
+
+      const cfg = state.salaryConfig;
+      const now = new Date();
+      const today = now.getDate();
+
+      if (cfg && cfg.enabled && (cfg.amountUsd || 0) > 0) {
+        const payday = cfg.payday || 25;
+        const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+        let daysUntil = payday - today;
+        if (daysUntil < 0) {
+          daysUntil = daysInMonth - today + payday;
+        }
+
+        const targetAcc = state.accounts.find(a => a.id === cfg.depositAccountId);
+        const accName = targetAcc ? targetAcc.name : 'Primary Account';
+
+        setElementText('salaryStatusTitle', `Automated Salary: ${cfg.employer || 'Active'}`);
+        setElementText('salaryNextPaydayBadge', daysUntil === 0 ? '🎉 Payday Today!' : `Next Payday: Day ${payday} (${daysUntil}d left)`);
+        setElementText('salaryStatusDesc', `${formatMoney(cfg.amountUsd)} / mo automatically deposited to ${accName} on day ${payday}.`);
+      } else {
+        setElementText('salaryStatusTitle', 'Automate Recurring Salary: Not Configured');
+        setElementText('salaryNextPaydayBadge', 'Inactive');
+        setElementText('salaryStatusDesc', 'Specify your monthly salary, deposit account, and payday to automate income deposits.');
+      }
+    }
+
+    function openSalaryModal() {
+      populateAccountDropdowns();
+      const curr = CURRENCIES[state.currency] || CURRENCIES.USD;
+      const cfg = state.salaryConfig || {};
+
+      const enabledToggle = document.getElementById('salaryEnabledToggle');
+      if (enabledToggle) enabledToggle.checked = cfg.enabled !== false;
+
+      const employerInput = document.getElementById('salaryEmployerInput');
+      if (employerInput) employerInput.value = cfg.employer || '';
+
+      const amountInput = document.getElementById('salaryAmountInput');
+      if (amountInput) amountInput.value = cfg.amountUsd ? Number((cfg.amountUsd * curr.rate).toFixed(curr.decimals)) : '';
+
+      const paydaySelect = document.getElementById('salaryPaydaySelect');
+      if (paydaySelect) paydaySelect.value = String(cfg.payday || 25);
+
+      const accSelect = document.getElementById('salaryAccountSelect');
+      if (accSelect) {
+        if (cfg.depositAccountId) accSelect.value = cfg.depositAccountId;
+        else if (accSelect.options.length > 0) accSelect.selectedIndex = 0;
+      }
+
+      setElementText('salaryCurrencyPrefixLabel', curr.symbol);
+      openModal('salaryModal');
+    }
+
+    function triggerImmediateSalaryDeposit() {
+      if (!state.salaryConfig || !state.salaryConfig.amountUsd) {
+        openSalaryModal();
+        showToast('Please configure your salary schedule details first', 'warning');
+        return;
+      }
+      const cfg = state.salaryConfig;
+      let targetAcc = state.accounts.find(a => a.id === cfg.depositAccountId);
+      if (!targetAcc) {
+        targetAcc = state.accounts.find(a => a.type !== 'Credit Card' && a.type !== 'Loan');
+      }
+      if (!targetAcc) {
+        // Create checking account
+        targetAcc = {
+          id: `acc_${Date.now()}_chk`,
+          name: 'Primary Checking',
+          type: 'Checking',
+          balanceUsd: 0
+        };
+        state.accounts.push(targetAcc);
+      }
+
+      targetAcc.balanceUsd += cfg.amountUsd;
+      const now = new Date();
+      state.transactions.unshift({
+        id: `tx_salary_${Date.now()}`,
+        title: `Salary Deposit: ${cfg.employer || 'Employer'}`,
+        type: 'income',
+        category: 'Salary',
+        amountUsd: cfg.amountUsd,
+        accountId: targetAcc.id,
+        date: now.toISOString().split('T')[0],
+        notes: `Immediate salary deposit run (Payday: Day ${cfg.payday || 25})`
+      });
+
+      const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      cfg.lastDepositProcessed = currentMonthKey;
+      saveState();
+      showToast(`💰 Deposited ${formatMoney(cfg.amountUsd)} to ${targetAcc.name}!`, 'success');
+      renderAll();
+    }
+
+    function triggerImmediateAutoDebit(debtId) {
+      const debt = (state.debts || []).find(d => d.id === debtId);
+      if (!debt) return;
+      if ((debt.balanceUsd || 0) <= 0.01) {
+        showToast(`"${debt.name}" has no outstanding balance!`, 'warning');
+        return;
+      }
+
+      let sourceAcc = state.accounts.find(a => a.id === debt.autoDebitAccountId);
+      if (!sourceAcc) {
+        sourceAcc = state.accounts.find(a => a.type !== 'Credit Card' && a.type !== 'Loan');
+      }
+      if (!sourceAcc) {
+        showToast('Please select a valid checking or savings account for auto-debit in the edit card modal.', 'warning');
+        openDebtModalForEdit(debt);
+        return;
+      }
+
+      let paymentAmount = 0;
+      if (debt.autoDebitType === 'full') {
+        paymentAmount = debt.balanceUsd;
+      } else if (debt.autoDebitType === 'custom') {
+        paymentAmount = Math.min(debt.balanceUsd, debt.autoDebitCustomAmountUsd || debt.minPaymentUsd || 50);
+      } else {
+        paymentAmount = Math.min(debt.balanceUsd, debt.minPaymentUsd || 50);
+      }
+
+      if (paymentAmount <= 0) {
+        showToast('Payment amount must be greater than $0.', 'warning');
+        return;
+      }
+
+      sourceAcc.balanceUsd -= paymentAmount;
+      debt.balanceUsd = Math.max(0, debt.balanceUsd - paymentAmount);
+      if (debt.linkedAccountId) {
+        const linkedAcc = state.accounts.find(a => a.id === debt.linkedAccountId);
+        if (linkedAcc) {
+          linkedAcc.balanceUsd = -Math.abs(debt.balanceUsd);
+        }
+      }
+
+      const now = new Date();
+      state.transactions.unshift({
+        id: `tx_autodebit_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+        title: `Auto-Debit: ${debt.name}`,
+        type: 'expense',
+        category: 'Debt & Loans',
+        amountUsd: paymentAmount,
+        accountId: sourceAcc.id,
+        date: now.toISOString().split('T')[0],
+        notes: `Immediate auto-debit test run from ${sourceAcc.name}`
+      });
+
+      const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      debt.lastAutoDebitProcessed = currentMonthKey;
+      saveState();
+      showToast(`⚡ Auto-Debit: Debited ${formatMoney(paymentAmount)} from ${sourceAcc.name} for ${debt.name}`, 'success');
+
+      if (debt.balanceUsd <= 0.01) {
+        showToast(`🎉 CONGRATULATIONS! "${debt.name}" is 100% PAID OFF!`, 'success');
+      }
+      renderAll();
+    }
+
     // ================= RENDER ENGINES =================
 
     // Safe DOM text content helper that prevents null property exceptions
@@ -3824,9 +4262,11 @@
     }
 
     function renderAll() {
+      processScheduledAutomations();
       renderCurrencyHeader();
       renderNetWorth();
       renderHealthStats();
+      renderSalaryStatusCard();
       renderAccounts();
       renderRecentTransactions();
       renderLedgerTable();
@@ -4128,9 +4568,44 @@
 
       // Prepay source asset accounts dropdown
       const prepaySourceSelect = document.getElementById('prepaySourceAccountSelect');
+      const assetAccs = state.accounts.filter(a => a.type !== 'Credit Card' && a.type !== 'Loan');
+      const assetOptionsHtml = (assetAccs.length > 0 ? assetAccs : state.accounts).map(a => `<option value="${a.id}">${a.name} (${formatMoney(a.balanceUsd)})</option>`).join('') || '<option value="__auto_primary__">Primary Checking (Auto-created)</option>';
+
       if (prepaySourceSelect) {
-        const assetAccs = state.accounts.filter(a => a.type !== 'Credit Card' && a.type !== 'Loan');
-        prepaySourceSelect.innerHTML = (assetAccs.length ? assetAccs : state.accounts).map(a => `<option value="${a.id}">${a.name} (${formatMoney(a.balanceUsd)})</option>`).join('');
+        prepaySourceSelect.innerHTML = assetOptionsHtml;
+      }
+
+      // Auto-Debit source asset accounts dropdown
+      const autoDebitAccSelect = document.getElementById('debtAutoDebitAccountSelect');
+      if (autoDebitAccSelect) {
+        autoDebitAccSelect.innerHTML = assetOptionsHtml;
+      }
+
+      // Salary deposit target accounts dropdown
+      const salaryAccSelect = document.getElementById('salaryAccountSelect');
+      if (salaryAccSelect) {
+        salaryAccSelect.innerHTML = assetOptionsHtml;
+      }
+
+      // Populate day-of-month options for auto-debit and salary
+      const autoDebitDaySelect = document.getElementById('debtAutoDebitDaySelect');
+      if (autoDebitDaySelect && autoDebitDaySelect.options.length === 0) {
+        let dHtml = '';
+        for (let i = 1; i <= 31; i++) {
+          const sfx = (i === 1 || i === 21 || i === 31) ? 'st' : (i === 2 || i === 22) ? 'nd' : (i === 3 || i === 23) ? 'rd' : 'th';
+          dHtml += `<option value="${i}" ${i === 15 ? 'selected' : ''}>Day ${i} (${i}${sfx} of month)</option>`;
+        }
+        autoDebitDaySelect.innerHTML = dHtml;
+      }
+
+      const salaryDaySelect = document.getElementById('salaryPaydaySelect');
+      if (salaryDaySelect && salaryDaySelect.options.length === 0) {
+        let sHtml = '';
+        for (let i = 1; i <= 31; i++) {
+          const sfx = (i === 1 || i === 21 || i === 31) ? 'st' : (i === 2 || i === 22) ? 'nd' : (i === 3 || i === 23) ? 'rd' : 'th';
+          sHtml += `<option value="${i}" ${i === 25 ? 'selected' : ''}>Day ${i} (${i}${sfx} of month)</option>`;
+        }
+        salaryDaySelect.innerHTML = sHtml;
       }
 
       // Prepay target debt dropdown
@@ -5946,6 +6421,33 @@
                 </div>
               </div>
 
+              <!-- Automated Auto-Debit Status Badge -->
+              ${(() => {
+                const autoDebitAcc = state.accounts.find(a => a.id === debt.autoDebitAccountId);
+                const strat = debt.autoDebitType === 'full' ? 'Full Balance' : debt.autoDebitType === 'custom' ? `${formatMoney(debt.autoDebitCustomAmountUsd || 0)} custom` : 'Min Due';
+                return debt.autoDebitEnabled ? `
+                  <div class="relative z-10 p-2.5 rounded-2xl bg-emerald-950/60 border border-emerald-500/40 flex items-center justify-between gap-2 text-xs font-mono">
+                    <div class="flex items-center gap-2 min-w-0">
+                      <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
+                      <div class="truncate">
+                        <span class="text-white font-bold block text-[11px] truncate">⚡ Auto-Debit: Day ${debt.autoDebitDay || 15}</span>
+                        <span class="text-[10px] text-emerald-300 block truncate">${strat} from ${autoDebitAcc?.name || 'Asset Account'}</span>
+                      </div>
+                    </div>
+                    <button type="button" class="trigger-autodebit-now-btn px-2.5 py-1 rounded-xl bg-emerald-600/25 hover:bg-emerald-600/40 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold cursor-pointer transition-colors shrink-0" title="Run auto-debit immediately (test)">
+                      ⚡ Run Now
+                    </button>
+                  </div>
+                ` : `
+                  <div class="relative z-10 p-2 rounded-xl bg-slate-950/40 border border-slate-800/80 flex items-center justify-between text-[10px] font-mono text-slate-400">
+                    <span>Auto-Debit: Inactive</span>
+                    <button type="button" class="setup-autodebit-btn text-emerald-400 hover:text-emerald-300 font-semibold cursor-pointer">
+                      + Enable Auto-Debit
+                    </button>
+                  </div>
+                `;
+              })()}
+
               <!-- Quick Paydown Button -->
               <button class="quick-prepay-btn w-full py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-750 text-emerald-300 font-bold text-xs border border-slate-700/80 cursor-pointer transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-95">
                 <svg class="w-3.5 h-3.5 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
@@ -5958,6 +6460,16 @@
               e.stopPropagation();
               openDebtModalForEdit(debt);
             };
+
+            // Wire auto debit triggers
+            card.querySelector('.trigger-autodebit-now-btn')?.addEventListener('click', (e) => {
+              e.stopPropagation();
+              triggerImmediateAutoDebit(debt.id);
+            });
+            card.querySelector('.setup-autodebit-btn')?.addEventListener('click', (e) => {
+              e.stopPropagation();
+              openDebtModalForEdit(debt);
+            });
 
             // Wire delete card
             card.querySelector('.delete-debt-btn').onclick = (e) => {
@@ -6065,6 +6577,33 @@
                 </div>
               </div>
 
+              <!-- Automated Auto-Debit Status Badge -->
+              ${(() => {
+                const autoDebitAcc = state.accounts.find(a => a.id === debt.autoDebitAccountId);
+                const strat = debt.autoDebitType === 'full' ? 'Full Balance' : debt.autoDebitType === 'custom' ? `${formatMoney(debt.autoDebitCustomAmountUsd || 0)} custom` : 'Installment Due';
+                return debt.autoDebitEnabled ? `
+                  <div class="relative z-10 p-2.5 rounded-2xl bg-indigo-950/60 border border-indigo-500/40 flex items-center justify-between gap-2 text-xs font-mono">
+                    <div class="flex items-center gap-2 min-w-0">
+                      <span class="w-2 h-2 rounded-full bg-indigo-400 animate-pulse shrink-0"></span>
+                      <div class="truncate">
+                        <span class="text-white font-bold block text-[11px] truncate">⚡ Auto-Debit: Day ${debt.autoDebitDay || 15}</span>
+                        <span class="text-[10px] text-indigo-300 block truncate">${strat} from ${autoDebitAcc?.name || 'Asset Account'}</span>
+                      </div>
+                    </div>
+                    <button type="button" class="trigger-autodebit-now-btn px-2.5 py-1 rounded-xl bg-indigo-600/25 hover:bg-indigo-600/40 text-indigo-300 border border-indigo-500/30 text-[10px] font-bold cursor-pointer transition-colors shrink-0" title="Run auto-debit immediately (test)">
+                      ⚡ Run Now
+                    </button>
+                  </div>
+                ` : `
+                  <div class="relative z-10 p-2 rounded-xl bg-slate-950/40 border border-slate-800/80 flex items-center justify-between text-[10px] font-mono text-slate-400">
+                    <span>Auto-Debit: Inactive</span>
+                    <button type="button" class="setup-autodebit-btn text-indigo-400 hover:text-indigo-300 font-semibold cursor-pointer">
+                      + Enable Auto-Debit
+                    </button>
+                  </div>
+                `;
+              })()}
+
               <!-- Quick Prepayment Button -->
               <button class="quick-prepay-btn w-full py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-750 text-indigo-300 font-bold text-xs border border-slate-700/80 cursor-pointer transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-95">
                 <svg class="w-3.5 h-3.5 text-indigo-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
@@ -6077,6 +6616,16 @@
               e.stopPropagation();
               openDebtModalForEdit(debt);
             };
+
+            // Wire auto debit triggers
+            card.querySelector('.trigger-autodebit-now-btn')?.addEventListener('click', (e) => {
+              e.stopPropagation();
+              triggerImmediateAutoDebit(debt.id);
+            });
+            card.querySelector('.setup-autodebit-btn')?.addEventListener('click', (e) => {
+              e.stopPropagation();
+              openDebtModalForEdit(debt);
+            });
 
             // Wire delete loan
             card.querySelector('.delete-debt-btn').onclick = (e) => {
@@ -6158,10 +6707,30 @@
       document.getElementById('debtEditIdInput').value = '';
       document.getElementById('debtModalTitle').textContent = cat === 'credit_card' ? 'Add Credit Card' : 'Add Fixed Loan';
       document.getElementById('debtModalSubtitle').textContent = cat === 'credit_card' 
-        ? 'Configure credit limit, current balance, APR, and minimum payment.' 
-        : 'Configure principal, original amount, interest rate, and monthly installment.';
+        ? 'Configure credit limit, current balance, APR, and automated payment options.' 
+        : 'Configure principal, original amount, interest rate, and automated payment options.';
       populateAccountDropdowns();
       setDebtModalCategory(cat);
+
+      // Reset Auto-Debit fields
+      const autoToggle = document.getElementById('debtAutoDebitToggle');
+      if (autoToggle) autoToggle.checked = false;
+      const autoContainer = document.getElementById('debtAutoDebitConfigContainer');
+      if (autoContainer) autoContainer.classList.add('hidden');
+      const autoAccountSelect = document.getElementById('debtAutoDebitAccountSelect');
+      if (autoAccountSelect && autoAccountSelect.options.length > 0) autoAccountSelect.selectedIndex = 0;
+      const autoDaySelect = document.getElementById('debtAutoDebitDaySelect');
+      if (autoDaySelect) autoDaySelect.value = '15';
+      const autoTypeSelect = document.getElementById('debtAutoDebitTypeSelect');
+      if (autoTypeSelect) autoTypeSelect.value = 'min';
+      const customContainer = document.getElementById('debtAutoDebitCustomAmountContainer');
+      if (customContainer) customContainer.classList.add('hidden');
+      const customInput = document.getElementById('debtAutoDebitCustomAmountInput');
+      if (customInput) customInput.value = '';
+
+      const autoCreateCheckbox = document.getElementById('debtAutoCreateAccountCheckbox');
+      if (autoCreateCheckbox) autoCreateCheckbox.checked = true;
+
       openModal('debtModal');
     }
 
@@ -6169,7 +6738,7 @@
       document.getElementById('debtEditIdInput').value = debt.id;
       const isCard = debt.category === 'credit_card' || (debt.creditLimitUsd && debt.creditLimitUsd > 0);
       document.getElementById('debtModalTitle').textContent = isCard ? `Edit Credit Card: ${debt.name}` : `Edit Loan: ${debt.name}`;
-      document.getElementById('debtModalSubtitle').textContent = 'Update interest rates, balances, or payment amounts.';
+      document.getElementById('debtModalSubtitle').textContent = 'Update interest rates, balances, or automated debit parameters.';
       document.getElementById('debtNameInput').value = debt.name;
 
       const curr = CURRENCIES[state.currency] || CURRENCIES.USD;
@@ -6192,6 +6761,39 @@
       document.getElementById('debtStartDateInput').value = debt.startDate || '';
       populateAccountDropdowns();
       document.getElementById('debtLinkedAccountSelect').value = debt.linkedAccountId || '';
+
+      // Hydrate Auto-Debit fields
+      const autoToggle = document.getElementById('debtAutoDebitToggle');
+      const autoContainer = document.getElementById('debtAutoDebitConfigContainer');
+      const customContainer = document.getElementById('debtAutoDebitCustomAmountContainer');
+      const customInput = document.getElementById('debtAutoDebitCustomAmountInput');
+
+      if (debt.autoDebitEnabled) {
+        if (autoToggle) autoToggle.checked = true;
+        if (autoContainer) autoContainer.classList.remove('hidden');
+        const autoAccountSelect = document.getElementById('debtAutoDebitAccountSelect');
+        if (autoAccountSelect && debt.autoDebitAccountId) autoAccountSelect.value = debt.autoDebitAccountId;
+        const autoDaySelect = document.getElementById('debtAutoDebitDaySelect');
+        if (autoDaySelect) autoDaySelect.value = String(debt.autoDebitDay || 15);
+        const autoTypeSelect = document.getElementById('debtAutoDebitTypeSelect');
+        if (autoTypeSelect) autoTypeSelect.value = debt.autoDebitType || 'min';
+
+        if (debt.autoDebitType === 'custom') {
+          if (customContainer) customContainer.classList.remove('hidden');
+          if (customInput) customInput.value = Number(((debt.autoDebitCustomAmountUsd || 0) * curr.rate).toFixed(curr.decimals));
+        } else {
+          if (customContainer) customContainer.classList.add('hidden');
+          if (customInput) customInput.value = '';
+        }
+      } else {
+        if (autoToggle) autoToggle.checked = false;
+        if (autoContainer) autoContainer.classList.add('hidden');
+        if (customContainer) customContainer.classList.add('hidden');
+        if (customInput) customInput.value = '';
+      }
+
+      const autoCreateCheckbox = document.getElementById('debtAutoCreateAccountCheckbox');
+      if (autoCreateCheckbox) autoCreateCheckbox.checked = !debt.linkedAccountId;
 
       setDebtModalCategory(isCard ? 'credit_card' : 'loan');
       openModal('debtModal');
@@ -6686,30 +7288,93 @@
       document.getElementById('cancelDebtPrepayBtn')?.addEventListener('click', () => closeModal('debtPrepayModal'));
       document.getElementById('openPrepayModalBtn')?.addEventListener('click', () => openModal('debtPrepayModal'));
 
+      // Auto-Debit Modal controls
+      document.getElementById('debtAutoDebitToggle')?.addEventListener('change', (e) => {
+        const container = document.getElementById('debtAutoDebitConfigContainer');
+        if (container) container.classList.toggle('hidden', !e.target.checked);
+      });
+
+      document.getElementById('debtAutoDebitTypeSelect')?.addEventListener('change', (e) => {
+        const customBox = document.getElementById('debtAutoDebitCustomAmountContainer');
+        if (customBox) customBox.classList.toggle('hidden', e.target.value !== 'custom');
+      });
+
       // Submit Debt Form
       document.getElementById('debtForm')?.addEventListener('submit', (e) => {
         e.preventDefault();
         const editId = document.getElementById('debtEditIdInput').value;
         const name = document.getElementById('debtNameInput').value.trim();
         const category = document.getElementById('debtCategoryInput')?.value || 'credit_card';
-        const rawBalance = parseFloat(document.getElementById('debtBalanceInput').value) || 0;
+        const rawBalanceVal = document.getElementById('debtBalanceInput').value;
+        const rawBalance = rawBalanceVal === '' ? 0 : parseFloat(rawBalanceVal);
         const apr = parseFloat(document.getElementById('debtAprInput').value) || 0;
         const rawMinPay = parseFloat(document.getElementById('debtMinPaymentInput').value) || 0;
         const rawCreditLimit = parseFloat(document.getElementById('debtCreditLimitInput')?.value) || 0;
         const rawOriginalAmount = parseFloat(document.getElementById('debtOriginalAmountInput')?.value) || 0;
         const startDate = document.getElementById('debtStartDateInput')?.value;
-        const linkedAccountId = document.getElementById('debtLinkedAccountSelect')?.value;
+        let linkedAccountId = document.getElementById('debtLinkedAccountSelect')?.value || '';
 
-        if (!name || rawBalance <= 0) return;
+        // Validation: allow $0 balance for new cards, ensure name is provided
+        if (!name) {
+          showToast('Please enter a card or lender name', 'warning');
+          return;
+        }
+        if (isNaN(rawBalance) || rawBalance < 0) {
+          showToast('Please enter a valid balance (0 or greater)', 'warning');
+          return;
+        }
 
         const balanceUsd = toUsd(rawBalance, state.currency);
-        const minPaymentUsd = toUsd(rawMinPay, state.currency);
+        let minPaymentUsd = toUsd(rawMinPay, state.currency);
+        if (minPaymentUsd <= 0 && balanceUsd > 0 && category === 'credit_card') {
+          minPaymentUsd = Math.max(25, balanceUsd * 0.02);
+        }
+
         const creditLimitUsd = (category === 'credit_card')
-          ? (rawCreditLimit > 0 ? toUsd(rawCreditLimit, state.currency) : Math.max(3000, balanceUsd * 1.5))
+          ? (rawCreditLimit > 0 ? toUsd(rawCreditLimit, state.currency) : Math.max(3000, balanceUsd > 0 ? balanceUsd * 1.5 : 3000))
           : undefined;
         const originalBalanceUsd = rawOriginalAmount > 0 
           ? toUsd(rawOriginalAmount, state.currency) 
           : Math.max(balanceUsd, balanceUsd > 0 ? balanceUsd * 1.25 : 10000);
+
+        // Auto-Debit Parameters
+        const autoDebitEnabled = document.getElementById('debtAutoDebitToggle')?.checked || false;
+        let autoDebitAccountId = document.getElementById('debtAutoDebitAccountSelect')?.value || '';
+        const autoDebitDay = parseInt(document.getElementById('debtAutoDebitDaySelect')?.value, 10) || 15;
+        const autoDebitType = document.getElementById('debtAutoDebitTypeSelect')?.value || 'min';
+        const rawCustomAmt = parseFloat(document.getElementById('debtAutoDebitCustomAmountInput')?.value) || 0;
+        const autoDebitCustomAmountUsd = rawCustomAmt > 0 ? toUsd(rawCustomAmt, state.currency) : undefined;
+
+        // Auto-create source checking account if needed for auto-debit
+        if (autoDebitEnabled && (!autoDebitAccountId || autoDebitAccountId === '__auto_primary__')) {
+          let assetAcc = state.accounts.find(a => a.type !== 'Credit Card' && a.type !== 'Loan');
+          if (!assetAcc) {
+            assetAcc = {
+              id: `acc_${Date.now()}_checking`,
+              name: 'Primary Checking',
+              type: 'Checking',
+              balanceUsd: 0
+            };
+            state.accounts.push(assetAcc);
+          }
+          autoDebitAccountId = assetAcc.id;
+        }
+
+        // Auto-create matching account in Accounts roster if unlinked and user requested
+        const autoCreateAccount = document.getElementById('debtAutoCreateAccountCheckbox')?.checked ?? true;
+        if (!linkedAccountId && autoCreateAccount) {
+          const newAcc = {
+            id: `acc_${Date.now()}_liability`,
+            name,
+            type: category === 'credit_card' ? 'Credit Card' : 'Loan',
+            balanceUsd: -balanceUsd,
+            creditLimitUsd: category === 'credit_card' ? creditLimitUsd : undefined,
+            apr: apr > 0 ? apr : undefined,
+            minPaymentUsd: minPaymentUsd > 0 ? minPaymentUsd : undefined
+          };
+          state.accounts.push(newAcc);
+          linkedAccountId = newAcc.id;
+        }
 
         state.debts = state.debts || [];
 
@@ -6729,6 +7394,12 @@
             debt.originalBalanceUsd = originalBalanceUsd;
             debt.startDate = startDate || debt.startDate;
             debt.linkedAccountId = linkedAccountId || undefined;
+            debt.autoDebitEnabled = autoDebitEnabled;
+            debt.autoDebitAccountId = autoDebitAccountId || undefined;
+            debt.autoDebitDay = autoDebitDay;
+            debt.autoDebitType = autoDebitType;
+            debt.autoDebitCustomAmountUsd = autoDebitCustomAmountUsd;
+
             showToast(`✓ ${category === 'credit_card' ? 'Credit card' : 'Loan'} "${name}" updated`, 'success');
           }
         } else {
@@ -6742,7 +7413,13 @@
             apr,
             minPaymentUsd,
             startDate: startDate || new Date().toISOString().split('T')[0],
-            linkedAccountId: linkedAccountId || undefined
+            linkedAccountId: linkedAccountId || undefined,
+            autoDebitEnabled,
+            autoDebitAccountId: autoDebitAccountId || undefined,
+            autoDebitDay,
+            autoDebitType,
+            autoDebitCustomAmountUsd,
+            lastAutoDebitProcessed: ''
           };
           state.debts.push(newDebt);
           showToast(`✓ ${category === 'credit_card' ? 'Credit card' : 'Fixed loan'} "${name}" added to portfolio`, 'success');
@@ -6752,8 +7429,10 @@
         if (linkedAccountId) {
           const acc = state.accounts.find(a => a.id === linkedAccountId);
           if (acc) {
-            acc.apr = apr;
-            acc.minPaymentUsd = minPaymentUsd;
+            acc.name = name;
+            acc.balanceUsd = -Math.abs(balanceUsd);
+            acc.apr = apr > 0 ? apr : acc.apr;
+            acc.minPaymentUsd = minPaymentUsd > 0 ? minPaymentUsd : acc.minPaymentUsd;
             if (category === 'credit_card' && creditLimitUsd) {
               acc.creditLimitUsd = creditLimitUsd;
             }
@@ -6763,6 +7442,60 @@
         saveState();
         closeModal('debtModal');
         document.getElementById('debtForm').reset();
+      });
+
+      // Salary Modal event wiring
+      document.getElementById('openSalaryModalBtn')?.addEventListener('click', openSalaryModal);
+      document.getElementById('openSalaryConfigBtn')?.addEventListener('click', openSalaryModal);
+      document.getElementById('closeSalaryModalBtn')?.addEventListener('click', () => closeModal('salaryModal'));
+      document.getElementById('cancelSalaryBtn')?.addEventListener('click', () => closeModal('salaryModal'));
+      document.getElementById('quickTestSalaryDepositBtn')?.addEventListener('click', triggerImmediateSalaryDeposit);
+      document.getElementById('triggerImmediateSalaryDepositBtn')?.addEventListener('click', triggerImmediateSalaryDeposit);
+
+      document.getElementById('salaryForm')?.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const enabled = document.getElementById('salaryEnabledToggle')?.checked ?? true;
+        const employer = document.getElementById('salaryEmployerInput')?.value.trim();
+        const rawAmount = parseFloat(document.getElementById('salaryAmountInput')?.value) || 0;
+        const payday = parseInt(document.getElementById('salaryPaydaySelect')?.value, 10) || 25;
+        let depositAccountId = document.getElementById('salaryAccountSelect')?.value || '';
+
+        if (!employer) {
+          showToast('Please enter employer or income source name', 'warning');
+          return;
+        }
+        if (rawAmount <= 0) {
+          showToast('Please enter a valid salary amount', 'warning');
+          return;
+        }
+
+        if (!depositAccountId || depositAccountId === '__auto_primary__' || !state.accounts.some(a => a.id === depositAccountId)) {
+          let assetAcc = state.accounts.find(a => a.type !== 'Credit Card' && a.type !== 'Loan');
+          if (!assetAcc) {
+            assetAcc = {
+              id: `acc_${Date.now()}_checking`,
+              name: 'Primary Checking',
+              type: 'Checking',
+              balanceUsd: 0
+            };
+            state.accounts.push(assetAcc);
+          }
+          depositAccountId = assetAcc.id;
+        }
+
+        state.salaryConfig = {
+          enabled,
+          employer,
+          amountUsd: toUsd(rawAmount, state.currency),
+          payday,
+          depositAccountId,
+          lastDepositProcessed: state.salaryConfig?.lastDepositProcessed || ''
+        };
+
+        saveState();
+        closeModal('salaryModal');
+        showToast(`✓ Automated recurring salary for ${employer} saved!`, 'success');
+        renderAll();
       });
 
       // Submit Debt Prepayment Form
@@ -7004,6 +7737,21 @@
             acc.creditLimitUsd = rawCreditLimit > 0 ? toUsd(rawCreditLimit, state.currency) : undefined;
             acc.apr = apr > 0 ? apr : undefined;
             acc.minPaymentUsd = rawMinPay > 0 ? toUsd(rawMinPay, state.currency) : undefined;
+
+            // Sync with state.debts if this is a credit card or loan
+            if (type === 'Credit Card' || type === 'Loan') {
+              state.debts = state.debts || [];
+              let linkedDebt = state.debts.find(d => d.linkedAccountId === acc.id);
+              if (linkedDebt) {
+                linkedDebt.name = name;
+                linkedDebt.category = type === 'Credit Card' ? 'credit_card' : 'loan';
+                linkedDebt.balanceUsd = Math.abs(acc.balanceUsd);
+                if (rawCreditLimit > 0) linkedDebt.creditLimitUsd = toUsd(rawCreditLimit, state.currency);
+                if (apr > 0) linkedDebt.apr = apr;
+                if (rawMinPay > 0) linkedDebt.minPaymentUsd = toUsd(rawMinPay, state.currency);
+              }
+            }
+
             showToast(`✓ Account "${name}" updated successfully`, 'success');
           }
         } else {
@@ -7018,6 +7766,27 @@
           };
 
           state.accounts.push(newAcc);
+
+          // If liability account, automatically create corresponding entry in state.debts
+          if (type === 'Credit Card' || type === 'Loan') {
+            state.debts = state.debts || [];
+            const isCard = type === 'Credit Card';
+            const debtAmt = Math.abs(newAcc.balanceUsd);
+            const newDebt = {
+              id: `debt_${Date.now()}`,
+              name,
+              category: isCard ? 'credit_card' : 'loan',
+              balanceUsd: debtAmt,
+              originalBalanceUsd: debtAmt > 0 ? debtAmt : 1000,
+              creditLimitUsd: isCard ? (rawCreditLimit > 0 ? toUsd(rawCreditLimit, state.currency) : Math.max(3000, debtAmt > 0 ? debtAmt * 1.5 : 3000)) : undefined,
+              apr: apr > 0 ? apr : (isCard ? 21.99 : 6.5),
+              minPaymentUsd: rawMinPay > 0 ? toUsd(rawMinPay, state.currency) : Math.max(25, debtAmt * 0.02),
+              startDate: new Date().toISOString().split('T')[0],
+              linkedAccountId: newAcc.id
+            };
+            state.debts.push(newDebt);
+          }
+
           showToast(`✓ Account "${name}" added successfully`, 'success');
         }
 
