@@ -3736,13 +3736,77 @@
 
     // Dev Bypass flag for local testing when external email delivery is delayed
     let devVerifiedBypass = sessionStorage.getItem('financeme_dev_verified_bypass') === 'true';
+    let isHydratingUserData = false;
+    let isSigningOut = false;
 
-    // Check if user has satisfied email verification (Google logins are automatically verified)
+    function markUserVerified(user = currentUser) {
+      devVerifiedBypass = true;
+      sessionStorage.setItem('financeme_dev_verified_bypass', 'true');
+      if (user?.uid) {
+        localStorage.setItem(`financeme_verified_${user.uid}`, 'true');
+      }
+      if (user?.email) {
+        localStorage.setItem(`financeme_verified_email_${user.email.toLowerCase()}`, 'true');
+      }
+    }
+
+    // Check if user has satisfied email verification (Google logins and returning users with saved data are automatically verified)
     function isUserVerified(user = currentUser) {
       if (!user) return false;
       if (devVerifiedBypass) return true;
+      if (user.uid && localStorage.getItem(`financeme_verified_${user.uid}`) === 'true') return true;
+      if (user.email && localStorage.getItem(`financeme_verified_email_${user.email.toLowerCase()}`) === 'true') return true;
+      if (user.uid && localStorage.getItem(`financeme_state_${user.uid}`)) return true;
+      if (user.email && localStorage.getItem(`financeme_state_email_${user.email.toLowerCase()}`)) return true;
       const isPasswordUser = user.providerData && user.providerData.some(p => p.providerId === 'password');
       return !isPasswordUser || user.emailVerified === true;
+    }
+
+    function hasMeaningfulUserData(d) {
+      if (!d || typeof d !== 'object') return false;
+      return Boolean(
+        d.financialPlanEstablished ||
+        (Array.isArray(d.accounts) && d.accounts.length > 0) ||
+        (Array.isArray(d.transactions) && d.transactions.length > 0) ||
+        (Array.isArray(d.debts) && d.debts.length > 0) ||
+        (Array.isArray(d.subscriptions) && d.subscriptions.length > 0) ||
+        (Array.isArray(d.goals) && d.goals.length > 0) ||
+        (d.salaryConfig && (d.salaryConfig.amountUsd || 0) > 0)
+      );
+    }
+
+    function normalizeStateObject(raw) {
+      if (!raw || typeof raw !== 'object') {
+        return JSON.parse(JSON.stringify(LAUNCH_EMPTY_DATA));
+      }
+      const accounts = Array.isArray(raw.accounts) ? raw.accounts : [];
+      const transactions = Array.isArray(raw.transactions) ? raw.transactions : [];
+      const subscriptions = Array.isArray(raw.subscriptions) ? raw.subscriptions : [];
+      const goals = Array.isArray(raw.goals) ? raw.goals : [];
+      const debts = Array.isArray(raw.debts) ? raw.debts : [];
+      return {
+        ...JSON.parse(JSON.stringify(LAUNCH_EMPTY_DATA)),
+        ...raw,
+        financialPlanEstablished: Boolean(
+          raw.financialPlanEstablished ||
+          accounts.length > 0 ||
+          debts.length > 0 ||
+          transactions.length > 0
+        ),
+        accounts,
+        transactions,
+        subscriptions,
+        goals,
+        debts,
+        debtSimulator: {
+          ...LAUNCH_EMPTY_DATA.debtSimulator,
+          ...(raw.debtSimulator || {})
+        },
+        salaryConfig: {
+          ...LAUNCH_EMPTY_DATA.salaryConfig,
+          ...(raw.salaryConfig || {})
+        }
+      };
     }
 
     // Dispatches verification email linked directly to the website return URL with fallback
@@ -3759,10 +3823,24 @@
         console.log('✓ Verification email dispatched with website URL return link:', redirectUrl);
       } catch (err) {
         console.warn('sendEmailVerification with actionCodeSettings notice:', err);
-        // Fallback without actionCodeSettings if domain is not yet in Firebase Authorized Domains
         await sendEmailVerification(user);
         console.log('✓ Verification email dispatched with default Firebase link');
       }
+    }
+
+    function openEmailVerificationModal(email) {
+      const targetEl = document.getElementById('verifyEmailTargetDisplay');
+      if (targetEl) targetEl.textContent = email || currentUser?.email || 'your email';
+      const banner = document.getElementById('verifyEmailAlertBanner');
+      if (banner) {
+        banner.className = 'hidden';
+        banner.innerHTML = '';
+      }
+      const domainEl = document.getElementById('currentDomainDisplay');
+      if (domainEl) {
+        domainEl.textContent = window.location.hostname;
+      }
+      openModal('emailVerificationModal');
     }
 
     // Handles inbound email verification links when user clicks the link in their inbox
@@ -3777,6 +3855,7 @@
           if (auth.currentUser) {
             await auth.currentUser.reload();
             currentUser = auth.currentUser;
+            markUserVerified(currentUser);
           }
           const cleanUrl = window.location.pathname;
           window.history.replaceState({}, document.title, cleanUrl);
@@ -3795,30 +3874,49 @@
       }
     }
 
-    // Resolves active Firestore document reference (authenticated verified user OR guest session)
-    function getFirestoreDocRef() {
+    // Resolves active Firestore document reference (always isolated per authenticated user UID or guest device)
+    function getFirestoreDocRef(uid = currentUser?.uid) {
       if (!db) return null;
-      if (currentUser?.uid && isUserVerified(currentUser)) {
-        return doc(db, 'users', currentUser.uid, 'data', 'financeState');
+      if (uid) {
+        return doc(db, 'users', uid, 'data', 'financeState');
       } else {
         return doc(db, 'guest_sessions', getDeviceId(), 'data', 'financeState');
       }
     }
 
-    // Local Storage Key Resolver (Isolated per verified user or guest)
-    function getStorageKey() {
-      return (currentUser?.uid && isUserVerified(currentUser)) 
-        ? `financeme_state_${currentUser.uid}` 
-        : 'financeme_state_guest';
+    // Local Storage Key Resolver (Always isolated per authenticated user UID or guest)
+    function getStorageKey(uid = currentUser?.uid) {
+      return uid ? `financeme_state_${uid}` : 'financeme_state_guest';
     }
 
     // Save and Sync Engine (Stores all user inputs in both Local Cache and Firestore Database)
-    async function saveState(skipCloud = false) {
+    async function saveState(skipCloud = false, allowEmptyOverwrite = false) {
+      if (isHydratingUserData || isSigningOut) {
+        renderAll();
+        return;
+      }
+
+      // Guard: Never overwrite an authenticated user's existing saved data with an uninitialized empty state
+      if (currentUser?.uid && !hasMeaningfulUserData(state) && !allowEmptyOverwrite) {
+        const existingSaved = loadInitialState(currentUser.uid, currentUser.email);
+        if (hasMeaningfulUserData(existingSaved)) {
+          state = normalizeStateObject(existingSaved);
+          renderAll();
+          return;
+        }
+      }
+
+      const nowIso = new Date().toISOString();
+      state.lastUpdated = nowIso;
+
       try {
         const key = getStorageKey();
         localStorage.setItem(key, JSON.stringify(state));
-        if (!currentUser) {
-          localStorage.setItem('financeme_state_v1', JSON.stringify(state));
+        if (currentUser?.email) {
+          localStorage.setItem(`financeme_state_email_${currentUser.email.toLowerCase()}`, JSON.stringify(state));
+        }
+        if (currentUser?.uid && hasMeaningfulUserData(state)) {
+          markUserVerified(currentUser);
         }
       } catch (err) {
         console.warn('LocalStorage save warning:', err);
@@ -3832,7 +3930,7 @@
           try {
             await setDoc(targetDocRef, {
               ...state,
-              lastUpdated: new Date().toISOString()
+              lastUpdated: nowIso
             }, { merge: true });
             updateCloudStatus('synced');
           } catch (err) {
@@ -3845,31 +3943,39 @@
       renderAll();
     }
 
-    function loadInitialState(uid = null) {
+    function loadInitialState(uid = null, email = null) {
       try {
-        const key = uid ? `financeme_state_${uid}` : 'financeme_state_guest';
-        const stored = localStorage.getItem(key) || (!uid ? localStorage.getItem('financeme_state_v1') : null);
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          if (parsed && typeof parsed === 'object') {
-            return {
-              ...LAUNCH_EMPTY_DATA,
-              ...parsed,
-              financialPlanEstablished: parsed.financialPlanEstablished || false,
-              accounts: Array.isArray(parsed.accounts) ? parsed.accounts : [],
-              transactions: Array.isArray(parsed.transactions) ? parsed.transactions : [],
-              subscriptions: Array.isArray(parsed.subscriptions) ? parsed.subscriptions : [],
-              goals: Array.isArray(parsed.goals) ? parsed.goals : [],
-              debts: Array.isArray(parsed.debts) ? parsed.debts : [],
-              debtSimulator: {
-                ...LAUNCH_EMPTY_DATA.debtSimulator,
-                ...(parsed.debtSimulator || {})
-              },
-              salaryConfig: {
-                ...LAUNCH_EMPTY_DATA.salaryConfig,
-                ...(parsed.salaryConfig || {})
+        if (uid) {
+          const primaryStored = localStorage.getItem(`financeme_state_${uid}`);
+          if (primaryStored) {
+            const parsed = JSON.parse(primaryStored);
+            if (parsed && typeof parsed === 'object' && hasMeaningfulUserData(parsed)) {
+              return normalizeStateObject(parsed);
+            }
+          }
+          if (email) {
+            const emailStored = localStorage.getItem(`financeme_state_email_${email.toLowerCase()}`);
+            if (emailStored) {
+              const parsedEmail = JSON.parse(emailStored);
+              if (parsedEmail && typeof parsedEmail === 'object' && hasMeaningfulUserData(parsedEmail)) {
+                return normalizeStateObject(parsedEmail);
               }
-            };
+            }
+          }
+          if (primaryStored) {
+            const parsed = JSON.parse(primaryStored);
+            if (parsed && typeof parsed === 'object') {
+              return normalizeStateObject(parsed);
+            }
+          }
+          return JSON.parse(JSON.stringify(LAUNCH_EMPTY_DATA));
+        } else {
+          const guestStored = localStorage.getItem('financeme_state_guest');
+          if (guestStored) {
+            const parsedGuest = JSON.parse(guestStored);
+            if (parsedGuest && typeof parsedGuest === 'object') {
+              return normalizeStateObject(parsedGuest);
+            }
           }
         }
       } catch (e) {
@@ -3901,7 +4007,6 @@
 
       localStorage.setItem('financeme_theme', theme);
 
-      // Re-render chart if visible
       if (document.getElementById('tab-analytics') && !document.getElementById('tab-analytics').classList.contains('hidden')) {
         renderCharts();
       }
@@ -3938,50 +4043,43 @@
         firestoreUnsubscribe = null;
       }
 
-      if (!db) return;
+      if (!db || isSigningOut) return;
       const targetDocRef = getFirestoreDocRef();
       if (!targetDocRef) return;
 
       updateCloudStatus('connecting');
 
       firestoreUnsubscribe = onSnapshot(targetDocRef, (snap) => {
+        if (isSigningOut || isHydratingUserData) return;
         if (snap.exists()) {
           const cloudData = snap.data();
           if (cloudData && typeof cloudData === 'object') {
-            state = {
+            // Never let an empty cloud document overwrite non-empty in-memory user data unless explicitly wiped
+            if (!hasMeaningfulUserData(cloudData) && hasMeaningfulUserData(state)) {
+              setDoc(targetDocRef, {
+                ...state,
+                lastUpdated: new Date().toISOString()
+              }, { merge: true }).catch(e => {
+                handleFirestoreError(e, OperationType.WRITE, targetDocRef.path);
+              });
+              updateCloudStatus('synced');
+              return;
+            }
+            state = normalizeStateObject({
               ...state,
-              ...cloudData,
-              financialPlanEstablished: (cloudData.financialPlanEstablished !== undefined) ? cloudData.financialPlanEstablished : state.financialPlanEstablished,
-              accounts: Array.isArray(cloudData.accounts) ? cloudData.accounts : (state.accounts || []),
-              transactions: Array.isArray(cloudData.transactions) ? cloudData.transactions : (state.transactions || []),
-              subscriptions: Array.isArray(cloudData.subscriptions) ? cloudData.subscriptions : (state.subscriptions || []),
-              goals: Array.isArray(cloudData.goals) ? cloudData.goals : (state.goals || []),
-              debts: Array.isArray(cloudData.debts) ? cloudData.debts : (state.debts || []),
-              debtSimulator: {
-                ...LAUNCH_EMPTY_DATA.debtSimulator,
-                ...(state.debtSimulator || {}),
-                ...(cloudData.debtSimulator || {})
-              },
-              salaryConfig: {
-                ...LAUNCH_EMPTY_DATA.salaryConfig,
-                ...(state.salaryConfig || {}),
-                ...(cloudData.salaryConfig || {})
-              }
-            };
+              ...cloudData
+            });
             const storageKey = getStorageKey();
             localStorage.setItem(storageKey, JSON.stringify(state));
+            if (currentUser?.email) {
+              localStorage.setItem(`financeme_state_email_${currentUser.email.toLowerCase()}`, JSON.stringify(state));
+            }
             renderAll();
           }
           updateCloudStatus('synced');
         } else {
           // If document doesn't exist yet in Firestore, seed ONLY if user has entered real data
-          const hasData = state && (
-            (state.accounts && state.accounts.length > 0) ||
-            (state.transactions && state.transactions.length > 0) ||
-            (state.debts && state.debts.length > 0) ||
-            (state.goals && state.goals.length > 0)
-          );
-          if (hasData) {
+          if (hasMeaningfulUserData(state)) {
             setDoc(targetDocRef, {
               ...state,
               lastUpdated: new Date().toISOString()
@@ -3995,6 +4093,97 @@
         handleFirestoreError(error, OperationType.GET, targetDocRef.path);
         updateCloudStatus('error', error?.message);
       });
+    }
+
+    // Top-level User Data Hydration & Cloud Sync Engine (Accessible across all Auth & Verification handlers)
+    async function loadAndSyncUserData(user) {
+      if (!user || !user.uid) return;
+      isHydratingUserData = true;
+      updateCloudStatus('connecting');
+
+      // 1. Immediately hydrate from user's isolated local cache for instant zero-latency recovery
+      const userLocalState = loadInitialState(user.uid, user.email);
+      const hasUserLocal = hasMeaningfulUserData(userLocalState);
+      if (hasUserLocal) {
+        state = normalizeStateObject(userLocalState);
+        renderAll();
+      }
+
+      // 2. Fetch user's private document from Firestore
+      const userDocRef = doc(db, 'users', user.uid, 'data', 'financeState');
+      let cloudLoaded = false;
+      try {
+        const snap = await getDoc(userDocRef);
+        if (snap.exists()) {
+          const cloudData = snap.data();
+          const hasCloudData = hasMeaningfulUserData(cloudData);
+
+          if (hasCloudData) {
+            // Check if local state is newer than cloud state
+            const localTime = userLocalState?.lastUpdated ? new Date(userLocalState.lastUpdated).getTime() : 0;
+            const cloudTime = cloudData?.lastUpdated ? new Date(cloudData.lastUpdated).getTime() : 0;
+
+            if (hasUserLocal && localTime > cloudTime) {
+              state = normalizeStateObject(userLocalState);
+              await setDoc(userDocRef, {
+                ...state,
+                lastUpdated: new Date().toISOString()
+              }, { merge: true });
+            } else {
+              state = normalizeStateObject(cloudData);
+            }
+
+            localStorage.setItem(`financeme_state_${user.uid}`, JSON.stringify(state));
+            if (user.email) {
+              localStorage.setItem(`financeme_state_email_${user.email.toLowerCase()}`, JSON.stringify(state));
+            }
+            cloudLoaded = true;
+            updateCloudStatus('synced');
+            showToast('✓ Cloud portfolio restored from your account!');
+          }
+        }
+      } catch (fetchErr) {
+        console.warn('Firestore initial getDoc error:', fetchErr);
+        handleFirestoreError(fetchErr, OperationType.GET, userDocRef.path);
+      }
+
+      // 3. If cloud doc didn't exist or was empty, preserve user's local state and sync to Firestore
+      if (!cloudLoaded) {
+        if (hasUserLocal) {
+          state = normalizeStateObject(userLocalState);
+          localStorage.setItem(`financeme_state_${user.uid}`, JSON.stringify(state));
+          if (user.email) {
+            localStorage.setItem(`financeme_state_email_${user.email.toLowerCase()}`, JSON.stringify(state));
+          }
+          try {
+            await setDoc(userDocRef, {
+              ...state,
+              lastUpdated: new Date().toISOString()
+            }, { merge: true });
+            updateCloudStatus('synced');
+            showToast('✓ Restored your saved account portfolio!');
+          } catch (saveErr) {
+            console.warn('Initial seed to Firestore error:', saveErr);
+          }
+        } else {
+          // Brand-new user with no cloud data and no local data for this UID (strictly private)
+          state = JSON.parse(JSON.stringify(LAUNCH_EMPTY_DATA));
+          updateCloudStatus('synced');
+        }
+      }
+
+      isHydratingUserData = false;
+      renderAll();
+      setupFirestoreSubscription();
+
+      // Prompt Financial Plan Setup Wizard ONLY if user has not established their plan yet
+      if (user && isUserVerified(user) && !hasMeaningfulUserData(state)) {
+        setTimeout(() => {
+          if (currentUser && !hasMeaningfulUserData(state)) {
+            openFinancialPlanWizard();
+          }
+        }, 350);
+      }
     }
 
     // ================= FIREBASE SETUP & SYNC =================
@@ -4028,147 +4217,59 @@
         await testFirestoreConnection();
         await handleInboundAuthAction();
 
-        function openEmailVerificationModal(email) {
-          const targetEl = document.getElementById('verifyEmailTargetDisplay');
-          if (targetEl) targetEl.textContent = email || currentUser?.email || 'your email';
-          const banner = document.getElementById('verifyEmailAlertBanner');
-          if (banner) {
-            banner.className = 'hidden';
-            banner.innerHTML = '';
-          }
-          const domainEl = document.getElementById('currentDomainDisplay');
-          if (domainEl) {
-            domainEl.textContent = window.location.hostname;
-          }
-          openModal('emailVerificationModal');
-        }
-
-        async function loadAndSyncUserData(user) {
-          if (!user) return;
-          updateCloudStatus('connecting');
-
-          const userDocRef = doc(db, 'users', user.uid, 'data', 'financeState');
-          let cloudLoaded = false;
-          try {
-            const snap = await getDoc(userDocRef);
-            if (snap.exists()) {
-              const cloudData = snap.data();
-              if (cloudData && typeof cloudData === 'object') {
-                state = {
-                  ...LAUNCH_EMPTY_DATA,
-                  ...cloudData,
-                  financialPlanEstablished: cloudData.financialPlanEstablished || false,
-                  accounts: Array.isArray(cloudData.accounts) ? cloudData.accounts : [],
-                  transactions: Array.isArray(cloudData.transactions) ? cloudData.transactions : [],
-                  subscriptions: Array.isArray(cloudData.subscriptions) ? cloudData.subscriptions : [],
-                  goals: Array.isArray(cloudData.goals) ? cloudData.goals : [],
-                  debts: Array.isArray(cloudData.debts) ? cloudData.debts : [],
-                  debtSimulator: {
-                    ...LAUNCH_EMPTY_DATA.debtSimulator,
-                    ...(cloudData.debtSimulator || {})
-                  },
-                  salaryConfig: {
-                    ...LAUNCH_EMPTY_DATA.salaryConfig,
-                    ...(cloudData.salaryConfig || {})
-                  }
-                };
-                localStorage.setItem(`financeme_state_${user.uid}`, JSON.stringify(state));
-                cloudLoaded = true;
-                updateCloudStatus('synced');
-                showToast('✓ Cloud portfolio loaded from database!');
-              }
-            }
-          } catch (fetchErr) {
-            console.warn('Firestore initial getDoc error:', fetchErr);
-            handleFirestoreError(fetchErr, OperationType.GET, userDocRef.path);
-          }
-
-          // 2. If cloud doc didn't exist or was newly registered user:
-          if (!cloudLoaded) {
-            const userLocalState = loadInitialState(user.uid);
-            const guestState = loadInitialState(null);
-            const hasUserLocal = userLocalState && (
-              userLocalState.accounts.length > 0 ||
-              userLocalState.transactions.length > 0 ||
-              userLocalState.debts.length > 0 ||
-              userLocalState.goals.length > 0
-            );
-            const hasGuestLocal = guestState && (
-              guestState.accounts.length > 0 ||
-              guestState.transactions.length > 0 ||
-              guestState.debts.length > 0 ||
-              guestState.goals.length > 0
-            );
-
-            if (hasUserLocal) {
-              state = userLocalState;
-            } else if (hasGuestLocal) {
-              state = { ...guestState };
-              localStorage.setItem(`financeme_state_${user.uid}`, JSON.stringify(state));
-              localStorage.removeItem('financeme_state_guest');
-              showToast('✓ Saved your guest inputs to your user account!');
-            } else {
-              state = JSON.parse(JSON.stringify(LAUNCH_EMPTY_DATA));
-            }
-
-            // Only seed to Firestore if user actually had local/guest entries
-            const hasDataToSave = state.accounts.length > 0 || state.transactions.length > 0 || state.debts.length > 0 || state.goals.length > 0;
-            if (hasDataToSave) {
-              try {
-                await setDoc(userDocRef, {
-                  ...state,
-                  lastUpdated: new Date().toISOString()
-                }, { merge: true });
-                updateCloudStatus('synced');
-              } catch (saveErr) {
-                console.warn('Initial seed to Firestore error:', saveErr);
-              }
-            }
-          }
-
-          renderAll();
-          setupFirestoreSubscription();
-
-          // Prompt Financial Plan Setup Wizard if verified user has not established their plan yet
-          if (user && isUserVerified(user) && !state.financialPlanEstablished && state.accounts.length === 0) {
-            setTimeout(() => {
-              openFinancialPlanWizard();
-            }, 350);
-          }
-        }
-
         // Listen for Authentication state
         onAuthStateChanged(auth, async (user) => {
           currentUser = user;
           updateAuthUI(user);
 
           if (user) {
+            isSigningOut = false;
+            // Pre-hydrate user's isolated local cache before switching to dashboard
+            const cachedUserState = loadInitialState(user.uid, user.email);
+            if (hasMeaningfulUserData(cachedUserState)) {
+              state = normalizeStateObject(cachedUserState);
+              markUserVerified(user);
+            }
+
             if (!isUserVerified(user)) {
-              // Unverified user: restrict dashboard access until email is verified
+              // Check if user already has cloud data in Firestore (returning user)
+              try {
+                const existingDoc = await getDoc(doc(db, 'users', user.uid, 'data', 'financeState'));
+                if (existingDoc.exists() && hasMeaningfulUserData(existingDoc.data())) {
+                  markUserVerified(user);
+                }
+              } catch (e) {
+                console.warn('Verification cloud check notice:', e);
+              }
+            }
+
+            if (!isUserVerified(user)) {
+              // Unverified new user: restrict dashboard access until email is verified or bypassed
               setAppMode('landing');
               openEmailVerificationModal(user.email);
               updateCloudStatus('Local Mode');
               return;
             }
 
-            // Verified user (or Google login): proceed into dashboard
+            // Verified or returning user: proceed into dashboard and restore all saved data
             closeModal('emailVerificationModal');
-            setAppMode('dashboard');
+            closeModal('authModal');
             await loadAndSyncUserData(user);
-
-            // Open financial plan wizard if needed
-            if (!state.financialPlanEstablished && state.accounts.length === 0) {
-              setTimeout(() => {
-                openFinancialPlanWizard();
-              }, 400);
-            }
+            setAppMode('dashboard');
           } else {
             // Unauthenticated / Guest session
             closeModal('emailVerificationModal');
-            state = loadInitialState(null);
-            renderAll();
-            setupFirestoreSubscription();
-            if (!isDemoMode) {
+            if (firestoreUnsubscribe) {
+              firestoreUnsubscribe();
+              firestoreUnsubscribe = null;
+            }
+            if (isDemoMode) {
+              state = loadInitialState(null);
+              renderAll();
+              setupFirestoreSubscription();
+            } else {
+              state = JSON.parse(JSON.stringify(LAUNCH_EMPTY_DATA));
+              renderAll();
               setAppMode('landing');
             }
           }
@@ -4292,36 +4393,65 @@
       }
     }
 
-    // Dedicated Sign Out Handler
+    // Dedicated Sign Out Handler (Flushes and preserves user's private data before clearing session memory)
     function executeSignOut() {
       promptConfirmation({
         title: 'Sign Out Account',
-        message: `Currently signed in as ${currentUser?.email || currentUser?.displayName || 'user'}. Are you sure you want to sign out? Your financial data remains safely stored in the Firebase Firestore cloud database.`,
+        message: `Currently signed in as ${currentUser?.email || currentUser?.displayName || 'user'}. Are you sure you want to sign out? Your financial data remains safely stored in your private account and will be restored when you sign back in.`,
         confirmText: 'Sign Out',
         isDanger: false,
-        onConfirm: () => {
+        onConfirm: async () => {
+          // 1. Flush any active user data to their isolated UID local cache & Firestore BEFORE signing out
+          if (currentUser?.uid && hasMeaningfulUserData(state)) {
+            const nowIso = new Date().toISOString();
+            state.lastUpdated = nowIso;
+            try {
+              localStorage.setItem(`financeme_state_${currentUser.uid}`, JSON.stringify(state));
+              if (currentUser.email) {
+                localStorage.setItem(`financeme_state_email_${currentUser.email.toLowerCase()}`, JSON.stringify(state));
+              }
+              markUserVerified(currentUser);
+            } catch (e) {
+              console.warn('Pre-signout localStorage flush warning:', e);
+            }
+            if (db) {
+              try {
+                const userDocRef = doc(db, 'users', currentUser.uid, 'data', 'financeState');
+                await setDoc(userDocRef, {
+                  ...state,
+                  lastUpdated: nowIso
+                }, { merge: true });
+              } catch (e) {
+                console.warn('Pre-signout Firestore flush notice:', e);
+              }
+            }
+          }
+
+          // 2. Detach Firestore subscription and clear in-memory session state
+          isSigningOut = true;
           sessionStorage.removeItem('financeme_demo_mode');
           isDemoMode = false;
           if (firestoreUnsubscribe) {
             firestoreUnsubscribe();
             firestoreUnsubscribe = null;
           }
-          signOut(auth).then(() => {
-            currentUser = null;
-            state = JSON.parse(JSON.stringify(LAUNCH_EMPTY_DATA));
-            localStorage.removeItem('financeme_state_guest');
-            updateAuthUI(null);
-            setAppMode('landing');
-            showToast('Signed out successfully. Cloud data remains safe.');
-          }).catch(err => {
+
+          currentUser = null;
+          state = JSON.parse(JSON.stringify(LAUNCH_EMPTY_DATA));
+          localStorage.removeItem('financeme_state_guest');
+          localStorage.removeItem('financeme_state_v1');
+
+          try {
+            await signOut(auth);
+          } catch (err) {
             console.warn('Sign out error:', err);
-            currentUser = null;
-            state = JSON.parse(JSON.stringify(LAUNCH_EMPTY_DATA));
-            localStorage.removeItem('financeme_state_guest');
+          } finally {
+            isSigningOut = false;
             updateAuthUI(null);
             setAppMode('landing');
-            showToast('Signed out');
-          });
+            renderAll();
+            showToast('Signed out successfully. Your data is safely stored in your account.');
+          }
         }
       });
     }
@@ -5695,6 +5825,19 @@
         }
       }
 
+      // Synchronize with state.debts if debts exist so dashboard minimum due matches debts portfolio
+      const allDebts = state.debts || [];
+      if (allDebts.length > 0) {
+        const debtsMinSum = allDebts.reduce((s, d) => s + Math.max(0, d.minPaymentUsd || 0), 0);
+        if (debtsMinSum > totalMonthlyMinDueUsd) {
+          totalMonthlyMinDueUsd = debtsMinSum;
+        }
+        const debtsBalSum = allDebts.reduce((s, d) => s + Math.max(0, d.balanceUsd || 0), 0);
+        if (totalLiabilitiesUsd === 0 && debtsBalSum > 0) {
+          totalLiabilitiesUsd = debtsBalSum;
+        }
+      }
+
       // Consolidated Debt & Credit Shield Block Update
       const totalDebtEl = document.getElementById('statTotalDebtBalance');
       const totalCreditEl = document.getElementById('statTotalCreditLine');
@@ -5721,6 +5864,106 @@
           }`;
         }
       }
+
+      renderDashboardDebtPaymentRoster();
+    }
+
+    function renderDashboardDebtPaymentRoster() {
+      const container = document.getElementById('dashboardDebtPaymentRoster');
+      if (!container) return;
+
+      const debts = state.debts || [];
+      if (debts.length === 0) {
+        container.innerHTML = `
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs font-mono text-slate-400 bg-slate-950/50 p-3 rounded-2xl border border-slate-800/70">
+            <span>No active loans or credit card minimum payment obligations placed yet.</span>
+            <button type="button" id="dashQuickAddDebtBtn" class="text-emerald-400 hover:text-emerald-300 font-semibold cursor-pointer self-start sm:self-auto">+ Place Loan / Card Payment →</button>
+          </div>
+        `;
+        document.getElementById('dashQuickAddDebtBtn')?.addEventListener('click', () => {
+          openDebtModalWithCategory('loan');
+        });
+        return;
+      }
+
+      const isCardItem = (d) => {
+        if (d.category === 'credit_card') return true;
+        if (d.category === 'loan') return false;
+        return Boolean(d.creditLimitUsd && d.creditLimitUsd > 0);
+      };
+
+      const loans = debts.filter(d => !isCardItem(d));
+      const cards = debts.filter(d => isCardItem(d));
+      const loansMinTotal = loans.reduce((s, d) => s + Math.max(0, d.minPaymentUsd || 0), 0);
+      const cardsMinTotal = cards.reduce((s, d) => s + Math.max(0, d.minPaymentUsd || 0), 0);
+
+      const renderRow = (d, isCard) => {
+        const minUsd = Math.max(0, d.minPaymentUsd || 0);
+        const balUsd = Math.max(0, d.balanceUsd || 0);
+        const autoLabel = d.autoDebitEnabled ? `⚡ Auto Day ${d.autoDebitDay || 15}` : 'Manual Due';
+        return `
+          <div class="p-2.5 rounded-xl bg-slate-900/90 border border-slate-800/90 flex items-center justify-between gap-2 text-xs font-mono hover:border-slate-700 transition-colors">
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full ${isCard ? 'bg-emerald-400' : 'bg-indigo-400'} shrink-0"></span>
+                <span class="font-bold text-white truncate font-sans">${escapeHtml(d.name)}</span>
+                <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-950 text-slate-400 border border-slate-800">${d.apr || 0}% APR</span>
+              </div>
+              <div class="text-[10px] text-slate-400 mt-0.5 flex items-center gap-2">
+                <span>Balance: <strong class="text-rose-300">${formatMoney(balUsd)}</strong></span>
+                <span>·</span>
+                <span class="${d.autoDebitEnabled ? 'text-emerald-400' : 'text-slate-500'}">${autoLabel}</span>
+              </div>
+            </div>
+            <div class="text-right shrink-0 flex items-center gap-2">
+              <div>
+                <span class="text-[9px] uppercase text-slate-400 block">Placed Min Payment</span>
+                <span class="text-xs font-bold text-amber-300 tabular-nums">${formatMoney(minUsd)}/mo</span>
+              </div>
+              <button type="button" class="dash-edit-debt-min-btn p-1.5 rounded-lg bg-slate-950 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800 cursor-pointer" data-debt-id="${d.id}" title="Edit minimum payment for ${escapeHtml(d.name)}">
+                <svg class="w-3 h-3 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+              </button>
+            </div>
+          </div>
+        `;
+      };
+
+      container.innerHTML = `
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <span class="text-[11px] font-mono uppercase tracking-wider text-slate-300 font-bold flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+            <span>Individual Placed Minimum Payments (Arranged per Loan & Credit Card)</span>
+          </span>
+          <div class="flex items-center gap-3 text-[11px] font-mono">
+            <span class="text-indigo-300">Loans Min: <strong>${formatMoney(loansMinTotal)}/mo</strong></span>
+            <span class="text-slate-600">|</span>
+            <span class="text-emerald-300">Cards Min: <strong>${formatMoney(cardsMinTotal)}/mo</strong></span>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
+          <div class="p-3 rounded-2xl bg-slate-950/60 border border-slate-800/80 space-y-2">
+            <div class="flex items-center justify-between text-[11px] font-mono pb-1 border-b border-slate-800/80">
+              <span class="text-indigo-300 font-bold uppercase">1. Installment Loans (${loans.length})</span>
+              <span class="text-amber-300 font-bold">${formatMoney(loansMinTotal)}/mo</span>
+            </div>
+            ${loans.length > 0 ? loans.map(d => renderRow(d, false)).join('') : '<p class="text-[11px] text-slate-500 font-mono py-2">No fixed installment loans active.</p>'}
+          </div>
+          <div class="p-3 rounded-2xl bg-slate-950/60 border border-slate-800/80 space-y-2">
+            <div class="flex items-center justify-between text-[11px] font-mono pb-1 border-b border-slate-800/80">
+              <span class="text-emerald-300 font-bold uppercase">2. Credit Cards (${cards.length})</span>
+              <span class="text-amber-300 font-bold">${formatMoney(cardsMinTotal)}/mo</span>
+            </div>
+            ${cards.length > 0 ? cards.map(d => renderRow(d, true)).join('') : '<p class="text-[11px] text-slate-500 font-mono py-2">No revolving credit cards active.</p>'}
+          </div>
+        </div>
+      `;
+
+      container.querySelectorAll('.dash-edit-debt-min-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const targetDebt = (state.debts || []).find(item => item.id === btn.dataset.debtId);
+          if (targetDebt) openDebtModalForEdit(targetDebt);
+        });
+      });
     }
 
     function renderHealthStats() {
@@ -7181,14 +7424,204 @@
         setElementText('simPrepayRoi', '0.0%');
       }
 
-      // 5. Interactive D3 Multi-Strategy Amortization Line Chart
+      // 5. Arranged Minimum Payment Obligations Table (Per Loan & Credit Card)
+      renderArrangedDebtsTable();
+
+      // 6. Interactive Multi-Strategy Amortization Line Chart
       renderD3AmortizationChart(baselineSim, avalancheSim, snowballSim);
 
-      // 6. Amortization Schedule Table
+      // 7. Amortization Schedule Table
       renderAmortizationTable(activeSim);
 
-      // 7. Debt Portfolio Roster
+      // 8. Debt Portfolio Roster
       renderDebtsGrid();
+    }
+
+    let arrangedDebtsSortMode = 'type';
+
+    function renderArrangedDebtsTable() {
+      const tbody = document.getElementById('arrangedDebtsTbody');
+      const tfoot = document.getElementById('arrangedDebtsTfoot');
+      const countBadge = document.getElementById('arrangedDebtsCountBadge');
+      if (!tbody || !tfoot) return;
+
+      const debts = Array.isArray(state.debts) ? [...state.debts] : [];
+      if (countBadge) {
+        countBadge.textContent = `${debts.length} Obligation${debts.length === 1 ? '' : 's'}`;
+      }
+
+      if (debts.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="9" class="p-8 text-center text-slate-500 text-xs font-sans">
+              No active loans or credit cards placed yet. Click <strong>+ Add Debt</strong> above to place each loan and credit card with its own minimum payment.
+            </td>
+          </tr>
+        `;
+        tfoot.innerHTML = '';
+        return;
+      }
+
+      const isCard = (d) => {
+        if (d.category === 'credit_card') return true;
+        if (d.category === 'loan') return false;
+        return Boolean(d.creditLimitUsd && d.creditLimitUsd > 0);
+      };
+
+      // Determine active strategy #1 target debt to show where extra monthly payment is directed
+      const strategy = state.debtSimulator?.strategy === 'snowball' ? 'snowball' : 'avalanche';
+      const activeExtraUsd = Math.max(0, state.debtSimulator?.extraMonthlyUsd || 0);
+      const activeDebtsWithBal = debts.filter(d => (d.balanceUsd || 0) > 0.001);
+      let priorityDebtId = null;
+      if (activeDebtsWithBal.length > 0) {
+        const sortedForPriority = [...activeDebtsWithBal].sort((a, b) => {
+          if (strategy === 'snowball') {
+            return (a.balanceUsd || 0) - (b.balanceUsd || 0);
+          }
+          return ((b.apr || 0) - (a.apr || 0)) || ((a.balanceUsd || 0) - (b.balanceUsd || 0));
+        });
+        priorityDebtId = sortedForPriority[0].id;
+      }
+
+      // Sort debts according to arrangedDebtsSortMode
+      debts.sort((a, b) => {
+        if (arrangedDebtsSortMode === 'minPay') {
+          return (b.minPaymentUsd || 0) - (a.minPaymentUsd || 0);
+        }
+        if (arrangedDebtsSortMode === 'apr') {
+          return (b.apr || 0) - (a.apr || 0);
+        }
+        if (arrangedDebtsSortMode === 'balance') {
+          return (b.balanceUsd || 0) - (a.balanceUsd || 0);
+        }
+        // Default 'type': Fixed Loans first, then Credit Cards, ordered by placed minimum payment descending
+        const aIsCard = isCard(a) ? 1 : 0;
+        const bIsCard = isCard(b) ? 1 : 0;
+        if (aIsCard !== bIsCard) return aIsCard - bIsCard;
+        return (b.minPaymentUsd || 0) - (a.minPaymentUsd || 0);
+      });
+
+      let loansBalSum = 0;
+      let loansMinSum = 0;
+      let loansExtraSum = 0;
+      let cardsBalSum = 0;
+      let cardsMinSum = 0;
+      let cardsExtraSum = 0;
+
+      tbody.innerHTML = debts.map((d) => {
+        const cardFlag = isCard(d);
+        const balUsd = Math.max(0, d.balanceUsd || 0);
+        const minUsd = Math.max(0, d.minPaymentUsd || 0);
+        const isPriority = d.id === priorityDebtId;
+        const extraForThis = isPriority ? activeExtraUsd : 0;
+        const totalMonthlyForThis = minUsd + extraForThis;
+
+        if (cardFlag) {
+          cardsBalSum += balUsd;
+          cardsMinSum += minUsd;
+          cardsExtraSum += extraForThis;
+        } else {
+          loansBalSum += balUsd;
+          loansMinSum += minUsd;
+          loansExtraSum += extraForThis;
+        }
+
+        const autoAcc = state.accounts.find(a => a.id === d.autoDebitAccountId);
+        const dueBadge = d.autoDebitEnabled
+          ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">⚡ Day ${d.autoDebitDay || 15} (${escapeHtml(autoAcc?.name || 'Auto')})</span>`
+          : `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-slate-900 text-slate-400 border border-slate-800">Manual Monthly</span>`;
+
+        return `
+          <tr class="hover:bg-slate-900/70 transition-colors ${isPriority && activeExtraUsd > 0 ? 'bg-emerald-950/15' : ''}">
+            <td class="p-3">
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-white font-sans">${escapeHtml(d.name)}</span>
+                ${isPriority ? `<span class="text-[9px] px-1.5 py-0.5 rounded-full font-bold ${strategy === 'snowball' ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'}">${strategy === 'snowball' ? '❄️ #1 Target' : '⚡ #1 Target'}</span>` : ''}
+              </div>
+            </td>
+            <td class="p-3">
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${cardFlag ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/25' : 'bg-indigo-500/10 text-indigo-300 border border-indigo-500/25'}">
+                ${cardFlag ? 'Credit Card' : 'Fixed Loan'}
+              </span>
+            </td>
+            <td class="p-3 text-right text-rose-300 font-bold tabular-nums">${formatMoney(balUsd)}</td>
+            <td class="p-3 text-right text-amber-300 tabular-nums">${(d.apr || 0).toFixed(2)}%</td>
+            <td class="p-3 text-right">
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 font-bold tabular-nums">
+                ${formatMoney(minUsd)}/mo
+              </span>
+            </td>
+            <td class="p-3 text-center">${dueBadge}</td>
+            <td class="p-3 text-right tabular-nums ${extraForThis > 0 ? 'text-emerald-400 font-bold' : 'text-slate-500'}">
+              ${extraForThis > 0 ? `+${formatMoney(extraForThis)}/mo` : 'Rollover Queued'}
+            </td>
+            <td class="p-3 text-right font-bold text-emerald-400 tabular-nums">${formatMoney(totalMonthlyForThis)}/mo</td>
+            <td class="p-3 text-center">
+              <div class="flex items-center justify-center gap-1">
+                <button type="button" class="arranged-edit-debt-btn px-2 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 text-[10px] cursor-pointer" data-id="${d.id}" title="Edit Placed Minimum Payment & Details">
+                  Edit Min
+                </button>
+                <button type="button" class="arranged-prepay-debt-btn px-2 py-1 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 text-[10px] cursor-pointer" data-id="${d.id}" title="Log Extra Payment">
+                  Pay
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      const totalBal = loansBalSum + cardsBalSum;
+      const totalMin = loansMinSum + cardsMinSum;
+      const totalExtra = loansExtraSum + cardsExtraSum;
+      const grandTotalMonthly = totalMin + totalExtra;
+
+      tfoot.innerHTML = `
+        <tr class="border-t border-slate-800 text-indigo-300/90 bg-slate-950/60">
+          <td class="p-2.5 pl-3" colspan="2">Subtotal: Fixed & Installment Loans</td>
+          <td class="p-2.5 text-right tabular-nums">${formatMoney(loansBalSum)}</td>
+          <td class="p-2.5 text-right">—</td>
+          <td class="p-2.5 text-right text-amber-300 tabular-nums">${formatMoney(loansMinSum)}/mo</td>
+          <td class="p-2.5 text-center">—</td>
+          <td class="p-2.5 text-right tabular-nums">${loansExtraSum > 0 ? `+${formatMoney(loansExtraSum)}/mo` : '$0.00'}</td>
+          <td class="p-2.5 text-right text-emerald-300 tabular-nums">${formatMoney(loansMinSum + loansExtraSum)}/mo</td>
+          <td class="p-2.5"></td>
+        </tr>
+        <tr class="border-t border-slate-800/80 text-emerald-300/90 bg-slate-950/60">
+          <td class="p-2.5 pl-3" colspan="2">Subtotal: Credit Cards & Revolving Lines</td>
+          <td class="p-2.5 text-right tabular-nums">${formatMoney(cardsBalSum)}</td>
+          <td class="p-2.5 text-right">—</td>
+          <td class="p-2.5 text-right text-amber-300 tabular-nums">${formatMoney(cardsMinSum)}/mo</td>
+          <td class="p-2.5 text-center">—</td>
+          <td class="p-2.5 text-right tabular-nums">${cardsExtraSum > 0 ? `+${formatMoney(cardsExtraSum)}/mo` : '$0.00'}</td>
+          <td class="p-2.5 text-right text-emerald-300 tabular-nums">${formatMoney(cardsMinSum + cardsExtraSum)}/mo</td>
+          <td class="p-2.5"></td>
+        </tr>
+        <tr class="border-t-2 border-slate-700 text-white bg-slate-900">
+          <td class="p-3 font-bold" colspan="2">Combined Portfolio Total (${debts.length} Obligations)</td>
+          <td class="p-3 text-right text-rose-400 font-bold tabular-nums">${formatMoney(totalBal)}</td>
+          <td class="p-3 text-right text-amber-300 tabular-nums">${latestDebtSimulation ? `${latestDebtSimulation.weightedApr.toFixed(1)}% avg` : '—'}</td>
+          <td class="p-3 text-right text-amber-300 font-bold tabular-nums">${formatMoney(totalMin)}/mo</td>
+          <td class="p-3 text-center text-[10px] text-slate-400">All Placed Minimums</td>
+          <td class="p-3 text-right text-emerald-400 font-bold tabular-nums">+${formatMoney(totalExtra)}/mo</td>
+          <td class="p-3 text-right text-emerald-400 font-black tabular-nums">${formatMoney(grandTotalMonthly)}/mo</td>
+          <td class="p-3"></td>
+        </tr>
+      `;
+
+      tbody.querySelectorAll('.arranged-edit-debt-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const target = (state.debts || []).find(item => item.id === btn.dataset.id);
+          if (target) openDebtModalForEdit(target);
+        });
+      });
+
+      tbody.querySelectorAll('.arranged-prepay-debt-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          openModal('debtPrepayModal');
+          const sel = document.getElementById('prepayTargetDebtSelect');
+          if (sel) sel.value = btn.dataset.id;
+        });
+      });
     }
 
     let d3CurveToggles = {
@@ -8414,11 +8847,25 @@
       document.getElementById('debtCatLoanBtn')?.addEventListener('click', () => setDebtModalCategory('loan'));
       document.getElementById('openNewCardBtn')?.addEventListener('click', () => openDebtModalWithCategory('credit_card'));
       document.getElementById('openNewLoanBtn')?.addEventListener('click', () => openDebtModalWithCategory('loan'));
+      document.getElementById('openNewCardSubBtn')?.addEventListener('click', () => openDebtModalWithCategory('credit_card'));
+      document.getElementById('openNewLoanSubBtn')?.addEventListener('click', () => openDebtModalWithCategory('loan'));
       document.getElementById('closeDebtModalBtn')?.addEventListener('click', () => closeModal('debtModal'));
       document.getElementById('cancelDebtBtn')?.addEventListener('click', () => closeModal('debtModal'));
       document.getElementById('closeDebtPrepayModalBtn')?.addEventListener('click', () => closeModal('debtPrepayModal'));
       document.getElementById('cancelDebtPrepayBtn')?.addEventListener('click', () => closeModal('debtPrepayModal'));
       document.getElementById('openPrepayModalBtn')?.addEventListener('click', () => openModal('debtPrepayModal'));
+
+      // Arranged Minimum Payments Sort Controls
+      document.querySelectorAll('.arranged-sort-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          arrangedDebtsSortMode = btn.dataset.sort || 'type';
+          document.querySelectorAll('.arranged-sort-btn').forEach(b => {
+            b.className = 'arranged-sort-btn px-2.5 py-1 rounded-lg text-slate-400 hover:text-white cursor-pointer transition-all';
+          });
+          btn.className = 'arranged-sort-btn active px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-semibold cursor-pointer transition-all';
+          renderArrangedDebtsTable();
+        });
+      });
 
       // Auto-Debit Modal controls
       document.getElementById('debtAutoDebitToggle')?.addEventListener('change', (e) => {
@@ -9140,9 +9587,17 @@
                 console.warn('Cloud clear notice:', err);
               }
             }
-            localStorage.removeItem('financeme_state_v1');
+            if (currentUser?.uid) {
+              localStorage.removeItem(`financeme_state_${currentUser.uid}`);
+              if (currentUser.email) {
+                localStorage.removeItem(`financeme_state_email_${currentUser.email.toLowerCase()}`);
+              }
+            } else {
+              localStorage.removeItem('financeme_state_v1');
+            }
             state = JSON.parse(JSON.stringify(LAUNCH_EMPTY_DATA));
-            saveState(true);
+            isUserDataHydrated = true;
+            saveState(true, true);
             closeModal('backupModal');
             showToast('All accounts and data have been wiped clean.');
             renderAll();
@@ -9543,6 +9998,7 @@
           if (activeAuthTab === 'signup') {
             const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
             const newUser = userCredential.user;
+            currentUser = newUser;
 
             // Dispatch verification email linked to website URL
             try {
@@ -9558,19 +10014,15 @@
           } else {
             const userCredential = await signInWithEmailAndPassword(auth, email, pass);
             const user = userCredential.user;
-
-            const isPasswordUser = user.providerData && user.providerData.some(p => p.providerId === 'password');
-            if (isPasswordUser && !user.emailVerified) {
-              clearAuthAlert();
-              closeModal('authModal');
-              openEmailVerificationModal(user.email);
-              showToast('Please verify your email address to unlock your dashboard.', 'warning');
-              return;
-            }
+            currentUser = user;
+            markUserVerified(user);
 
             clearAuthAlert();
             closeModal('authModal');
-            showToast('Logged in successfully!');
+            closeModal('emailVerificationModal');
+            setAppMode('dashboard');
+            await loadAndSyncUserData(user);
+            showToast('Logged in successfully! Your financial data has been restored.');
           }
         } catch (err) {
           console.warn('Firebase Auth error:', err);
@@ -9647,7 +10099,12 @@
           const provider = new GoogleAuthProvider();
           provider.setCustomParameters({ prompt: 'select_account' });
           const result = await signInWithPopup(auth, provider);
+          currentUser = result.user;
+          markUserVerified(result.user);
           closeModal('authModal');
+          closeModal('emailVerificationModal');
+          setAppMode('dashboard');
+          await loadAndSyncUserData(result.user);
           showToast(`✓ Welcome, ${result.user.displayName || result.user.email}!`);
         } catch (err) {
           console.warn('Google sign-in error:', err);
@@ -9685,6 +10142,7 @@
           await auth.currentUser.reload();
           if (auth.currentUser.emailVerified) {
             currentUser = auth.currentUser;
+            markUserVerified(currentUser);
             if (banner) {
               banner.className = 'block p-3 rounded-2xl bg-emerald-950/50 border border-emerald-500/40 text-emerald-300 font-semibold text-xs';
               banner.textContent = '✓ Email verified successfully! Loading your dashboard...';
@@ -9813,11 +10271,13 @@
 
       // Developer / Testing Verification Bypass Button
       document.getElementById('devBypassVerifyBtn')?.addEventListener('click', async () => {
-        devVerifiedBypass = true;
-        sessionStorage.setItem('financeme_dev_verified_bypass', 'true');
+        if (auth?.currentUser) {
+          currentUser = auth.currentUser;
+        }
+        markUserVerified(currentUser);
         closeModal('emailVerificationModal');
         setAppMode('dashboard');
-        showToast('⚡ Instant verification applied for testing session! Welcome.', 'success');
+        showToast('⚡ Instant verification applied for your account! Welcome.', 'success');
         if (currentUser) {
           await loadAndSyncUserData(currentUser);
         }
