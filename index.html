@@ -1026,6 +1026,11 @@
             <span id="statMonthlyMinDue" class="text-base sm:text-lg font-bold font-mono text-amber-300 tabular-nums">$0.00/mo</span>
           </div>
         </div>
+
+        <!-- Individual Minimum Payments Roster Arranged per Loan & Credit Card -->
+        <div id="dashboardDebtPaymentRoster" class="pt-4 border-t border-slate-800/80 space-y-3">
+          <!-- Dynamically populated via renderDashboardDebtPaymentRoster() -->
+        </div>
       </div>
 
       <!-- Accounts Roster (Assets vs Liabilities) -->
@@ -1262,6 +1267,53 @@
               <span id="cardsUtilizationStatusLabel" class="text-[10px] text-emerald-400 font-mono block mt-0.5">Healthy (&lt;30%)</span>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- 1.2 Placed Minimum Payments Master Schedule (Arranged Per Loan & Credit Card) -->
+      <div id="debtsArrangedPaymentSection" class="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4 shadow-sm">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
+          <div class="space-y-0.5">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+              <h3 class="text-base font-bold text-white">Monthly Minimum Payment Obligations (Arranged per Loan & Card)</h3>
+              <span id="arrangedDebtsCountBadge" class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/30 font-semibold">0 Obligations</span>
+            </div>
+            <p class="text-xs text-slate-400">Every loan and revolving card has its own placed minimum payment. Arranged below with APR, schedule, and active strategy payment commitments.</p>
+          </div>
+          
+          <!-- Arrange / Sort Controls -->
+          <div class="flex flex-wrap items-center gap-1.5 p-1 bg-slate-950 rounded-xl border border-slate-800 text-xs font-mono">
+            <span class="text-[10px] text-slate-500 px-2 uppercase font-semibold">Arrange by:</span>
+            <button id="sortDebtsByTypeBtn" type="button" class="arranged-sort-btn active px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-semibold cursor-pointer transition-all" data-sort="type">Type</button>
+            <button id="sortDebtsByMinPayBtn" type="button" class="arranged-sort-btn px-2.5 py-1 rounded-lg text-slate-400 hover:text-white cursor-pointer transition-all" data-sort="minPay">Highest Min</button>
+            <button id="sortDebtsByAprBtn" type="button" class="arranged-sort-btn px-2.5 py-1 rounded-lg text-slate-400 hover:text-white cursor-pointer transition-all" data-sort="apr">Highest APR</button>
+            <button id="sortDebtsByBalanceBtn" type="button" class="arranged-sort-btn px-2.5 py-1 rounded-lg text-slate-400 hover:text-white cursor-pointer transition-all" data-sort="balance">Balance</button>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-950">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-900 text-slate-400 font-mono uppercase text-[10px] border-b border-slate-800">
+              <tr>
+                <th class="p-3">Loan / Creditor</th>
+                <th class="p-3">Type</th>
+                <th class="p-3 text-right">Principal Balance</th>
+                <th class="p-3 text-right">APR</th>
+                <th class="p-3 text-right text-amber-300">Placed Minimum Payment</th>
+                <th class="p-3 text-center">Due / Auto-Debit</th>
+                <th class="p-3 text-right">Strategy Acceleration</th>
+                <th class="p-3 text-right font-bold text-emerald-400">Total Monthly Outflow</th>
+                <th class="p-3 text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="arrangedDebtsTbody" class="divide-y divide-slate-800/80 font-mono text-slate-300">
+              <!-- Populated via renderArrangedDebtsTable() -->
+            </tbody>
+            <tfoot id="arrangedDebtsTfoot" class="bg-slate-900/90 font-mono text-xs border-t-2 border-slate-800 font-bold">
+              <!-- Populated with grand totals -->
+            </tfoot>
+          </table>
         </div>
       </div>
 
